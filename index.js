@@ -1,12 +1,38 @@
 var _prefix = 'mb-'
 var _modules = {}
 
+function parseAttribute (input) {
+	var object = {}
+	var objectEmpty = true
+	var values = input.split(';')
+
+	values.forEach(value => {
+		var split = value.split(':')
+		if (split.length >= 2) {
+			var key = split[0].trim()
+			split.shift()
+
+			object[key] = split.join(':')
+			objectEmpty = false
+		}
+	})
+
+	if (objectEmpty) {
+		object.default = input
+	}
+
+	return object
+}
+
 function getAttributes (element) {
 	var values = []
 
 	for (var attribute of element.attributes) {
 		if (attribute.name.indexOf(_prefix) === 0) {
-			values.push(attribute.name.substr(_prefix.length))
+			values.push({
+				name: attribute.name.substr(_prefix.length),
+				value: parseAttribute(attribute.value)
+			})
 		}
 	}
 
@@ -32,9 +58,18 @@ function findBits (node, callback) {
 }
 
 function applyBits (node, attributes) {
+	if (!node.minibits) {
+		node.minibits = {}
+	}
+
 	attributes.forEach(attr => {
-		if (typeof _modules[attr] === 'function') {
-			_modules[attr](node)
+		var moduleName = attr.name
+
+		if (
+			!node.minibits[moduleName] &&
+			typeof _modules[moduleName] === 'function'
+		) {
+			node.minibits[moduleName] = _modules[moduleName](node, attr.value) || true
 		}
 	})
 }
