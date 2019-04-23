@@ -10,9 +10,9 @@ export default function (element, options) {
 	}
 
 	var toggle = function () {
-		targets.forEach(target => {
+		for (var target of targets) {
 			target.classList.toggle(options.class)
-		})
+		}
 	}
 
 	element.addEventListener('click', toggle)

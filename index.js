@@ -82,9 +82,9 @@ export function init () {
 	var observer = new MutationObserver(mutationsList => {
 		mutationsList.forEach(mutation => {
 			if (mutation.addedNodes.length) {
-				mutation.addedNodes.forEach(node => {
+				for (var node of mutation.addedNodes) {
 					findBits(node, applyBits)
-				})
+				}
 			}
 		})
 	})
