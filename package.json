@@ -1,0 +1,33 @@
+{
+  "name": "minibits",
+  "version": "0.1.0",
+  "description": "Minimal UI functionalities with no styling.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hdodov/minibits.git"
+  },
+  "keywords": [
+    "ui",
+    "dom",
+    "sticky",
+    "slide",
+    "animation",
+    "transition",
+    "front-end",
+    "utility",
+    "minimal"
+  ],
+  "author": "Hristiyan Dodov",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/hdodov/minibits/issues"
+  },
+  "homepage": "https://github.com/hdodov/minibits#readme",
+  "dependencies": {
+    "core-js": "^3.0.1"
+  }
+}
