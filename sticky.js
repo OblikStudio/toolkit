@@ -16,7 +16,6 @@ const actions = {
 		this.createPlaceholder()
 
 		return function (observerResult) {
-			console.log('action on result', observerResult)
 			this.sticky.setFixed(observerResult === true)
 		}
 	}
@@ -40,37 +39,96 @@ class Effect {
 }
 
 class Sticky {
-	constructor (element) {
+	constructor (element, options) {
+		this.options = Object.assign({
+			animate: false,
+			initialAnimation: true,
+			classFixed: 'is-fixed',
+			classUnfixed: null,
+			classTransition: 'is-transition'
+		}, options)
+
 		this.element = element
 		this.static = element
 		this.isFixed = false
 
+		this.animationElement = (this.options.animationTarget)
+			? document.querySelector(this.options.animationTarget)
+			: this.element
+
 		this.effects = [
 			new Effect(
 				this,
-				observers.before.call(this, {
-					target: '.test'
-				}),
-				actions.fixed.call(this)
+				observers.before.call(this, {}),
+				actions.fixed.call(this, {})
 			)
 		]
 
 		window.addEventListener('scroll', this.update.bind(this))
 		window.addEventListener('resize', this.update.bind(this))
+		this.update()
 	}
 
-	setFixed (value) {
-		console.log('set fixed', value)
+	transition (callback) {
+		return new Promise((resolve, reject) => {
+			if (this.animationHandler) {
+				this.animationHandler()
+			}
+
+			this.animationHandler = () => {
+				this.animationElement.classList.remove(this.options.classTransition)
+				this.animationElement.removeEventListener('transitionend', this.animationHandler)
+				this.animationHandler = null
+				console.log("transition ended")
+				resolve()
+			}
+
+			this.animationElement.addEventListener('transitionend', this.animationHandler)
+			this.animationElement.addEventListener('transitioncancel', () => {
+				console.log('trans cancel')
+			})
+
+			this.animationElement.classList.add(this.options.classTransition)
+		}).then(callback)
+	}
+
+	applyFixed (value) {
+		console.log('apply fixed', value)
+
 		if (!!value) {
-			this.element.classList.add('is-fixed')
+			this.element.classList.add(this.options.classFixed)
+			this.element.classList.remove(this.options.classUnfixed)
 			this.placeholder.style.position = this.element.style.position
 			this.element.style.position = 'fixed'
 			this.static = this.placeholder
 		} else {
-			this.element.classList.remove('is-fixed')
+			this.element.classList.remove(this.options.classFixed)
+			this.element.classList.add(this.options.classUnfixed)
 			this.element.style.position = ''
 			this.placeholder.style.position = 'fixed'
 			this.static = this.element
+		}
+	}
+
+	setFixed (value) {
+		if (document.readyState === 'loading' && !this.options.initialAnimation) {
+			var parent = this.element.parentNode
+			var sibling = this.element.nextSibling
+
+			parent.removeChild(this.element)
+			this.applyFixed(value)
+			parent.insertBefore(this.element, sibling)
+
+			return
+		}
+
+		if (this.options.animate) {
+			this.transition(() => {
+				this.applyFixed(value)
+				return Promise.resolve()
+			})
+		} else {
+			this.applyFixed(value)
 		}
 	}
 
@@ -80,6 +138,7 @@ class Sticky {
 		}
 
 		this.placeholder = document.createElement('div')
+		this.placeholder.style.position = 'fixed'
 		this.element.parentNode.insertBefore(this.placeholder, this.element.nextSibling)
 		this.updatePlaceholder()
 	}
@@ -102,5 +161,5 @@ class Sticky {
 }
 
 export default function (element, options) {
-	return new Sticky(element)
+	return new Sticky(element, options)
 }

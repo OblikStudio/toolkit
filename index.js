@@ -2,6 +2,10 @@ var _prefix = 'mb-'
 var _modules = {}
 
 function parseAttribute (input) {
+	if (input.length && input[0] === '{') {
+		return JSON.parse(input)
+	}
+
 	var object = {}
 	var objectEmpty = true
 	var values = input.split(';')
