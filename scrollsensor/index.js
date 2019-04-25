@@ -1,13 +1,5 @@
-import sticky from './actions/sticky'
-import after from './observers/after'
-
-const observers = {
-	after
-}
-
-const actions = {
-	sticky
-}
+const observers = {}
+const actions = {}
 
 class ScrollEffect {
 	constructor (sensor, observer, action) {
@@ -109,6 +101,11 @@ class ScrollSensor {
 			effect.update(rect)
 		})
 	}
+}
+
+export function register (data) {
+	Object.assign(observers, data.observers)
+	Object.assign(actions, data.actions)
 }
 
 export default function (element, options) {
