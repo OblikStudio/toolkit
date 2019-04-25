@@ -9,48 +9,9 @@ const PLACEHOLDER_COPIED_PROPERTIES = [
 	'box-sizing'
 ]
 
-const observers = {
-	before: function (data) {
-		// var target = document.querySelector(data.target)
-		var offset = (data.offset || 0)
-
-		return function () {
-			// var rect = target.getBoundingClientRect()
-			var rect = this.sticky.static.getBoundingClientRect()
-			return (rect.top + offset < 0)
-		}
-	}
-}
-
-const actions = {
-	fixed: function () {
-		this.createPlaceholder()
-
-		return function (observerResult) {
-			this.sticky.setFixed(observerResult === true)
-		}
-	}
-}
-
-class Effect {
-	constructor (sticky, observer, action) {
-		this.sticky = sticky
-		this.observer = observer
-		this.observerResult = undefined
-		this.action = action
-	}
-
-	update (data) {
-		var result = this.observer.call(this, data)
-		if (result !== this.observerResult) {
-			this.action.call(this, result)
-			this.observerResult = result
-		}
-	}
-}
-
-class Sticky {
-	constructor (element, options) {
+export default class {
+	constructor (sensor, options) {
+		this.sensor = sensor
 		this.options = Object.assign({
 			animate: false,
 			initialAnimation: true,
@@ -59,25 +20,25 @@ class Sticky {
 			classTransition: 'is-transition'
 		}, options)
 
-		this.element = element
-		this.static = element
+		this.element = this.sensor.element
+		this.static = this.element
 		this.isFixed = false
 
 		this.animationElement = (this.options.animationTarget)
 			? document.querySelector(this.options.animationTarget)
 			: this.element
 
-		this.effects = [
-			new Effect(
-				this,
-				observers.before.call(this, {}),
-				actions.fixed.call(this, {})
-			)
-		]
+		this.placeholder = document.createElement('div')
+		this.placeholder.style.display = 'none'
+		this.element.parentNode.insertBefore(this.placeholder, this.element.nextSibling)
+		this.updatePlaceholder()
+	}
 
-		window.addEventListener('scroll', this.update.bind(this))
-		window.addEventListener('resize', this.update.bind(this))
-		this.update()
+	updatePlaceholder () {
+		this.elementLatestStyles = window.getComputedStyle(this.element)
+		PLACEHOLDER_COPIED_PROPERTIES.forEach(property => {
+			this.placeholder.style[property] = this.elementLatestStyles.getPropertyValue(property)
+		})
 	}
 
 	transition (callback) {
@@ -112,9 +73,11 @@ class Sticky {
 			this.placeholder.style.display = 'none'
 			this.static = this.element
 		}
+
+		this.sensor.element = this.static
 	}
 
-	setFixed (value) {
+	update (value) {
 		if (document.readyState === 'loading' && !this.options.initialAnimation) {
 			var parent = this.element.parentNode
 			var sibling = this.element.nextSibling
@@ -140,34 +103,4 @@ class Sticky {
 			this.applyFixed(value)
 		}
 	}
-
-	createPlaceholder () {
-		if (this.placeholder) {
-			return
-		}
-
-		this.placeholder = document.createElement('div')
-		this.placeholder.style.display = 'none'
-		this.element.parentNode.insertBefore(this.placeholder, this.element.nextSibling)
-		this.updatePlaceholder()
-	}
-
-	updatePlaceholder () {
-		this.elementLatestStyles = window.getComputedStyle(this.element)
-		PLACEHOLDER_COPIED_PROPERTIES.forEach(property => {
-			this.placeholder.style[property] = this.elementLatestStyles.getPropertyValue(property)
-		})
-	}
-
-	update () {
-		var rect = this.static.getBoundingClientRect()
-
-		this.effects.forEach(effect => {
-			effect.update(rect)
-		})
-	}
-}
-
-export default function (element, options) {
-	return new Sticky(element, options)
 }
