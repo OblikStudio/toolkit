@@ -1,3 +1,14 @@
+const PLACEHOLDER_COPIED_PROPERTIES = [
+	'position',
+	'float',
+	'flex',
+	'width',
+	'height',
+	'margin',
+	'padding',
+	'box-sizing'
+]
+
 const observers = {
 	before: function (data) {
 		// var target = document.querySelector(data.target)
@@ -79,33 +90,26 @@ class Sticky {
 				this.animationElement.classList.remove(this.options.classTransition)
 				this.animationElement.removeEventListener('transitionend', this.animationHandler)
 				this.animationHandler = null
-				console.log("transition ended")
 				resolve()
 			}
 
 			this.animationElement.addEventListener('transitionend', this.animationHandler)
-			this.animationElement.addEventListener('transitioncancel', () => {
-				console.log('trans cancel')
-			})
-
 			this.animationElement.classList.add(this.options.classTransition)
 		}).then(callback)
 	}
 
 	applyFixed (value) {
-		console.log('apply fixed', value)
-
 		if (!!value) {
 			this.element.classList.add(this.options.classFixed)
 			this.element.classList.remove(this.options.classUnfixed)
-			this.placeholder.style.position = this.element.style.position
 			this.element.style.position = 'fixed'
+			this.placeholder.style.display = this.elementLatestStyles.getPropertyValue('display')
 			this.static = this.placeholder
 		} else {
 			this.element.classList.remove(this.options.classFixed)
 			this.element.classList.add(this.options.classUnfixed)
 			this.element.style.position = ''
-			this.placeholder.style.position = 'fixed'
+			this.placeholder.style.display = 'none'
 			this.static = this.element
 		}
 	}
@@ -120,6 +124,11 @@ class Sticky {
 			parent.insertBefore(this.element, sibling)
 
 			return
+		}
+
+		if (value) {
+			// Get the latest element styles before fixing it.
+			this.updatePlaceholder()
 		}
 
 		if (this.options.animate) {
@@ -138,17 +147,16 @@ class Sticky {
 		}
 
 		this.placeholder = document.createElement('div')
-		this.placeholder.style.position = 'fixed'
+		this.placeholder.style.display = 'none'
 		this.element.parentNode.insertBefore(this.placeholder, this.element.nextSibling)
 		this.updatePlaceholder()
 	}
 
 	updatePlaceholder () {
-		var styles = window.getComputedStyle(this.element)
-		this.placeholder.style.width = this.element.offsetWidth + 'px'
-		this.placeholder.style.height = this.element.offsetHeight + 'px'
-		this.placeholder.style.display = styles.getPropertyValue('display')
-		this.placeholder.style.margin = styles.getPropertyValue('margin')
+		this.elementLatestStyles = window.getComputedStyle(this.element)
+		PLACEHOLDER_COPIED_PROPERTIES.forEach(property => {
+			this.placeholder.style[property] = this.elementLatestStyles.getPropertyValue(property)
+		})
 	}
 
 	update () {
