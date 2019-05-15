@@ -1,54 +1,14 @@
+import { get as getAttribute } from './utils/attributes'
+
 var _prefix = 'mb-'
 var _modules = {}
-
-function parseAttribute (input) {
-	if (input.length && input[0] === '{') {
-		return JSON.parse(input)
-	}
-
-	var object = {}
-	var objectEmpty = true
-	var values = input.split(';')
-
-	values.forEach(value => {
-		var split = value.split(':')
-		if (split.length >= 2) {
-			var key = split[0].trim()
-			split.shift()
-
-			object[key] = split.join(':')
-			objectEmpty = false
-		}
-	})
-
-	if (objectEmpty) {
-		object.default = input
-	}
-
-	return object
-}
-
-function getAttributes (element) {
-	var values = []
-
-	for (var attribute of element.attributes) {
-		if (attribute.name.indexOf(_prefix) === 0) {
-			values.push({
-				name: attribute.name.substr(_prefix.length),
-				value: parseAttribute(attribute.value)
-			})
-		}
-	}
-
-	return values
-}
 
 function findBits (node, callback) {
 	if (!node || node.nodeType !== 1) {
 		return
 	}
 
-	var attrs = getAttributes(node)
+	var attrs = getAttribute(node, _prefix)
 	if (attrs.length) {
 		callback(node, attrs)
 	}
@@ -69,22 +29,37 @@ function applyBits (node, attributes) {
 	attributes.forEach(attr => {
 		var moduleName = attr.name
 
-		if (
-			!node.minibits[moduleName] &&
-			typeof _modules[moduleName] === 'function'
-		) {
-			node.minibits[moduleName] = _modules[moduleName](node, attr.value) || true
+		if (!node.minibits[moduleName]) {
+			if (typeof _modules[moduleName] === 'function') {
+				node.minibits[moduleName] = new _modules[moduleName](node, attr.value)
+			}
 		}
 	})
 }
 
-export function register (modules) {
-	_modules = modules
+function removeBits (node, attributes) {
+	if (!node.minibits) {
+		return
+	}
+
+	for (var k in node.minibits) {
+		if (typeof node.minibits[k].destroy === 'function') {
+			node.minibits[k].destroy()
+		}
+	}
+
+	delete node.minibits
 }
 
 export function init () {
 	var observer = new MutationObserver(mutationsList => {
 		mutationsList.forEach(mutation => {
+			if (mutation.removedNodes.length) {
+				for (var node of mutation.removedNodes) {
+					findBits(node, removeBits)
+				}
+			}
+
 			if (mutation.addedNodes.length) {
 				for (var node of mutation.addedNodes) {
 					findBits(node, applyBits)
@@ -99,4 +74,8 @@ export function init () {
 	})
 
 	findBits(document.body, applyBits)
+}
+
+export function register (modules) {
+	_modules = modules
 }

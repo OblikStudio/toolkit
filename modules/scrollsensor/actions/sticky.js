@@ -103,4 +103,8 @@ export default class {
 			this.applyFixed(value)
 		}
 	}
+
+	destroy () {
+		this.placeholder.parentNode.removeChild(this.placeholder)
+	}
 }

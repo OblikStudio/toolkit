@@ -16,6 +16,16 @@ class ScrollEffect {
 			this.observerResult = result
 		}
 	}
+
+	destroy () {
+		if (typeof this.observer.destroy === 'function') {
+			this.observer.destroy()
+		}
+
+		if (typeof this.action.destroy === 'function') {
+			this.action.destroy()
+		}
+	}
 }
 
 class ScrollSensor {
@@ -38,11 +48,10 @@ class ScrollSensor {
 			throw new Error('No effects specified.')
 		}
 
-		var boundUpdate = this.update.bind(this)
-		window.addEventListener('scroll', boundUpdate)
-		window.addEventListener('resize', boundUpdate)
-
-		this.update()
+		this.updateHandler = this.update.bind(this)
+		window.addEventListener('scroll', this.updateHandler)
+		window.addEventListener('resize', this.updateHandler)
+		this.updateHandler()
 	}
 
 	createEffect (data) {
@@ -89,8 +98,8 @@ class ScrollSensor {
 
 		return new ScrollEffect(
 			this,
-			new observer(this, data.observer),
-			new action(this, data.action)
+			new observer(this, observerOptions),
+			new action(this, actionOptions)
 		)
 	}
 
@@ -101,6 +110,14 @@ class ScrollSensor {
 			effect.update(rect)
 		})
 	}
+
+	destroy () {
+		this.effects.forEach(effect => effect.destroy())
+		this.effects = null
+
+		window.removeEventListener('scroll', this.updateHandler)
+		window.removeEventListener('resize', this.updateHandler)
+	}
 }
 
 export function register (data) {
@@ -108,6 +125,4 @@ export function register (data) {
 	Object.assign(actions, data.actions)
 }
 
-export default function (element, options) {
-	return new ScrollSensor(element, options)
-}
+export default ScrollSensor
