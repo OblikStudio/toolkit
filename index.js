@@ -1,14 +1,17 @@
-import { get as getAttribute } from './utils/attributes'
+import { get as getAttributes } from './utils/attributes'
 
-var _prefix = 'mb-'
-var _modules = {}
+const _modules = {}
+const _settings = {
+	prefix: 'mb',
+	separator: '-'
+}
 
 function findBits (node, callback) {
 	if (!node || node.nodeType !== 1) {
 		return
 	}
 
-	var attrs = getAttribute(node, _prefix)
+	var attrs = getAttributes(node, _settings)
 	if (attrs.length) {
 		callback(node, attrs)
 	}
@@ -21,18 +24,65 @@ function findBits (node, callback) {
 	}
 }
 
+function findAncestor (node, attribute) {
+	while (node = node.parentElement) {
+		if (node.hasAttribute(attribute)) {
+			return node
+		}
+	}
+
+	return null
+}
+
+function findModule (moduleFullName) {
+	var obj = _modules
+	var path = moduleFullName.split('-')
+
+	for (var part of path) {
+		if (obj) {
+			obj = obj[part]
+		}
+	}
+
+	if (typeof obj === 'function') {
+		return obj
+	} else if (obj && typeof obj.$base === 'function') {
+		return obj.$base
+	}
+
+	return null
+}
+
 function applyBits (node, attributes) {
 	if (!node.minibits) {
 		node.minibits = {}
 	}
 
-	attributes.forEach(attr => {
-		var moduleName = attr.name
+	attributes.forEach(({ moduleFullName, parentAttribute, parentName, value }) => {
+		if (node.minibits[moduleFullName]) {
+			return
+		}
 
-		if (!node.minibits[moduleName]) {
-			if (typeof _modules[moduleName] === 'function') {
-				node.minibits[moduleName] = new _modules[moduleName](node, attr.value)
+		var module = findModule(moduleFullName)
+		if (module) {
+			if (parentAttribute) {
+				var parent = findAncestor(node, parentAttribute)
+				var parentModule = null
+
+				if (parent) {
+					parentModule = parent.minibits && parent.minibits[parentName]
+				}
+
+				if (parentModule) {
+					node.minibits[moduleFullName] = new module(node, value, parentModule)
+				} else {
+					console.warn(`Parent module instance of ${ moduleFullName } not found`)
+				}
+			} else {
+				node.minibits[moduleFullName] = new module(node, value)
 			}
+		} else {
+			console.warn(`Module ${ moduleFullName } not found`)
 		}
 	})
 }
@@ -77,5 +127,5 @@ export function init () {
 }
 
 export function register (modules) {
-	_modules = modules
+	Object.assign(_modules, modules)
 }
