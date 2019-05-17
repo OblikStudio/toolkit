@@ -8,10 +8,6 @@ export default class extends EventEmitter {
 		this._parent = parent
 		this._children = []
 		this._destroyed = false
-
-		if (this._parent) {
-			this._parent._addModule(this)
-		}
 	}
 
 	_addModule (module) {

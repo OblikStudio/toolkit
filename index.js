@@ -74,7 +74,9 @@ function applyBits (node, attributes) {
 				}
 
 				if (parentModule) {
-					node.minibits[moduleFullName] = new module(node, value, parentModule)
+					var moduleInstance = new module(node, value, parentModule)
+          parentModule.emit(moduleInstance._name + 'Add', moduleInstance) // emit only after child has initialized
+          node.minibits[moduleFullName] = moduleInstance
 				} else {
 					console.warn(`Parent module instance of ${ moduleFullName } not found`)
 				}
