@@ -36,7 +36,18 @@ export default class extends BaseModule {
     drag(this.element, {
       start: this.pointerDown.bind(this),
       move: this.pointerMove.bind(this),
-      end: this.pointerUp.bind(this)
+      end: this.pointerUp.bind(this),
+      retouch: (event) => {
+        console.log('retouch', console.table({
+          live: this.dragLive,
+          origin: this.dragOrigin,
+          delta: this.dragDelta
+        }))
+        this.dragOrigin = {
+          x: this.dragOrigin.x - this.dragDelta.x,
+          y: this.dragOrigin.y - this.dragDelta.y
+        }
+      }
     })
 
     this.element.addEventListener('click', (event) => {
@@ -50,6 +61,8 @@ export default class extends BaseModule {
     setTimeout(() => {
       this.setSlide(0)
     }, 0)
+
+    window.slider = this
   }
 
   setSlide (index) {
@@ -96,10 +109,7 @@ export default class extends BaseModule {
     this.isDraggingLink = checkAnchor(event.target)
     this.element.classList.remove('has-transition')
 
-    // event might not be just Touch instance
-    if (event.preventDefault) {
-      event.preventDefault()
-    }
+    event.preventDefault()
   }
 
   pointerMove (event) {
