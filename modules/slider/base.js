@@ -22,8 +22,8 @@ export default class extends BaseModule {
     this.currentSlide = null
 
     this.dragOrigin = null
-    this.dragLive = null
-    this.dragDelta = null
+    this.deltas = null
+    this.totalDelta = null
 
     this.clickThreshold = 40
     this.isDraggingLink = null
@@ -38,21 +38,17 @@ export default class extends BaseModule {
       move: this.pointerMove.bind(this),
       end: this.pointerUp.bind(this),
       retouch: (event) => {
-        console.log('retouch', console.table({
-          live: this.dragLive,
-          origin: this.dragOrigin,
-          delta: this.dragDelta
-        }))
-        this.dragOrigin = {
-          x: this.dragOrigin.x - this.dragDelta.x,
-          y: this.dragOrigin.y - this.dragDelta.y
-        }
+        this.pointerDown(event)
+        this.deltas.unshift({
+          x: 0,
+          y: 0
+        })
       }
     })
 
     this.element.addEventListener('click', (event) => {
-      // If the user tried to drag, prevent redirection.
       if (this.isDraggingLink && this.isDrag) {
+        // The user tried to drag, prevent redirection.
         event.preventDefault()
       }
     })
@@ -61,8 +57,6 @@ export default class extends BaseModule {
     setTimeout(() => {
       this.setSlide(0)
     }, 0)
-
-    window.slider = this
   }
 
   setSlide (index) {
@@ -100,30 +94,48 @@ export default class extends BaseModule {
       y: event.pageY
     }
 
-    this.dragDelta = {
-      x: 0,
-      y: 0
-    }
-
     this.isDrag = false
     this.isDraggingLink = checkAnchor(event.target)
     this.element.classList.remove('has-transition')
 
-    event.preventDefault()
+    // Don't prevent default for touchstart because if the slide is a link,
+    // you can't follow it. The browser should automatically detect a drag and
+    // prevent redirection.
+    if (event.type !== 'touchstart') {
+      event.preventDefault()
+    }
+  }
+
+  updateDelta (data) {
+    if (!data) {
+      this.deltas = data
+      this.totalDelta = data
+      return
+    }
+
+    if (!this.deltas) {
+      this.deltas = []
+    }
+
+    this.deltas[0] = data
+    this.totalDelta = this.deltas.reduce((acc, val) => {
+      return {
+        x: acc.x + val.x,
+        y: acc.y + val.y
+      }
+    }, {
+      x: 0,
+      y: 0
+    })
   }
 
   pointerMove (event) {
-    this.dragLive = {
-      x: event.pageX,
-      y: event.pageY
-    }
+    this.updateDelta({
+      x: event.pageX - this.dragOrigin.x,
+      y: event.pageY - this.dragOrigin.y
+    })
 
-    this.dragDelta = {
-      x: this.dragLive.x - this.dragOrigin.x,
-      y: this.dragLive.y - this.dragOrigin.y
-    }
-
-    if (!this.isDrag && Math.abs(this.dragDelta.x) > this.clickThreshold) {
+    if (!this.isDrag && Math.abs(this.totalDelta.x) > this.clickThreshold) {
       this.isDrag = true
     }
 
@@ -131,13 +143,20 @@ export default class extends BaseModule {
   }
 
   pointerUp (event) {
-    var direction = Math.sign(this.dragDelta.x)
-    var absoluteDelta = Math.abs(this.dragDelta.x)
-    var changeSlide = absoluteDelta > (this.currentSlide.offsetWidth * 0.25)
+    var direction
+    var absoluteDelta
+    var changeSlide
+
+    if (this.totalDelta) {
+      direction = Math.sign(this.totalDelta.x)
+      absoluteDelta = Math.abs(this.totalDelta.x)
+      changeSlide = absoluteDelta > (this.currentSlide.offsetWidth * 0.25)
+    } else {
+      // The element was just clicked, I.E. there was no move event.
+    }
 
     this.dragOrigin = null
-    this.dragLive = null
-    this.dragDelta = null
+    this.updateDelta(null)
 
     this.element.classList.add('has-transition')
 
@@ -151,8 +170,8 @@ export default class extends BaseModule {
   renderItems () {
     var itemsX = this.origin.x
 
-    if (this.dragDelta) {
-      itemsX += this.dragDelta.x
+    if (this.totalDelta) {
+      itemsX += this.totalDelta.x
     }
 
     this.slides.forEach(slide => {

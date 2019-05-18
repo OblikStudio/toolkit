@@ -1,9 +1,9 @@
-function tryAssignTouch (event, touchId) {
+function tryAssignTouch (event, identifier) {
   var assigned = false
 
   if (event.changedTouches) {
     for (var touch of event.changedTouches) {
-      if (touch.identifier === touchId) {
+      if (touch.identifier === identifier) {
         for (var k in touch) {
           if (typeof event[k] === 'undefined') {
             event[k] = touch[k]
@@ -21,12 +21,9 @@ function tryAssignTouch (event, touchId) {
 export default function (element, handlers) {
   var onStart = (typeof handlers.start === 'function' && handlers.start)
   var onMove = (typeof handlers.move === 'function' && handlers.move)
-  var onEnd = (typeof handlers.end === 'function' && handlers.end)
   var onRetouch = (typeof handlers.retouch === 'function' && handlers.retouch)
+  var onEnd = (typeof handlers.end === 'function' && handlers.end)
   var activeTouch = null
-
-  // on touchstart, save the touch id in a variable; call onEnd and onMove
-  // only for that touch
 
   var touchMoveHandler = (event) => {
     if (event.type.indexOf('touch') === 0) {
@@ -35,7 +32,6 @@ export default function (element, handlers) {
       }
     }
 
-    console.log('move', event.identifier)
     onMove(event)
   }
 
@@ -53,7 +49,6 @@ export default function (element, handlers) {
     document.removeEventListener('touchcancel', upHandler)
 
     if (onEnd) {
-      console.log('end', event.identifier)
       onEnd(event)
     }
 
@@ -79,7 +74,6 @@ export default function (element, handlers) {
         }
       }
 
-      console.log('start', event.identifier)
       onStart(event)
     }
 
