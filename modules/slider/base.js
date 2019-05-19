@@ -29,7 +29,7 @@ export default class extends BaseModule {
     this.isDraggingLink = null
     this.isDrag = null
 
-    this.on('slideAdd', function (module) {
+    this.on('slide:add', function (module) {
       this.slides.push(module.element)
     })
 
@@ -104,6 +104,9 @@ export default class extends BaseModule {
     if (event.type !== 'touchstart') {
       event.preventDefault()
     }
+
+    // Stop propagating so when nesting sliders, parent sliders don't move.
+    event.stopPropagation()
   }
 
   updateDelta (data) {

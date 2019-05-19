@@ -53,38 +53,59 @@ function findModule (moduleFullName) {
 	return null
 }
 
+function createModule (node, meta) {
+	var name = meta.moduleFullName
+	var module = findModule(name)
+	var moduleInstance = null
+	var parent = null
+	var parentModule = null
+
+	if (meta.parentAttribute) {
+		parent = findAncestor(node, meta.parentAttribute)
+
+		if (parent) {
+			parentModule = parent.minibits && parent.minibits[meta.parentName]
+
+			if (!parentModule) {
+				throw new Error(`Module instance of parent ${ meta.parentAttribute } not found.`)
+			}
+		} else {
+			throw new Error(`Parent ${ meta.parentAttribute } not found.`)
+		}
+	}
+
+	if (typeof module === 'function') {
+		moduleInstance = new module(node, meta.value, parentModule)
+
+		if (parentModule) {
+      parentModule.emit(moduleInstance._name + ':add', moduleInstance) // emit only after child has initialized
+		}
+	} else {
+		if (parentModule) {
+			// do this if parent is instance of BaseClass and has emit
+			parentModule.emit('node:' + meta.moduleName + ':add', node)
+			// else do something like
+			// parentModule[name] = node
+		}
+	}
+
+	return moduleInstance
+}
+
 function applyBits (node, attributes) {
 	if (!node.minibits) {
 		node.minibits = {}
 	}
 
-	attributes.forEach(({ moduleFullName, parentAttribute, parentName, value }) => {
-		if (node.minibits[moduleFullName]) {
-			return
-		}
+	attributes.forEach((data) => {
+		var module = null
 
-		var module = findModule(moduleFullName)
-		if (module) {
-			if (parentAttribute) {
-				var parent = findAncestor(node, parentAttribute)
-				var parentModule = null
+		if (!node.minibits[data.moduleFullName]) {
+			module = createModule(node, data)
 
-				if (parent) {
-					parentModule = parent.minibits && parent.minibits[parentName]
-				}
-
-				if (parentModule) {
-					var moduleInstance = new module(node, value, parentModule)
-          parentModule.emit(moduleInstance._name + 'Add', moduleInstance) // emit only after child has initialized
-          node.minibits[moduleFullName] = moduleInstance
-				} else {
-					console.warn(`Parent module instance of ${ moduleFullName } not found`)
-				}
-			} else {
-				node.minibits[moduleFullName] = new module(node, value)
+			if (module) {
+				node.minibits[data.moduleFullName] = module
 			}
-		} else {
-			console.warn(`Module ${ moduleFullName } not found`)
 		}
 	})
 }
