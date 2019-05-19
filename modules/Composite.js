@@ -13,7 +13,6 @@ export default class extends EventEmitter {
 	_addModule (module) {
 		if (this._children.indexOf(module) < 0) {
 			this._children.push(module)
-			this.emit(module._name + 'Add', module)
 		}
 	}
 

@@ -1,4 +1,4 @@
-import Module from '../../Module'
+import Composite from '../../Composite'
 import drag from '../../../utils/drag'
 
 function checkAnchor (element) {
@@ -11,7 +11,7 @@ function checkAnchor (element) {
   return value
 }
 
-export default class extends Module {
+export default class extends Composite {
   constructor (element, options, parent) {
     super('slider', parent)
 
