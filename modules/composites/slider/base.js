@@ -1,5 +1,5 @@
-import BaseModule from '../BaseModule'
-import drag from '../../utils/drag'
+import Module from '../../Module'
+import drag from '../../../utils/drag'
 
 function checkAnchor (element) {
   var value = false
@@ -11,7 +11,7 @@ function checkAnchor (element) {
   return value
 }
 
-export default class extends BaseModule {
+export default class extends Module {
   constructor (element, options, parent) {
     super('slider', parent)
 
