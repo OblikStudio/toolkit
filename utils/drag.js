@@ -44,17 +44,19 @@ export default function (element, handlers) {
       }
     }
 
-    document.removeEventListener('mouseup', upHandler)
-    document.removeEventListener('touchend', upHandler)
-    document.removeEventListener('touchcancel', upHandler)
+    window.removeEventListener('mouseup', upHandler)
+    window.removeEventListener('touchend', upHandler)
+    window.removeEventListener('touchcancel', upHandler)
 
     if (onEnd) {
       onEnd(event)
     }
 
     if (onMove) {
-      document.removeEventListener('mousemove', onMove)
-      document.removeEventListener('touchmove', touchMoveHandler)
+      // If target is document instead of window, preventDefault() doesn't
+      // stop vertical scroll on iOS Safari?
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('touchmove', touchMoveHandler)
     }
   }
 
@@ -78,15 +80,19 @@ export default function (element, handlers) {
     }
 
     if (onMove) {
-      document.addEventListener('mousemove', onMove)
-      document.addEventListener('touchmove', touchMoveHandler)
+      window.addEventListener('mousemove', onMove)
+      window.addEventListener('touchmove', touchMoveHandler, {
+        passive: false
+      })
     }
 
-    document.addEventListener('mouseup', upHandler)
-    document.addEventListener('touchend', upHandler)
-    document.addEventListener('touchcancel', upHandler)
+    window.addEventListener('mouseup', upHandler)
+    window.addEventListener('touchend', upHandler)
+    window.addEventListener('touchcancel', upHandler)
   }
 
   element.addEventListener('mousedown', downHandler)
-  element.addEventListener('touchstart', downHandler)
+  element.addEventListener('touchstart', downHandler, {
+    passive: false
+  })
 }

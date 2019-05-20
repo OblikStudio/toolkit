@@ -1,10 +1,12 @@
 ## Todo
 
-- add tests: missing child modules, custom modules
 - improve behavior when a node is removed and immediately added in the same mutation
 - smart queries with > < + - &
 - turn drag.js to event emitter
 - check performance issue? of drag.js on mobile when dragging with multiple fingers
+- add tests: missing child modules, custom modules
+- disallow unregistered modules?
+- make unregistered modules extend a simpler class, not Composite that also has EventEmitter
 
 ## Definitions
 

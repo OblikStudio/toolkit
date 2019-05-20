@@ -127,10 +127,21 @@ export default class extends Composite {
   }
 
   pointerMove (event) {
+    var lastDelta = this.totalDelta
+
     this.updateDelta({
       x: event.pageX - this.dragOrigin.x,
       y: event.pageY - this.dragOrigin.y
     })
+
+    if (lastDelta) {
+      var angle = Math.atan2(this.totalDelta.y - lastDelta.y, this.totalDelta.x - lastDelta.x)
+      var sin = Math.sin(angle)
+
+      if (Math.abs(sin) < 0.8) {
+        event.preventDefault() // prevent scroll on mobile
+      }
+    }
 
     if (!this.isDrag && Math.abs(this.totalDelta.x) > this.clickThreshold) {
       this.isDrag = true
