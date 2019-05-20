@@ -1,26 +1,28 @@
 import EventEmitter from 'events'
 
 export default class extends EventEmitter {
-	constructor (name, parent) {
+	constructor (name, element, parentModule) {
 		super()
 
+    this.element = element
 		this._name = name
-		this._parent = parent
+		this._parent = parentModule
 		this._children = []
 		this._destroyed = false
 	}
 
-	_addModule (module) {
+	$addModule (module) {
 		if (this._children.indexOf(module) < 0) {
 			this._children.push(module)
+      this.emit(module._name + ':added', module)
 		}
 	}
 
-	_removeModule (module) {
+	$removeModule (module) {
 		var index = this._children.indexOf(module)
 		if (index >= 0) {
 			this._children.splice(index, 1)
-			this.emit(module._name + 'Remove', module)
+			this.emit(module._name + ':removed', module)
 		}
 	}
 
@@ -30,7 +32,7 @@ export default class extends EventEmitter {
 		}
 
 		if (this._parent) {
-			this._parent._removeModule(this)
+			this._parent.$removeModule(this)
 			this._parent = null
 		}
 

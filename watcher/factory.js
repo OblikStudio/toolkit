@@ -1,3 +1,5 @@
+import Composite from '../modules/Composite'
+
 function findAncestorByAttribute (node, attribute) {
   while (node = node.parentElement) {
     if (node.hasAttribute(attribute)) {
@@ -8,10 +10,9 @@ function findAncestorByAttribute (node, attribute) {
   return null
 }
 
-export function create (node, module, meta) {
+function findParentModule (node, meta) {
   var parent = null
   var parentModule = null
-  var moduleInstance = null
 
   if (meta.parentAttribute) {
     parent = findAncestorByAttribute(node, meta.parentAttribute)
@@ -27,43 +28,74 @@ export function create (node, module, meta) {
     }
   }
 
-  if (typeof module === 'function') {
-    moduleInstance = new module(node, meta.value, parentModule)
-  }
+  return parentModule
+}
 
-  var moduleName = meta.moduleName
-  if (moduleInstance && typeof moduleInstance._name === 'string') {
-    moduleName = moduleInstance._name
+function updateChildStorage (parentModule, childModule, remove = false) {
+  var key = '$' + childModule._name
+  var value = parentModule[key]
+
+  if (Array.isArray(value)) {
+    var index = value.indexOf(childModule)
+    var added = index >= 0
+
+    if (remove) {
+      if (added) {
+        value.splice(index, 1)
+      }
+    } else if (!added) {
+      value.push(childModule)
+    }
+  } else {
+    if (remove) {
+      if (value === childModule) {
+        parentModule[key] = null
+      }
+    } else {
+      parentModule[key] = childModule
+    }
+  }
+}
+
+export function create (node, module, meta) {
+  var instance = null
+  var parentModule = findParentModule(node, meta)
+
+  if (typeof module === 'function') {
+    instance = new module(node, meta.value, parentModule)
+
+    if (!(instance instanceof Composite)) {
+      instance._name = meta.moduleName
+      instance._parent = parentModule
+    }
+  } else {
+    instance = new Composite(meta.moduleName, node, parentModule)
+    instance._unregistered = true
+    instance._value = meta.value
   }
 
   if (parentModule) {
-    if (moduleInstance) {
-      if (typeof parentModule._addModule === 'function') {
-        parentModule._addModule(moduleInstance)
-      }
-
-      if (typeof parentModule.emit === 'function') {
-        parentModule.emit(moduleName + ':add', moduleInstance)
-      }
-    } else {
-      if (typeof parentModule.emit === 'function') {
-        parentModule.emit('node:' + moduleName + ':add', node, meta.value)
-      } else {
-        parentModule[moduleName] = {
-          element: node,
-          value: meta.value
-        }
-      }
+    if (typeof parentModule.$addModule === 'function') {
+      parentModule.$addModule(instance)
     }
+
+    updateChildStorage(parentModule, instance)
   }
 
-  return moduleInstance
+  return instance
 }
 
 export function destroy (node, instance, meta) {
-  if (typeof instance.destroy === 'function') {
+  if (instance.destroy === 'function') {
     instance.destroy()
   }
 
-  // TODO: notify parent similarly to create()
+  var parentModule = instance._parent
+  if (parentModule) {
+    if (typeof parentModule.$removeModule === 'function') {
+      parentModule.$removeModule(instance)
+    }
+
+    updateChildStorage(parentModule, instance, true)
+  }
 }

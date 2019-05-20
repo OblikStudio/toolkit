@@ -1,13 +1,11 @@
 ## Todo
 
-- use parent[moduleName] = moduleInstance when parent has no emit
-- emit module remove events similarly to add
-- rename moduleAdd, moduleRemove events to module:add and module:remove
-- support child modules that don't extend the BaseModule
-- add support to Composites that allows arbitrary modules that don't need to be defined and simply emit an elementAdded event with the name, node and options as arguments
-- add support to Bits that allows arbitrary modules to be used by simply setting bit[moduleName] = { element, data }
 - add init() event
-- add tests
+- improve behavior when a node is removed and immediately added in the same mutation
+- smart queries with > < + - &
+- turn drag.js to event emitter
+- check performance issue? of drag.js on mobile when dragging with multiple fingers
+- add tests: missing modules, missing child modules, custom modules, custom modules as functions
 
 ## Definitions
 

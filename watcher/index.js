@@ -29,9 +29,14 @@ function createModules (node, attributes) {
 
   attributes.forEach((data) => {
     if (!node.minibits[data.moduleFullName]) {
-      var module = findModuleDefinition(data.moduleFullName)
-      var instance = factory.create(node, module, data)
+      var definition = findModuleDefinition(data.moduleFullName)
+      if (!definition && !data.parentAttribute) {
+        // If a module has no definition and it's not a child module, ignore it.
+        console.warn(`Definition of module ${ data.moduleFullName } not found.`)
+        return
+      }
 
+      var instance = factory.create(node, definition, data)
       if (instance) {
         node.minibits[data.moduleFullName] = instance
       }
