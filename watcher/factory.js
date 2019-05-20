@@ -64,14 +64,14 @@ export function create (node, module, meta) {
   if (typeof module === 'function') {
     instance = new module(node, meta.value, parentModule)
 
+    // Handle modules that are plain functions.
     if (!(instance instanceof Composite)) {
       instance._name = meta.moduleName
       instance._parent = parentModule
     }
   } else {
-    instance = new Composite(meta.moduleName, node, parentModule)
+    instance = new Composite(meta.moduleName, node, meta.value, parentModule)
     instance._unregistered = true
-    instance._value = meta.value
   }
 
   if (parentModule) {

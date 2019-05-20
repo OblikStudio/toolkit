@@ -1,11 +1,12 @@
 import EventEmitter from 'events'
 
 export default class extends EventEmitter {
-	constructor (name, element, parentModule) {
+	constructor (name, element, value, parentModule) {
 		super()
 
     this.element = element
 		this._name = name
+    this._value = value
 		this._parent = parentModule
 		this._children = []
 		this._destroyed = false

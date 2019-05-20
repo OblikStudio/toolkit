@@ -24,14 +24,16 @@ export default class extends EventEmitter {
       callback(node, attrs)
     }
 
-    node = node.firstElementChild
+    var child = node.firstElementChild
 
-    while (node) {
-      this.search(node, callback)
-      node = node.nextElementSibling
+    while (child) {
+      this.search(child, callback)
+      child = child.nextElementSibling
     }
 
-    this.emit('searched', node)
+    if (attrs.length) {
+      this.emit('searched', node)
+    }
   }
 
   addNode (node) {

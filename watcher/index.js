@@ -44,6 +44,14 @@ function createModules (node, attributes) {
   })
 }
 
+function initModules (node) {
+  for (var k in node.minibits) {
+    if (typeof node.minibits[k].init === 'function') {
+      node.minibits[k].init()
+    }
+  }
+}
+
 function destroyModules (node, attributes) {
   attributes.forEach((data) => {
     var instance = node.minibits && node.minibits[data.moduleFullName]
@@ -64,6 +72,8 @@ export function init (element = document.body) {
   })
 
   observer.on('added', createModules)
+  observer.on('searched', initModules)
   observer.on('removed', destroyModules)
+
   observer.addNode(observer.element)
 }

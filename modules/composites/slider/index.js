@@ -13,7 +13,7 @@ function checkAnchor (element) {
 
 export default class extends Composite {
   constructor (element, options, parent) {
-    super('slider', element, parent)
+    super('slider', ...arguments)
 
     this.$slide = []
 
@@ -47,11 +47,10 @@ export default class extends Composite {
         event.preventDefault()
       }
     })
+  }
 
-    // should happen on module init() event
-    setTimeout(() => {
-      this.setSlide(0)
-    }, 0)
+  init () {
+    this.setSlide(0)
   }
 
   setSlide (index) {
