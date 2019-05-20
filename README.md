@@ -1,6 +1,6 @@
 ## Todo
 
-- add tests: missing modules, missing child modules, custom modules, custom modules as functions, simple modules (bits)
+- add tests: missing child modules, custom modules
 - improve behavior when a node is removed and immediately added in the same mutation
 - smart queries with > < + - &
 - turn drag.js to event emitter

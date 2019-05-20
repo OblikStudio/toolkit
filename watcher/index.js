@@ -77,3 +77,8 @@ export function init (element = document.body) {
 
   observer.addNode(observer.element)
 }
+
+export default {
+  register,
+  init
+}

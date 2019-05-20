@@ -22,12 +22,15 @@ export function parseName (input, separator) {
 }
 
 export function parseValue (input) {
+  if (!input || typeof input !== 'string') {
+    return undefined
+  }
+
 	if (input.length && input[0] === '{') {
 		return JSON.parse(input)
 	}
 
-	var object = {}
-	var objectEmpty = true
+	var result = {}
 	var values = input.split(';')
 
 	values.forEach(value => {
@@ -36,16 +39,15 @@ export function parseValue (input) {
 			var key = split[0].trim()
 			split.shift()
 
-			object[key] = split.join(':')
-			objectEmpty = false
+			result[key] = split.join(':')
 		}
 	})
 
-	if (objectEmpty) {
-		object.default = input
+	if (Object.keys(result) === 0) {
+		result.default = input
 	}
 
-	return object
+	return result
 }
 
 export function get (element, settings) {
