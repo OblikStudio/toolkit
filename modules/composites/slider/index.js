@@ -1,5 +1,5 @@
 import Composite from '../../Composite'
-import drag from '../../../utils/drag'
+import Drag from '../../../utils/drag'
 
 function checkAnchor (element) {
   var value = false
@@ -28,18 +28,11 @@ export default class extends Composite {
     this.isDraggingLink = null
     this.isDrag = null
 
-    drag(this.element, {
-      start: this.pointerDown.bind(this),
-      move: this.pointerMove.bind(this),
-      end: this.pointerUp.bind(this),
-      retouch: (event) => {
-        this.pointerDown(event)
-        this.deltas.unshift({
-          x: 0,
-          y: 0
-        })
-      }
-    })
+    this.drag = new Drag(this.element)
+    this.drag.on('start', this.pointerDown.bind(this))
+    this.drag.on('move', this.pointerMove.bind(this))
+    this.drag.on('end', this.pointerUp.bind(this))
+    this.drag.on('retouch', this.newDelta.bind(this))
 
     this.element.addEventListener('click', (event) => {
       if (this.isDraggingLink && this.isDrag) {
@@ -103,6 +96,19 @@ export default class extends Composite {
     event.stopPropagation()
   }
 
+  newDelta (event) {
+    this.dragOrigin = {
+      x: event.pageX,
+      y: event.pageY
+    }
+
+    this.deltas = this.deltas || []
+    this.deltas.unshift({
+      x: 0,
+      y: 0
+    })
+  }
+
   updateDelta (data) {
     if (!data) {
       this.deltas = data
@@ -126,22 +132,24 @@ export default class extends Composite {
     })
   }
 
-  pointerMove (event) {
-    var lastDelta = this.totalDelta
+  pointerMove (event, direction) {
+    var sine = Math.sin(direction)
+
+    if (Math.abs(sine) < 0.8) {
+      event.stopPropagation()
+
+      if (event.cancelable) {
+        event.preventDefault() // prevent scroll on mobile
+      }
+    } else {
+      this.newDelta(event)
+      return
+    }
 
     this.updateDelta({
       x: event.pageX - this.dragOrigin.x,
       y: event.pageY - this.dragOrigin.y
     })
-
-    if (lastDelta) {
-      var angle = Math.atan2(this.totalDelta.y - lastDelta.y, this.totalDelta.x - lastDelta.x)
-      var sin = Math.sin(angle)
-
-      if (Math.abs(sin) < 0.8) {
-        event.preventDefault() // prevent scroll on mobile
-      }
-    }
 
     if (!this.isDrag && Math.abs(this.totalDelta.x) > this.clickThreshold) {
       this.isDrag = true
