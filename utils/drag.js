@@ -62,6 +62,7 @@ export default class extends EventEmitter {
     this.element.addEventListener('touchmove', this.moveHandler)
 
     this.element.addEventListener('mouseup', this.endHandler)
+    this.element.addEventListener('mouseleave', this.endHandler)
     this.element.addEventListener('touchend', this.endHandler)
     this.element.addEventListener('touchcancel', this.endHandler)
 
@@ -107,6 +108,7 @@ export default class extends EventEmitter {
     }
 
     this.element.removeEventListener('mouseup', this.endHandler)
+    this.element.removeEventListener('mouseleave', this.endHandler)
     this.element.removeEventListener('touchend', this.endHandler)
     this.element.removeEventListener('touchcancel', this.endHandler)
 
