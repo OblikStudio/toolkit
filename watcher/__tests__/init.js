@@ -1,5 +1,5 @@
 import watcher from '../index'
-import Composite from '../../modules/Composite'
+import Composite from '../../modules/composite'
 
 global.console.warn = jest.fn()
 global.MutationObserver = require('mutation-observer')

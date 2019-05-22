@@ -1,4 +1,4 @@
-import Composite from '../modules/Composite'
+import Composite from '../modules/composite'
 
 function findAncestorByAttribute (node, attribute) {
   while (node = node.parentElement) {
@@ -67,7 +67,7 @@ export function create (node, module, meta) {
     // Handle modules that are plain functions.
     if (!(instance instanceof Composite)) {
       instance._name = meta.moduleName
-      instance._parent = parentModule
+      instance.$parent = parentModule
     }
   } else {
     instance = new Composite(meta.moduleName, node, meta.value, parentModule)
@@ -90,7 +90,7 @@ export function destroy (node, instance, meta) {
     instance.destroy()
   }
 
-  var parentModule = instance._parent
+  var parentModule = instance.$parent
   if (parentModule) {
     if (typeof parentModule.$removeModule === 'function') {
       parentModule.$removeModule(instance)

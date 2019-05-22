@@ -1,5 +1,5 @@
 import * as factory from './factory'
-import Observer from './Observer'
+import Observer from './observer'
 
 const _modules = {}
 
@@ -46,8 +46,8 @@ function createModules (node, attributes) {
 
 function initModules (node) {
   for (var k in node.minibits) {
-    if (typeof node.minibits[k].init === 'function') {
-      node.minibits[k].init()
+    if (typeof node.minibits[k].$init === 'function') {
+      node.minibits[k].$init()
     }
   }
 }

@@ -4,10 +4,11 @@ export default class extends EventEmitter {
 	constructor (name, element, value, parentModule) {
 		super()
 
-    this.element = element
+    this.$element = element
+    this.$parent = parentModule
+    this.$value = value
+
 		this._name = name
-    this._value = value
-		this._parent = parentModule
 		this._children = []
 		this._destroyed = false
 	}
@@ -27,17 +28,17 @@ export default class extends EventEmitter {
 		}
 	}
 
-	destroy () {
+	$destroy () {
 		if (this._destroyed) {
 			return
 		}
 
-		if (this._parent) {
-			this._parent.$removeModule(this)
-			this._parent = null
+		if (this.$parent) {
+			this.$parent.$removeModule(this)
+			this.$parent = null
 		}
 
-		this._children.forEach(child => child.destroy())
+		this._children.forEach(child => child.$destroy())
 		this._children = null
 		this._destroyed = true
 	}

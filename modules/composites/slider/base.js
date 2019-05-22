@@ -1,4 +1,4 @@
-import Composite from '../../Composite'
+import Composite from '../../composite'
 import Drag from '../../../utils/drag'
 
 function checkAnchor (element) {
@@ -12,7 +12,7 @@ function checkAnchor (element) {
 }
 
 export default class extends Composite {
-  constructor (element, options, parent) {
+  constructor () {
     super('slider', ...arguments)
 
     this.$slide = []
@@ -30,13 +30,13 @@ export default class extends Composite {
     this.isDraggingLink = null
     this.isDrag = null
 
-    this.drag = new Drag(this.element)
+    this.drag = new Drag(this.$element)
     this.drag.on('start', this.pointerDown.bind(this))
     this.drag.on('move', this.pointerMove.bind(this))
     this.drag.on('end', this.pointerUp.bind(this))
     this.drag.on('retouch', this.newDelta.bind(this))
 
-    this.element.addEventListener('click', (event) => {
+    this.$element.addEventListener('click', (event) => {
       if (this.isDraggingLink && this.isDrag) {
         // The user tried to drag, prevent redirection.
         event.preventDefault()
@@ -44,7 +44,7 @@ export default class extends Composite {
     })
   }
 
-  init () {
+  $init () {
     this.setSlide(0)
   }
 
@@ -56,8 +56,8 @@ export default class extends Composite {
     if (targetSlide) {
       this.setSlideState('activeSlide', targetSlide, 'is-active')
       this.origin = {
-        x: -this.activeSlide.element.offsetLeft,
-        y: -this.activeSlide.element.offsetTop
+        x: -this.activeSlide.$element.offsetLeft,
+        y: -this.activeSlide.$element.offsetTop
       }
 
       this.renderItems()
@@ -92,7 +92,7 @@ export default class extends Composite {
 
     this.isDrag = false
     this.isDraggingLink = checkAnchor(event.target)
-    this.element.classList.add('is-dragged')
+    this.$element.classList.add('is-dragged')
     this.setCurrentSlide(this.activeSlide)
     this.setCenterSlide(this.activeSlide)
 
@@ -145,11 +145,11 @@ export default class extends Composite {
 
   setSlideState (key, slide, className) {
     if (this[key]) {
-      this[key].element.classList.remove(className)
+      this[key].$element.classList.remove(className)
     }
 
     if (slide) {
-      slide.element.classList.add(className)
+      slide.$element.classList.add(className)
     }
 
     this[key] = slide
@@ -223,7 +223,7 @@ export default class extends Composite {
       this.isDrag = true
     }
 
-    this.rect = this.element.getBoundingClientRect()
+    this.rect = this.$element.getBoundingClientRect()
     this.rect.centerX = this.rect.left + (this.rect.width / 2)
 
     this.$slide.forEach(slide => slide.update())
@@ -237,7 +237,7 @@ export default class extends Composite {
     this.dragOrigin = null
     this.updateDelta(null)
 
-    this.element.classList.remove('is-dragged')
+    this.$element.classList.remove('is-dragged')
 
     if (this.currentSlide !== this.activeSlide) {
       this.setSlide(this.currentSlide)
@@ -256,8 +256,34 @@ export default class extends Composite {
       itemsX += this.totalDelta.x
     }
 
+    var leftOffset = this.$slide[0].$element.offsetLeft
+    var rightOffset = this.$slide[this.$slide.length - 1].$element.offsetLeft
+    var leftDiff = leftOffset - itemsX
+    var rightDiff = rightOffset + itemsX
+
+    var overdragSpan = this.$element.offsetWidth
+    var overdragWidth = overdragSpan / 3
+    var overdrag = null
+
+    if (leftDiff < 0) {
+      overdrag = leftDiff
+    } else if (rightDiff < 0) {
+      overdrag = rightDiff
+    }
+
+    if (overdrag) {
+      let coef = Math.pow(Math.max(1 + overdrag / overdragSpan, 0), 3)
+      let offset = (overdragWidth * (1 - coef))
+
+      if (overdrag === leftDiff) {
+        itemsX = leftOffset + offset
+      } else {
+        itemsX = -(rightOffset + offset)
+      }
+    }
+
     this.$slide.forEach(slide => {
-      slide.element.style.transform = `translateX(${ itemsX }px)`
+      slide.$element.style.transform = `translateX(${ itemsX }px)`
     })
   }
 }
