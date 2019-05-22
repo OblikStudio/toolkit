@@ -17,7 +17,6 @@ export default class extends Composite {
 
     this.$slide = []
 
-    this.activeSlideIndex = null
     this.activeSlide = null
     this.currentSlide = null
     this.centerSlide = null
@@ -26,6 +25,7 @@ export default class extends Composite {
     this.deltas = null
     this.totalDelta = null
 
+    this.rect = null
     this.clickThreshold = 40
     this.isDraggingLink = null
     this.isDrag = null
@@ -48,11 +48,13 @@ export default class extends Composite {
     this.setSlide(0)
   }
 
-  setSlide (index) {
-    var slide = this.$slide[index]
-    if (slide) {
-      this.activeSlideIndex = index
-      this.setSlideState('activeSlide', slide, 'is-active')
+  setSlide (slide) {
+    var targetSlide = (typeof slide === 'number')
+      ? this.$slide[slide]
+      : slide
+
+    if (targetSlide) {
+      this.setSlideState('activeSlide', targetSlide, 'is-active')
       this.origin = {
         x: -this.activeSlide.element.offsetLeft,
         y: -this.activeSlide.element.offsetTop
@@ -66,7 +68,12 @@ export default class extends Composite {
   }
 
   move (direction) {
-    return this.setSlide(this.activeSlideIndex + direction)
+    var index = this.$slide.indexOf(this.activeSlide)
+    if (index >= 0) {
+      return this.setSlide(index + direction)
+    }
+
+    return false
   }
 
   next () {
@@ -85,7 +92,7 @@ export default class extends Composite {
 
     this.isDrag = false
     this.isDraggingLink = checkAnchor(event.target)
-    this.element.classList.remove('has-transition')
+    this.element.classList.add('is-dragged')
     this.setCurrentSlide(this.activeSlide)
     this.setCenterSlide(this.activeSlide)
 
@@ -168,26 +175,26 @@ export default class extends Composite {
     }
   }
 
-  updateCurrentSlide (center) {
+  updateCurrentSlide () {
     var direction = Math.sign(-this.totalDelta.x)
     var index = this.$slide.indexOf(this.currentSlide)
     var prevSlide = this.$slide[index - 1]
     var nextSlide = this.$slide[index + 1]
 
     if (direction === 1) {
-      if (nextSlide && center > this.currentSlide.rect.thresholdRight) {
+      if (nextSlide && this.rect.centerX > this.currentSlide.rect.thresholdRight) {
         this.setCurrentSlide(nextSlide)
       }
 
-      if (prevSlide && center < prevSlide.rect.thresholdRight) {
+      if (prevSlide && this.rect.centerX < prevSlide.rect.thresholdRight) {
         this.setCurrentSlide(prevSlide)
       }
     } else if (direction === -1) {
-      if (prevSlide && center < this.currentSlide.rect.thresholdLeft) {
+      if (prevSlide && this.rect.centerX < this.currentSlide.rect.thresholdLeft) {
         this.setCurrentSlide(prevSlide)
       }
 
-      if (nextSlide && center > nextSlide.rect.thresholdLeft) {
+      if (nextSlide && this.rect.centerX > nextSlide.rect.thresholdLeft) {
         this.setCurrentSlide(nextSlide)
       }
     }
@@ -212,19 +219,16 @@ export default class extends Composite {
       y: event.pageY - this.dragOrigin.y
     })
 
-    if (!this.isDrag && Math.abs(this.totalDelta.x) > this.clickThreshold) {
-      this.element.classList.add('is-dragged')
+    if (!this.isDrag && Math.abs(this.totalDelta.x) >= this.clickThreshold) {
       this.isDrag = true
     }
 
-    var elementRect = this.element.getBoundingClientRect()
-    var elementCenter = elementRect.left + (elementRect.width / 2)
+    this.rect = this.element.getBoundingClientRect()
+    this.rect.centerX = this.rect.left + (this.rect.width / 2)
 
-    this.$slide.forEach(slide => slide.update(elementCenter))
-
-    this.updateCenterSlide(elementCenter)
-    this.updateCurrentSlide(elementCenter)
-
+    this.$slide.forEach(slide => slide.update())
+    this.updateCenterSlide()
+    this.updateCurrentSlide()
 
     this.renderItems()
   }
@@ -233,11 +237,10 @@ export default class extends Composite {
     this.dragOrigin = null
     this.updateDelta(null)
 
-    this.element.classList.add('has-transition')
     this.element.classList.remove('is-dragged')
 
     if (this.currentSlide !== this.activeSlide) {
-      this.setSlide(this.$slide.indexOf(this.currentSlide))
+      this.setSlide(this.currentSlide)
     } else {
       this.renderItems()
     }
