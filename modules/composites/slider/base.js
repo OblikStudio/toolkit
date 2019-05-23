@@ -53,12 +53,14 @@ export default class extends Composite {
       ? this.$slide[slide]
       : slide
 
-    if (targetSlide) {
+    if (targetSlide && targetSlide !== this.activeSlide) {
       this.setSlideState('activeSlide', targetSlide, 'is-active')
       this.origin = {
         x: -(this.activeSlide.$element.offsetLeft - this.$slide[0].$element.offsetLeft),
         y: -(this.activeSlide.$element.offsetTop - this.$slide[0].$element.offsetTop)
       }
+
+      this.emit('slideChange', this.activeSlide)
 
       this.renderItems()
       return true
