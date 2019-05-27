@@ -14,6 +14,11 @@ export default class extends Composite {
     this.redirecting = false
 
     window.addEventListener('click', (event) => {
+      if (typeof event.button === 'number' && event.button !== 0) {
+        // Only handle left button clicks. event.button on mobile is also `0`.
+        return
+      }
+
       if (event.defaultPrevented) {
         // Some other script tried to prevent redirection. The loader should
         // honor that.
@@ -51,6 +56,8 @@ export default class extends Composite {
     this.$element.classList.add('is-animate-out')
     this.animating = true
 
+    // Uses a timeout instead of tracking the end of all transitions due to:
+    // https://stackoverflow.com/questions/56321027
     setTimeout(() => {
       this.redirect()
     }, this.$value.wait)
