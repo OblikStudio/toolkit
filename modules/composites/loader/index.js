@@ -1,32 +1,17 @@
 import Composite from '../../composite'
-import { getAnchor } from '../../../utils/dom'
-
-function transitionEnd (element) {
-  return new Promise((resolve, reject) => {
-    var pending = 0
-    var end = (event) => {
-      pending--
-
-      if (pending <= 0) {
-        resolve()
-      }
-    }
-
-    element.addEventListener('transitionstart', (event) => {
-      pending++
-    })
-
-    element.addEventListener('transitionend', end)
-  })
-}
+import { getTag } from '../../../utils/dom'
 
 export default class extends Composite {
   constructor () {
     super('loader', ...arguments)
 
+    this.$value = Object.assign({
+      wait: 1000
+    }, this.$value)
+
     this.activeLink = null
+    this.animating = false
     this.redirecting = false
-    this.$animation = []
 
     window.addEventListener('click', (event) => {
       if (event.defaultPrevented) {
@@ -35,7 +20,7 @@ export default class extends Composite {
         return
       }
 
-      var link = getAnchor(event.target)
+      var link = getTag(event.target, 'A')
       if (link && !this.redirecting) {
         event.stopImmediatePropagation()
         event.preventDefault()
@@ -44,33 +29,31 @@ export default class extends Composite {
         this.animateOut()
       }
     })
+
+    this.$element.classList.add('is-animate-in')
   }
 
   $init () {
-    this.animateIn()
-  }
-
-  waitForAnimations () {
-    if (this.$animation.length) {
-      return Promise.all(this.$animation.map(module => {
-        return transitionEnd(module.$element)
-      }))
-    } else {
-      return Promise.resolve()
-    }
+    window.requestAnimationFrame(() => {
+      this.animateIn()
+    })
   }
 
   animateIn () {
-    window.requestAnimationFrame(() => {
-      this.$element.classList.remove('is-animate-in')
-    })
+    this.$element.classList.remove('is-animate-in')
   }
 
   animateOut () {
+    if (this.animating) {
+      return
+    }
+
     this.$element.classList.add('is-animate-out')
-    this.waitForAnimations().then(() => {
+    this.animating = true
+
+    setTimeout(() => {
       this.redirect()
-    })
+    }, this.$value.wait)
   }
 
   redirect () {

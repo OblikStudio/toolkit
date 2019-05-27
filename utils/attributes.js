@@ -1,3 +1,5 @@
+const RE_NUMBER = /^\d*\.?\d+$/
+
 export function parseName (input, separator) {
 	var split = input.split(separator)
 	var prefix = split.shift()
@@ -38,8 +40,13 @@ export function parseValue (input) {
 		if (split.length >= 2) {
 			var key = split[0].trim()
 			split.shift()
+			var value = split.join(':')
 
-			result[key] = split.join(':')
+      if (RE_NUMBER.test(value)) {
+        value = parseFloat(value)
+      }
+
+      result[key] = value
 		}
 	})
 

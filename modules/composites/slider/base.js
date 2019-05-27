@@ -1,6 +1,6 @@
 import Composite from '../../composite'
 import Drag from '../../../utils/drag'
-import { getAnchor } from '../../../utils/dom'
+import { getTag } from '../../../utils/dom'
 
 export default class extends Composite {
   constructor () {
@@ -84,7 +84,7 @@ export default class extends Composite {
     }
 
     this.isDrag = false
-    this.isDraggingLink = !!getAnchor(event.target)
+    this.isDraggingLink = !!getTag(event.target, 'A')
     this.$element.classList.add('is-dragged')
     this.setCurrentSlide(this.activeSlide)
     this.setCenterSlide(this.activeSlide)
