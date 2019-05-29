@@ -6,6 +6,7 @@ export default class extends Composite {
     super('loader', ...arguments)
 
     this.$value = Object.assign({
+      delay: 0,
       wait: 1000
     }, this.$value)
 
@@ -40,7 +41,13 @@ export default class extends Composite {
 
   $init () {
     window.requestAnimationFrame(() => {
-      this.animateIn()
+      if (this.$value.delay > 0) {
+        setTimeout(() => {
+          this.animateIn()
+        }, this.$value.delay)
+      } else {
+        this.animateIn()
+      }
     })
   }
 
