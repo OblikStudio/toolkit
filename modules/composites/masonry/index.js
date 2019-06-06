@@ -1,11 +1,15 @@
 import Composite from '../../composite'
 
-function pointInsideNode (point, node) {
-  return (point >= node.offsetLeft && point <= node.offsetLeft + node.offsetWidth)
-}
-
 function getNodeBottom (node) {
   return node.offsetTop + node.offsetHeight + parseInt(window.getComputedStyle(node).marginBottom)
+}
+
+function nodesIntersect (a, b) {
+  var halfA = (a.offsetWidth / 2)
+  var halfB = (b.offsetWidth / 2)
+  var centerA = a.offsetLeft + halfA
+  var centerB = b.offsetLeft + halfB
+  return Math.abs(centerA - centerB) < (halfA + halfB)
 }
 
 export default class extends Composite {
@@ -34,10 +38,7 @@ export default class extends Composite {
 
       var aboveNodes = previousNodes.filter(previousNode => {
         if (previousNode.offsetTop + previousNode.offsetHeight < node.offsetTop) {
-          if (
-            (pointInsideNode(node.offsetLeft, previousNode)) ||
-            (pointInsideNode(previousNode.offsetLeft, node))
-          ) {
+          if (nodesIntersect(node, previousNode)) {
             return true
           }
         }
