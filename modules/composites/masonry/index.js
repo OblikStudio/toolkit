@@ -9,7 +9,7 @@ function nodesIntersect (a, b) {
   var halfB = (b.offsetWidth / 2)
   var centerA = a.offsetLeft + halfA
   var centerB = b.offsetLeft + halfB
-  return Math.abs(centerA - centerB) < (halfA + halfB)
+  return Math.abs(centerA - centerB) < (halfA + halfB - 1) // -1 for threshold because widths are rounded
 }
 
 export default class extends Composite {
