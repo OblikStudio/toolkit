@@ -44,6 +44,10 @@ export function parseValue (input) {
 
       if (RE_NUMBER.test(value)) {
         value = parseFloat(value)
+      } else if (value === 'true') {
+        value = true
+      } else if (value === 'false') {
+        value = false
       }
 
       result[key] = value
