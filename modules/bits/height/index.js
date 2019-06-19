@@ -1,27 +1,20 @@
-function findOriginNode (element) {
-	while (true) {
-		if (
-			element.parentElement &&
-			element.parentElement !== document.body
-		) {
-			element = element.parentElement
-		} else {
-			return element
-		}
-	}
-}
-
 export default class {
-	constructor (element) {
+	constructor (element, options) {
 		this.element = element
+
+    this.varElement = null
 		this.updateHandler = this.update.bind(this)
 
 		this.observer = new MutationObserver(this.updateHandler)
-		this.observer.observe(findOriginNode(this.element) || this.element, {
+		this.observer.observe(this.element, {
 			attributes: true,
 			childList: true,
 			subtree: true
 		})
+
+    if (options && options.var && this.element.parentElement) {
+      this.varElement = this.element.parentElement
+    }
 
 		window.addEventListener('resize', this.updateHandler)
 		window.addEventListener('load', this.updateHandler)
@@ -29,10 +22,16 @@ export default class {
 	}
 
 	update () {
-		this.element.style.height = this.element.firstElementChild.offsetHeight + 'px'
+    var value = this.element.firstElementChild.offsetHeight + 'px'
+
+    if (this.varElement) {
+      this.varElement.style.setProperty('--height', value)
+    } else {
+      this.element.style.height = value
+    }
 	}
 
-	destroy () {
+	$destroy () {
 		window.removeEventListener('resize', this.updateHandler)
 		window.removeEventListener('load', this.updateHandler)
 		this.observer.disconnect()
