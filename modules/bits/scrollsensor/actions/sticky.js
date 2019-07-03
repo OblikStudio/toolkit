@@ -6,6 +6,7 @@ const PLACEHOLDER_COPIED_PROPERTIES = [
 	'height',
 	'margin',
 	'padding',
+	'border',
 	'box-sizing'
 ]
 
@@ -30,6 +31,7 @@ export default class {
 
 		this.placeholder = document.createElement('div')
 		this.placeholder.style.display = 'none'
+		this.placeholder.style.opacity = 0
 		this.element.parentNode.insertBefore(this.placeholder, this.element.nextSibling)
 		this.updatePlaceholder()
 	}
