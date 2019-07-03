@@ -2,6 +2,7 @@ export default class {
 	constructor (element, options) {
 		this.element = element
 
+    this.varName = 'height'
     this.varElement = null
 		this.updateHandler = this.update.bind(this)
 
@@ -12,8 +13,16 @@ export default class {
 			subtree: true
 		})
 
-    if (options && options.var && this.element.parentElement) {
-      this.varElement = this.element.parentElement
+    if (options && options.var) {
+      if (typeof options.var === 'string') {
+        this.varName = options.var
+      }
+
+      if (options.target) {
+        this.varElement = document.querySelector(options.target)
+      } else {
+        this.varElement = this.element.parentElement
+      }
     }
 
 		window.addEventListener('resize', this.updateHandler)
@@ -25,7 +34,7 @@ export default class {
     var value = this.element.firstElementChild.offsetHeight + 'px'
 
     if (this.varElement) {
-      this.varElement.style.setProperty('--height', value)
+      this.varElement.style.setProperty('--' + this.varName, value)
     } else {
       this.element.style.height = value
     }
