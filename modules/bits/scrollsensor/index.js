@@ -12,7 +12,7 @@ class ScrollEffect {
 	update (data) {
 		var result = this.observer.check(data)
 		if (result !== this.observerResult) {
-			this.action.update(result)
+			this.action.update(result, this.observer)
 			this.observerResult = result
 		}
 	}

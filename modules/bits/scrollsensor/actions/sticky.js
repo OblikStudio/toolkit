@@ -16,6 +16,7 @@ export default class {
 		this.options = Object.assign({
 			animate: false,
 			initialAnimation: true,
+			setWidth: true,
 			classFixed: 'is-fixed',
 			classUnfixed: null,
 			classTransition: 'is-transition'
@@ -68,18 +69,26 @@ export default class {
 			this.element.style.position = 'fixed'
 			this.placeholder.style.display = this.elementLatestStyles.getPropertyValue('display')
 			this.static = this.placeholder
+
+			if (this.options.setWidth) {
+				this.element.style.width = this.placeholder.offsetWidth + 'px'
+			}
 		} else {
 			this.element.classList.remove(this.options.classFixed)
 			this.element.classList.add(this.options.classUnfixed)
 			this.element.style.position = ''
 			this.placeholder.style.display = 'none'
 			this.static = this.element
+
+			if (this.options.setWidth) {
+				this.element.style.width = ''
+			}
 		}
 
 		this.sensor.element = this.static
 	}
 
-	update (value) {
+	update (value, observer) {
 		if (document.readyState === 'loading' && !this.options.initialAnimation) {
 			var parent = this.element.parentNode
 			var sibling = this.element.nextSibling
@@ -94,6 +103,10 @@ export default class {
 		if (value) {
 			// Get the latest element styles before fixing it.
 			this.updatePlaceholder()
+
+			if (observer.$fixedOffset) {
+				this.element.style.top = observer.$fixedOffset + 'px'
+			}
 		}
 
 		if (this.options.animate) {
