@@ -1,7 +1,7 @@
-import after from './after'
+import relative from './relative'
 import direction from './direction'
 
 export default {
-  after,
+  relative,
   direction
 }
