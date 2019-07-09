@@ -1,5 +1,5 @@
 import watcher from '../index'
-import Composite from '../../modules/composite'
+import Module from '../../modules/module'
 
 global.console.warn = jest.fn()
 global.MutationObserver = require('mutation-observer')
@@ -33,8 +33,8 @@ const modules = {
         })
 
         describe('arbitrary module', () => {
-          test('is a composite', () => {
-            expect(this.$random).toBeInstanceOf(Composite)
+          test('is a module', () => {
+            expect(this.$random).toBeInstanceOf(Module)
           })
 
           test('has a correct name', () => {

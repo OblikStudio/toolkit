@@ -1,4 +1,4 @@
-import Composite from '../composite'
+import Module from '../module'
 
 function getNodeBottom (node) {
   return node.offsetTop + node.offsetHeight + parseInt(window.getComputedStyle(node).marginBottom)
@@ -12,7 +12,7 @@ function nodesIntersect (a, b) {
   return Math.abs(centerA - centerB) < (halfA + halfB - 1) // -1 for threshold because widths are rounded
 }
 
-export default class extends Composite {
+export default class extends Module {
   constructor () {
     super('masonry', ...arguments)
     this.$item = []

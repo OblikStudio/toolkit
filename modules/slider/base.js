@@ -1,8 +1,8 @@
-import Composite from '../composite'
+import Module from '../module'
 import Drag from '../../utils/drag'
 import { getTag } from '../../utils/dom'
 
-export default class extends Composite {
+export default class extends Module {
   constructor () {
     super('slider', ...arguments)
 

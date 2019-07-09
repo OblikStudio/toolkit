@@ -1,6 +1,6 @@
-import Composite from '../composite'
+import Module from '../module'
 
-export default class extends Composite {
+export default class extends Module {
   constructor () {
     super('slide', ...arguments)
 

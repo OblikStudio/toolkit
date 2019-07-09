@@ -1,4 +1,4 @@
-import Composite from '../modules/composite'
+import Module from '../modules/module'
 
 function findAncestorByAttribute (node, attribute) {
   while (node = node.parentElement) {
@@ -65,12 +65,12 @@ export function create (node, module, meta) {
     instance = new module(node, meta.value, parentModule)
 
     // Handle modules that are plain functions.
-    if (!(instance instanceof Composite)) {
+    if (!(instance instanceof Module)) {
       instance._name = meta.moduleName
       instance.$parent = parentModule
     }
   } else {
-    instance = new Composite(meta.moduleName, node, meta.value, parentModule)
+    instance = new Module(meta.moduleName, node, meta.value, parentModule)
     instance._unregistered = true
   }
 
