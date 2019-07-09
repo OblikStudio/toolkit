@@ -1,5 +1,5 @@
-import Composite from '../../composite'
-import { getTag } from '../../../utils/dom'
+import Composite from '../composite'
+import { getTag } from '../../utils/dom'
 
 export default class extends Composite {
   constructor () {

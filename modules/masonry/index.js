@@ -1,4 +1,4 @@
-import Composite from '../../composite'
+import Composite from '../composite'
 
 function getNodeBottom (node) {
   return node.offsetTop + node.offsetHeight + parseInt(window.getComputedStyle(node).marginBottom)

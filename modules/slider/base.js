@@ -1,6 +1,6 @@
-import Composite from '../../composite'
-import Drag from '../../../utils/drag'
-import { getTag } from '../../../utils/dom'
+import Composite from '../composite'
+import Drag from '../../utils/drag'
+import { getTag } from '../../utils/dom'
 
 export default class extends Composite {
   constructor () {

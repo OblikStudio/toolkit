@@ -1,4 +1,4 @@
-import Composite from '../../composite'
+import Composite from '../composite'
 
 export default class extends Composite {
   constructor () {

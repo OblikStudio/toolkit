@@ -1,7 +1,7 @@
 const observers = {}
 const actions = {}
 
-class ScrollEffect {
+class Effect {
 	constructor (sensor, observer, action) {
 		this.sensor = sensor
 		this.observer = observer
@@ -28,7 +28,7 @@ class ScrollEffect {
 	}
 }
 
-class ScrollSensor {
+class Sensor {
 	constructor (element, options) {
 		this.element = element
 		this.effects = []
@@ -96,7 +96,7 @@ class ScrollSensor {
 			throw new Error('Action not found: ' + actionType)
 		}
 
-		return new ScrollEffect(
+		return new Effect(
 			this,
 			new observer(this, observerOptions),
 			new action(this, actionOptions)
@@ -125,4 +125,4 @@ export function register (data) {
 	Object.assign(actions, data.actions)
 }
 
-export default ScrollSensor
+export default Sensor
