@@ -1,5 +1,7 @@
 const PLACEHOLDER_COPIED_PROPERTIES = [
 	'position',
+	'top',
+	'bottom',
 	'float',
 	'flex',
 	'width',
@@ -106,6 +108,10 @@ export default class {
 
 			if (observer.$fixedOffset) {
 				this.element.style.top = observer.$fixedOffset + 'px'
+			}
+		} else {
+			if (observer.$fixedOffset) {
+				this.element.style.top = ''
 			}
 		}
 
