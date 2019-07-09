@@ -6,7 +6,11 @@ import slider from './slider'
 import source from './source'
 import toggle from './toggle'
 import tweet from './tweet'
-import viewport from './viewport'
+
+import { default as viewport, register as viewportRegister } from './viewport'
+import viewportPartials from './viewport/partials'
+
+viewportRegister(viewportPartials)
 
 export default {
   cursor,
