@@ -1,5 +1,5 @@
 export default class {
-	constructor (sensor, options) {
+	constructor (effect, options) {
 		this.options = Object.assign({
 			offset: 0,
 			target: null,
@@ -7,6 +7,10 @@ export default class {
 		}, options)
 
 		this.targetElement = null
+		this.$stickyOffset = {
+			x: 0,
+			y: 0
+		}
 
 		var area = this.options.area.split(' ')
 		this.areaCompare = area[0]
@@ -26,9 +30,9 @@ export default class {
 		edgeValue += this.options.offset
 
 		if (this.areaEdge === 'top') {
-			this.$fixedOffset = -this.options.offset
+			this.$stickyOffset.y = -this.options.offset
 		} else {
-			this.$fixedOffset = -(boundingRect.height + this.options.offset)
+			this.$stickyOffset.y = -(boundingRect.height + this.options.offset)
 		}
 
 		if (this.areaCompare === 'after') {

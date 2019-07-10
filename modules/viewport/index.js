@@ -2,18 +2,32 @@ const observers = {}
 const actions = {}
 
 class Effect {
-	constructor (sensor, observer, action) {
+	constructor (sensor) {
 		this.sensor = sensor
-		this.observer = observer
+
+		this.observer = null
+		this.action = null
 		this.observerResult = undefined
+	}
+
+	setObserver (observer) {
+		this.observer = observer
+	}
+
+	setAction (action) {
 		this.action = action
 	}
 
 	update (data) {
 		var result = this.observer.check(data)
+
 		if (result !== this.observerResult) {
 			this.action.update(result, this.observer)
 			this.observerResult = result
+		}
+
+		if (typeof this.action.refresh === 'function') {
+			this.action.refresh(data)
 		}
 	}
 
@@ -51,6 +65,11 @@ class Sensor {
 		this.updateHandler = this.update.bind(this)
 		window.addEventListener('scroll', this.updateHandler)
 		window.addEventListener('resize', this.updateHandler)
+
+		// When some fonts/images are loaded, they may displace the content, so this
+		// change must be reflected.
+		window.addEventListener('load', this.updateHandler)
+
 		this.updateHandler()
 	}
 
@@ -96,11 +115,14 @@ class Sensor {
 			throw new Error('Action not found: ' + actionType)
 		}
 
-		return new Effect(
-			this,
-			new observer(this, observerOptions),
-			new action(this, actionOptions)
-		)
+		var effect = new Effect(this)
+		var observerInstance = new observer(effect, observerOptions)
+		var actionInstance = new action(effect, actionOptions)
+
+		effect.setObserver(observerInstance)
+		effect.setAction(actionInstance)
+
+		return effect
 	}
 
 	update () {

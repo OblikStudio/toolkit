@@ -1,6 +1,5 @@
 export default class {
-	constructor (sensor, options) {
-		this.sensor = sensor
+	constructor (effect, options) {
 		this.options = Object.assign({
 			direction: 'up'
 		}, options)

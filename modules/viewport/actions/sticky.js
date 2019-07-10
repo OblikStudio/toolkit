@@ -1,3 +1,9 @@
+// todo:
+// - support horizontal fixed and bounds
+// - support offset left when position absolute
+
+import query from '../../../utils/context-query'
+
 const PLACEHOLDER_COPIED_PROPERTIES = [
 	'position',
 	'top',
@@ -13,20 +19,28 @@ const PLACEHOLDER_COPIED_PROPERTIES = [
 ]
 
 export default class {
-	constructor (sensor, options) {
-		this.sensor = sensor
+	constructor (effect, options) {
+		this.effect = effect
+		this.sensor = effect.sensor
 		this.options = Object.assign({
 			animate: false,
 			initialAnimation: true,
 			setWidth: true,
 			classFixed: 'is-fixed',
 			classUnfixed: null,
-			classTransition: 'is-transition'
+			classTransition: 'is-transition',
+			bounds: null
 		}, options)
 
 		this.element = this.sensor.element
 		this.static = this.element
 		this.isFixed = false
+		this.isAbsolute = false
+		this.boundsElement = null
+		this.offset = {
+			x: 'auto',
+			y: 0
+		}
 
 		this.animationElement = (this.options.animationTarget)
 			? document.querySelector(this.options.animationTarget)
@@ -37,6 +51,10 @@ export default class {
 		this.placeholder.style.opacity = 0
 		this.element.parentNode.insertBefore(this.placeholder, this.element.nextSibling)
 		this.updatePlaceholder()
+
+		if (this.options.bounds) {
+			this.boundsElement = query(this.element, this.options.bounds)
+		}
 	}
 
 	updatePlaceholder () {
@@ -65,10 +83,18 @@ export default class {
 	}
 
 	applyFixed (value) {
-		if (!!value) {
+		var value = !!value
+		if (this.isFixed !== value) {
+			this.isFixed = value
+		} else {
+			return
+		}
+
+		if (this.isFixed) {
 			this.element.classList.add(this.options.classFixed)
 			this.element.classList.remove(this.options.classUnfixed)
 			this.element.style.position = 'fixed'
+			this.updateOffset()
 			this.placeholder.style.display = this.elementLatestStyles.getPropertyValue('display')
 			this.static = this.placeholder
 
@@ -79,6 +105,7 @@ export default class {
 			this.element.classList.remove(this.options.classFixed)
 			this.element.classList.add(this.options.classUnfixed)
 			this.element.style.position = ''
+			this.element.style.top = ''
 			this.placeholder.style.display = 'none'
 			this.static = this.element
 
@@ -87,7 +114,45 @@ export default class {
 			}
 		}
 
+		// Change the element that the sensor uses to element that is part of the
+		// document flow. I.E. the default location of the element.
 		this.sensor.element = this.static
+	}
+
+	applyAbsolute (value, location) {
+		this.isAbsolute = !!value
+
+		if (this.isAbsolute) {
+			this.element.style.position = 'absolute'
+			this.element.style.top = location.y + 'px'
+		} else {
+			this.element.style.position = 'fixed'
+			this.updateOffset()
+		}
+	}
+
+	updateOffset () {
+		Object.assign(this.offset, this.effect.observer.$stickyOffset)
+		this.element.style.top = this.offset.y + 'px'
+	}
+
+	refresh (staticRect) {
+		if (!this.isFixed || !this.boundsElement) {
+			return
+		}
+
+		var elementRect = this.element.getBoundingClientRect()
+		var boundsRect = this.boundsElement.getBoundingClientRect()
+
+		if (boundsRect.bottom - elementRect.bottom < 0) {
+			this.applyAbsolute(true, {
+				y: boundsRect.bottom - staticRect.bottom + this.static.offsetTop
+			})
+		}
+
+		if (this.offset.y + elementRect.height < boundsRect.bottom) {
+			this.applyAbsolute(false)
+		}
 	}
 
 	update (value, observer) {
@@ -105,14 +170,6 @@ export default class {
 		if (value) {
 			// Get the latest element styles before fixing it.
 			this.updatePlaceholder()
-
-			if (observer.$fixedOffset) {
-				this.element.style.top = observer.$fixedOffset + 'px'
-			}
-		} else {
-			if (observer.$fixedOffset) {
-				this.element.style.top = ''
-			}
 		}
 
 		if (this.options.animate) {
