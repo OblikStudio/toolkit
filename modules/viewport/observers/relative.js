@@ -21,7 +21,7 @@ export default class {
 		}
 	}
 
-	check (boundingRect) {
+	$check (boundingRect) {
 		if (this.targetElement) {
 			boundingRect = this.targetElement.getBoundingClientRect()
 		}

@@ -136,7 +136,7 @@ export default class {
 		this.element.style.top = this.offset.y + 'px'
 	}
 
-	refresh (staticRect) {
+	$refresh (staticRect) {
 		if (!this.isFixed || !this.boundsElement) {
 			return
 		}
@@ -155,7 +155,7 @@ export default class {
 		}
 	}
 
-	update (value, observer) {
+	$update (value, observer) {
 		if (document.readyState === 'loading' && !this.options.initialAnimation) {
 			var parent = this.element.parentNode
 			var sibling = this.element.nextSibling
@@ -182,7 +182,7 @@ export default class {
 		}
 	}
 
-	destroy () {
+	$destroy () {
 		this.placeholder.parentNode.removeChild(this.placeholder)
 	}
 }

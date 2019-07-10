@@ -19,25 +19,25 @@ class Effect {
 	}
 
 	update (data) {
-		var result = this.observer.check(data)
+		var result = this.observer.$check(data)
 
 		if (result !== this.observerResult) {
-			this.action.update(result, this.observer)
+			this.action.$update(result, this.observer)
 			this.observerResult = result
 		}
 
-		if (typeof this.action.refresh === 'function') {
-			this.action.refresh(data)
+		if (typeof this.action.$refresh === 'function') {
+			this.action.$refresh(data)
 		}
 	}
 
 	destroy () {
-		if (typeof this.observer.destroy === 'function') {
-			this.observer.destroy()
+		if (typeof this.observer.$destroy === 'function') {
+			this.observer.$destroy()
 		}
 
-		if (typeof this.action.destroy === 'function') {
-			this.action.destroy()
+		if (typeof this.action.$destroy === 'function') {
+			this.action.$destroy()
 		}
 	}
 }

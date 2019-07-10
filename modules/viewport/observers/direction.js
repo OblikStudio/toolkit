@@ -7,7 +7,7 @@ export default class {
 		this.lastPosition = null
 	}
 
-	check () {
+	$check () {
 		var previous = this.lastPosition
 		this.lastPosition = document.documentElement.scrollTop
 
