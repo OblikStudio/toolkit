@@ -29,11 +29,7 @@ export default class {
 		var edgeValue = boundingRect[this.areaEdge] || 0
 		edgeValue += this.options.offset
 
-		if (this.areaEdge === 'top') {
-			this.$stickyOffset.y = -this.options.offset
-		} else {
-			this.$stickyOffset.y = -(boundingRect.height + this.options.offset)
-		}
+		this.$stickyOffset.y = -this.options.offset
 
 		if (this.areaCompare === 'after') {
 			return edgeValue < 0

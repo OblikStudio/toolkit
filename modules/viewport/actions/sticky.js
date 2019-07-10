@@ -1,6 +1,7 @@
 // todo:
 // - support horizontal fixed and bounds
 // - support offset left when position absolute
+// - update elements on resize when fixed
 
 import query from '../../../utils/context-query'
 
@@ -49,6 +50,7 @@ export default class {
 		this.placeholder = document.createElement('div')
 		this.placeholder.style.display = 'none'
 		this.placeholder.style.opacity = 0
+		this.placeholder.style.pointerEvents = 'none'
 		this.element.parentNode.insertBefore(this.placeholder, this.element.nextSibling)
 		this.updatePlaceholder()
 
