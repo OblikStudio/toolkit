@@ -1,28 +1,34 @@
 // todo:
-// - on Edge, and mobile Safari, scroll starts from the top of the page
 // - when clicking on a link, the document fragment is not added to the address bar (due to preventDefault)
+// - scroll can't be interrupted in firefox
 
 import Module from '../module'
 import Animation from '../../utils/animation'
 import { offsetGlobal, getTag } from '../../utils/dom'
+import { browser } from '../../utils/detect-browser'
+
+const useBody = browser().match(/safari|edge/)
 
 export function scroll (options) {
   if (!options.target) {
     throw new Error('No scroll target')
   }
 
+  var scroller = useBody
+    ? document.body
+    : document.documentElement
+
   options = Object.assign({
     interruptible: true,
     duration: 650,
     values: {
       scroll: {
-        start: document.documentElement.scrollTop,
+        start: scroller.scrollTop,
         end: offsetGlobal(options.target).top
       }
     },
     update: function () {
-      document.body.scrollTop = this.scroll // for Edge
-      document.documentElement.scrollTop = this.scroll
+      scroller.scrollTop = this.scroll
     }
   }, options)
 
