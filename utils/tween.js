@@ -16,6 +16,10 @@ export default class {
     this.isComplete = false
   }
 
+  update () {
+    this.callback.call(this, this.value)
+  }
+
   step () {
     var newStamp = Date.now()
     this.delta = newStamp - this.stamp
@@ -25,13 +29,16 @@ export default class {
       this.elapsed = this.duration
     }
 
-    this.progress = this.elapsed / this.duration
+    if (this.duration > 0) {
+      this.progress = this.elapsed / this.duration
+    } else {
+      this.progress = 1
+    }
+
     this.value = this.easing(this.progress)
-    this.callback(this.value)
+    this.update()
 
-    this.isComplete = this.elapsed < this.duration
+    this.isComplete = this.elapsed >= this.duration
     this.stamp = newStamp
-
-    return this.isComplete
   }
 }

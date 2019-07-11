@@ -5,6 +5,9 @@ export default class extends Tween {
     super(options.update, options.duration, options.easing)
     this.isRunning = false
     this.isTicking = false
+
+    this.values = options.values
+    this.update()
   }
 
   run () {
@@ -18,15 +21,31 @@ export default class extends Tween {
       this.stamp = Date.now()
     }
 
-    requestAnimationFrame(() => {
-      this.isTicking = false
+    if (this.elapsed < this.duration) {
+      requestAnimationFrame(() => {
+        this.isTicking = false
+        this.step()
+        
+        if (this.isRunning && !this.isComplete) {
+          this.run()
+        }
+      })
 
-      if (this.isRunning && this.step()) {
-        this.run()
-      }
-    })
+      this.isTicking = true
+    } else {
+      this.step()
+    }
+  }
 
-    this.isTicking = true
+  update () {
+    for (let name in this.values) {
+      let value = this.values[name]
+      let diff = value.end - value.start
+
+      this[name] = value.start + (diff * this.value)
+    }
+
+    super.update()
   }
 
   stop () {
