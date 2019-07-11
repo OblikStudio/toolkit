@@ -1,6 +1,5 @@
 // todo:
 // - when clicking on a link, the document fragment is not added to the address bar (due to preventDefault)
-// - scroll can't be interrupted in firefox
 
 import Module from '../module'
 import Animation from '../../utils/animation'
@@ -37,11 +36,11 @@ export function scroll (options) {
   if (options.interruptible) {
     var interruptHandler = function (event) {
       scrollAnimation.stop()
-      window.removeEventListener('mousewheel', interruptHandler)
+      window.removeEventListener('wheel', interruptHandler)
       window.removeEventListener('touchstart', interruptHandler)
     }
 
-    window.addEventListener('mousewheel', interruptHandler)
+    window.addEventListener('wheel', interruptHandler)
     window.addEventListener('touchstart', interruptHandler)
   } 
 
