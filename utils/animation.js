@@ -16,6 +16,11 @@ export default class extends Tween {
       return
     }
 
+    if (this.isComplete) {
+      this.isRunning = false
+      return
+    }
+
     if (!this.isRunning) {
       this.isRunning = true
       this.stamp = Date.now()
@@ -26,7 +31,7 @@ export default class extends Tween {
         this.isTicking = false
         this.step()
         
-        if (this.isRunning && !this.isComplete) {
+        if (this.isRunning) {
           this.run()
         }
       })

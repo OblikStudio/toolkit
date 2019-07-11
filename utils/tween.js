@@ -4,7 +4,15 @@ export default class {
   constructor (callback, duration, easing) {
     this.callback = callback
     this.duration = duration
-    this.easing = easing || linear
+    this.easing = easing
+
+    if (typeof this.duration !== 'number') {
+      throw new Error('Duration must be a number')
+    }
+
+    if (typeof this.easing !== 'function') {
+      this.easing = linear
+    }
 
     this.elapsed = 0
     this.progress = 0
