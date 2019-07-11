@@ -12,6 +12,18 @@ export function getTag (element, tagName) {
   }
 }
 
+export function offsetGlobal (element, referenceElement = null) {
+  var offset = { top: 0, left: 0 }
+
+  do {
+    offset.top += element.offsetTop
+    offset.left += element.offsetLeft
+    element = element.offsetParent
+  } while (element !== referenceElement)
+
+  return offset
+}
+
 export function awaitAnimation (element) {
   return new Promise ((resolve, reject) => {
     var pendingEvents = []
