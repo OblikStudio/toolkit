@@ -2,6 +2,7 @@ import cursor from './cursor'
 import height from './height'
 import loader from './loader'
 import masonry from './masonry'
+import scrollto from './scrollto'
 import slider from './slider'
 import source from './source'
 import toggle from './toggle'
@@ -17,6 +18,7 @@ export default {
   height,
   loader,
   masonry,
+  scrollto,
   slider,
   source,
   toggle,
