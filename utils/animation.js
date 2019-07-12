@@ -7,7 +7,7 @@ export default class extends Tween {
     this.isTicking = false
 
     this.values = options.values
-    this.update()
+    this.updateValues()
   }
 
   run () {
@@ -42,14 +42,17 @@ export default class extends Tween {
     }
   }
 
-  update () {
+  updateValues () {
     for (let name in this.values) {
       let value = this.values[name]
       let diff = value.end - value.start
 
       this[name] = value.start + (diff * this.value)
     }
+  }
 
+  update () {
+    this.updateValues()
     super.update()
   }
 
