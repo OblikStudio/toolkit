@@ -31,11 +31,16 @@ export default class {
 	}
 
 	update () {
-    var value = this.element.firstElementChild.offsetHeight + 'px'
+    var value
+    var element = this.element.firstElementChild
+
+    if (element) {
+      value = element.offsetHeight + 'px'
+    }
 
     if (this.varElement) {
       this.varElement.style.setProperty('--' + this.varName, value)
-    } else {
+    } else if (value) {
       this.element.style.height = value
     }
 	}
