@@ -128,22 +128,6 @@ export function elastic (pos) {
   return -1 * Math.pow(4,-8*pos) * Math.sin((pos*6-1)*(2*Math.PI)/2) + 1
 }
 
-export function swingFromTo (pos) {
-  var s = 1.70158
-  return ((pos/=0.5) < 1) ? 0.5*(pos*pos*(((s*=(1.525))+1)*pos - s)) :
-  0.5*((pos-=2)*pos*(((s*=(1.525))+1)*pos + s) + 2)
-}
-
-export function swingFrom (pos) {
-  var s = 1.70158
-  return pos*pos*((s+1)*pos - s)
-}
-
-export function swingTo (pos) {
-  var s = 1.70158
-  return (pos-=1)*pos*((s+1)*pos + s) + 1
-}
-
 export function bounce (pos) {
   if (pos < (1/2.75)) {
     return (7.5625*pos*pos)
@@ -166,17 +150,4 @@ export function bouncePast (pos) {
   } else {
     return 2 - (7.5625*(pos-=(2.625/2.75))*pos + 0.984375)
   }
-}
-
-export function easeFromTo (pos) {
-  if ((pos/=0.5) < 1) return 0.5*Math.pow(pos,4)
-  return -0.5 * ((pos-=2)*Math.pow(pos,3) - 2)
-}
-
-export function easeFrom (pos) {
-  return Math.pow(pos,4)
-}
-
-export function easeTo (pos) {
-  return Math.pow(pos,0.25)
 }
