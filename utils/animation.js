@@ -27,14 +27,14 @@ export default class extends Tween {
     }
 
     if (this.elapsed < this.duration) {
-      requestAnimationFrame(() => {
+      setTimeout(() => {
         this.isTicking = false
         this.step()
         
         if (this.isRunning) {
           this.run()
         }
-      })
+      }, 0)
 
       this.isTicking = true
     } else {
