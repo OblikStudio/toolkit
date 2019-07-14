@@ -7,17 +7,6 @@ import { getViewportOverflow, getViewportScroller } from '../../utils/overflow'
 // 2. determine viewport overflow (check viewport propagation)
 // 3. get target scrolling element based on event.target
 
-function canBeScrolled (element, delta) {
-  if (typeof delta === 'number') {
-    if (
-      (delta > 0 && element.scrollTop + element.clientHeight >= element.scrollHeight) ||
-      (delta < 0 && element.scrollTop <= 0)
-    ) {
-      return false
-    }
-  }
-}
-
 // - the <body> scrollHeight in Edge is incorrect - it includes the horizontal scrollbar
 // - there's weird 1px difference between <html> scrollHeight and <body> scrollHeight
 
@@ -34,6 +23,7 @@ function findScroller (element, delta) {
       element = getViewportScroller()
     }
 
+    var scrollTop = element.scrollTop
     var scrollHeight = element.scrollHeight
     var clientHeight = element.clientHeight
 
@@ -46,14 +36,21 @@ function findScroller (element, delta) {
 
     var hasScroll = (scrollHeight !== clientHeight)
     if (hasScroll) {
+      // add checks for overflow property
+      if (typeof delta === 'number') {
+        if (
+          (delta > 0 && scrollTop + clientHeight >= scrollHeight) ||
+          (delta < 0 && scrollTop <= 0)
+        ) {
+          if (isRoot) {
+            break
+          } else {
+            continue
+          }
+        }
+      }
+
       return element
-      // elementStyle = window.getComputedStyle(element)
-
-      
-
-      // if (elementStyle.overflowY.match(/auto|scroll/)) {
-      //   return element
-      // }
     }
 
     if (isRoot) {
@@ -69,9 +66,9 @@ var anim
 window.addEventListener('wheel', (event) => {
   var delta = Math.sign(event.deltaY) * 100
   var scroller = findScroller(event.target, delta)
-  console.log(scroller.tagName)
 
   if (!scroller) return
+  // console.log(scroller.tagName)
 
   var value = scroller.scrollTop
   var newValue = scroller.scrollTop + delta
