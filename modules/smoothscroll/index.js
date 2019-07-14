@@ -1,6 +1,11 @@
 import Animation from '../../utils/animation'
 import { elastic as easeOutExpo } from '../../utils/easings'
 import { browser } from '../../utils/detect-browser'
+import { getViewportOverflow, getViewportScroller } from '../../utils/overflow'
+
+// 1. get scroller element (<html> for chrome, <body> for edge)
+// 2. determine viewport overflow (check viewport propagation)
+// 3. get target scrolling element based on event.target
 
 function canBeScrolled (element, delta) {
   if (typeof delta === 'number') {
@@ -11,22 +16,49 @@ function canBeScrolled (element, delta) {
       return false
     }
   }
-
-  var style = window.getComputedStyle(element).overflowY
-  if (element.offsetParent === null) {
-    // <html> and <body> have no offsetParent and they can't be scrolled only
-    // if their overflow is `hidden`; they can be scrolled when `visible`
-    return style !== 'hidden'
-  } else {
-    return style === 'auto' || style === 'scroll'
-  }
 }
+
+// - the <body> scrollHeight in Edge is incorrect - it includes the horizontal scrollbar
+// - there's weird 1px difference between <html> scrollHeight and <body> scrollHeight
+
+// https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollHeight#Determine_if_an_element_has_been_totally_scrolled
+// The following equivalence returns true if an element is at the end of its scroll, false if it isn't.
+// element.scrollHeight - element.scrollTop === element.clientHeight
+// for Edge, this is the case:
+// body.scrollHeight - body.scrollTop === html.clientHeight
 
 function findScroller (element, delta) {
   do {
-    var hasScroll = (element.clientHeight < element.scrollHeight)
-    if (hasScroll && canBeScrolled(element, delta)) {
+    var isRoot = element === document.body || element === document.documentElement
+    if (isRoot) {   
+      element = getViewportScroller()
+    }
+
+    var scrollHeight = element.scrollHeight
+    var clientHeight = element.clientHeight
+
+    if (isRoot) {
+      // Edge uses <body> to scroll and it has an incorrect clientHeight. The
+      // <html> clientHeight should be accurate both in and out of quirks mode
+      // in all browsers.
+      clientHeight = document.documentElement.clientHeight
+    }
+
+    var hasScroll = (scrollHeight !== clientHeight)
+    if (hasScroll) {
       return element
+      // elementStyle = window.getComputedStyle(element)
+
+      
+
+      // if (elementStyle.overflowY.match(/auto|scroll/)) {
+      //   return element
+      // }
+    }
+
+    if (isRoot) {
+      // If the <body> is reached, skip iteration for <html>
+      break
     }
   } while (element = element.parentElement)
 
@@ -37,7 +69,8 @@ var anim
 window.addEventListener('wheel', (event) => {
   var delta = Math.sign(event.deltaY) * 100
   var scroller = findScroller(event.target, delta)
-  console.log(scroller, event.target)
+  console.log(scroller.tagName)
+
   if (!scroller) return
 
   var value = scroller.scrollTop
@@ -61,8 +94,6 @@ window.addEventListener('wheel', (event) => {
   } if (newValue + scroller.clientHeight > scroller.scrollHeight) {
     maxNewValue = scroller.scrollHeight - scroller.clientHeight
   }
-
-  console.log(newValue, maxNewValue, value)
 
   anim = new Animation({
     duration: 450,
