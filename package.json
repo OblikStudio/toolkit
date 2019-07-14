@@ -4,7 +4,8 @@
   "description": "Minimal UI functionalities with no styling.",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "dev": "webpack --watch --mode=development"
   },
   "repository": {
     "type": "git",
@@ -28,12 +29,16 @@
   },
   "homepage": "https://github.com/hdodov/minibits#readme",
   "dependencies": {
+    "@babel/polyfill": "^7.4.4",
+    "babel-loader": "^8.0.6",
     "core-js": "^3.0.1"
   },
   "devDependencies": {
     "@babel/core": "^7.4.4",
     "@babel/preset-env": "^7.4.4",
     "jest": "^24.8.0",
-    "mutation-observer": "^1.0.3"
+    "mutation-observer": "^1.0.3",
+    "webpack": "^4.35.3",
+    "webpack-cli": "^3.3.5"
   }
 }
