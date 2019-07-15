@@ -1,5 +1,6 @@
 // todo:
 // - when clicking on a link, the document fragment is not added to the address bar (due to preventDefault)
+// - the cliecked element should be focused as per default behavior
 
 import Module from '../module'
 import Animation from '../../utils/animation'

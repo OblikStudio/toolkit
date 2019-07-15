@@ -3,18 +3,9 @@ import { elastic as easeOutExpo } from '../../utils/easings'
 import { browser } from '../../utils/detect-browser'
 import { getViewportOverflow, getViewportScroller } from '../../utils/overflow'
 
-// 1. get scroller element (<html> for chrome, <body> for edge)
-// 2. determine viewport overflow (check viewport propagation)
-// 3. get target scrolling element based on event.target
-
-// - the <body> scrollHeight in Edge is incorrect - it includes the horizontal scrollbar
-// - there's weird 1px difference between <html> scrollHeight and <body> scrollHeight
-
-// https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollHeight#Determine_if_an_element_has_been_totally_scrolled
-// The following equivalence returns true if an element is at the end of its scroll, false if it isn't.
-// element.scrollHeight - element.scrollTop === element.clientHeight
-// for Edge, this is the case:
-// body.scrollHeight - body.scrollTop === html.clientHeight
+// https://www.w3.org/TR/uievents/#events-wheelevents
+// - handle deltaMode (firefox uses different one)
+// - check the spec for when scroll should affect the parent container
 
 function findScroller (element, delta) {
   do {
@@ -64,7 +55,7 @@ function findScroller (element, delta) {
 
 var anim
 window.addEventListener('wheel', (event) => {
-  var delta = Math.sign(event.deltaY) * 100
+  var delta = event.deltaY
   var scroller = findScroller(event.target, delta)
 
   if (!scroller) return
@@ -93,7 +84,7 @@ window.addEventListener('wheel', (event) => {
   }
 
   anim = new Animation({
-    duration: 450,
+    duration: 900,
     easing: easeOutExpo,
     values: {
       scroll: {
