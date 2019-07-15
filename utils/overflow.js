@@ -42,23 +42,24 @@ export function getViewportScroller () {
   // right element to use for scrolling APIs, without making assumptions about
   // a particular user agent’s behavior or having to invoke a scroll to see
   // which element scrolls the viewport.
-  var element = document.scrollingElement
+  if (document.scrollingElement) {
+    return document.scrollingElement
+  }
 
-  // Note: For some reason, compatMode in Edge is `CSS1Compat` but
-  // scrollingElement still returns the <body>
-
-  if (!element) {
+  if (typeof document.compatMode === 'string') {
     // https://developer.mozilla.org/en-US/docs/Web/API/Document/compatMode
     // "BackCompat" if the document is in quirks mode.
     if (document.compatMode === 'BackCompat') {
       // https://developer.mozilla.org/en-US/docs/Mozilla/Mozilla_quirks_mode_behavior
       // The scrollLeft, scrollTop, scrollWidth, and scrollHeight properties are
       // relative to BODY in quirks mode (instead of HTML).
-      element = document.body
+      return document.body
     } else {
-      element = document.documentElement 
+      return document.documentElement
     }
   }
 
-  return element
+  // If execution reaches here, the browser is exremely old and we assume it
+  // uses the non-spec value.
+  return document.body
 }
