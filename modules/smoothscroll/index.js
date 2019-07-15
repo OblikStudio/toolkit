@@ -6,6 +6,7 @@ import { getViewportOverflow, getViewportScroller } from '../../utils/overflow'
 // https://www.w3.org/TR/uievents/#events-wheelevents
 // - handle deltaMode (firefox uses different one)
 // - check the spec for when scroll should affect the parent container
+// - handle margin collapsing and transform falsely indicating scrollbar via scrollHeight
 
 function findScroller (element, delta) {
   do {
