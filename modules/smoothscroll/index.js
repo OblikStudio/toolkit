@@ -1,12 +1,16 @@
 import Animation from '../../utils/animation'
-import { elastic as easeOutExpo } from '../../utils/easings'
+import { easeOutExpo } from '../../utils/easings'
 import { browser } from '../../utils/detect-browser'
 import { getViewportOverflow, getViewportScroller } from '../../utils/overflow'
 
 // https://www.w3.org/TR/uievents/#events-wheelevents
 // - handle deltaMode (firefox uses different one)
 // - check the spec for when scroll should affect the parent container
-// - handle margin collapsing and transform falsely indicating scrollbar via scrollHeight
+
+// wheel event not fired when you've scrolled iframe all the way, default
+// scrolling takes place, and if an animation on the root is not yet
+// finished, both it and the default behavior try to scroll and UX is
+// glitchy
 
 function findScroller (element, delta) {
   do {
@@ -28,7 +32,6 @@ function findScroller (element, delta) {
 
     var hasScroll = (scrollHeight !== clientHeight)
     if (hasScroll) {
-      // add checks for overflow property
       if (typeof delta === 'number') {
         if (
           (delta > 0 && scrollTop + clientHeight >= scrollHeight) ||
@@ -39,6 +42,18 @@ function findScroller (element, delta) {
           } else {
             continue
           }
+        }
+      }
+
+      if (isRoot) {
+        var overflow = getViewportOverflow()
+        if (overflow.y !== 'auto') {
+          continue
+        }
+      } else {
+        var overflow = window.getComputedStyle(element).overflowY
+        if (overflow && !overflow.match(/auto|scroll/)) {
+          continue
         }
       }
 
@@ -54,51 +69,68 @@ function findScroller (element, delta) {
   return null
 }
 
-var anim
 window.addEventListener('wheel', (event) => {
+  if (event.defaultPrevented) {
+    // Another handler prevented scroll, we should honor that.
+    return
+  }
+
+  var clamp = false
   var delta = event.deltaY
   var scroller = findScroller(event.target, delta)
+  if (!scroller) {
+    return
+  }
 
-  if (!scroller) return
-  // console.log(scroller.tagName)
+  var animation = scroller.mbScrollAnim
+  var isAnimationRunning = animation && animation.isRunning
 
   var value = scroller.scrollTop
   var newValue = scroller.scrollTop + delta
 
-  if (anim && anim.isRunning) {
-    anim.stop()
+  if (isAnimationRunning) {
+    var remaining = animation.values.scroll.end - animation.scroll
+    var durationRemaining = animation.duration - animation.elapsed
 
-    var remaining = anim.values.scroll.end - anim.scroll
-    var durationRemaining = anim.duration - anim.elapsed
-
-    var samedir = Math.sign(delta) === Math.sign(anim.values.scroll.end - value)
+    var samedir = Math.sign(delta) === Math.sign(animation.values.scroll.end - value)
     if (samedir) {
       newValue += remaining
     }
   }
 
-  var maxNewValue = newValue
-  if (newValue < 0) {
-    maxNewValue = 0
-  } if (newValue + scroller.clientHeight > scroller.scrollHeight) {
-    maxNewValue = scroller.scrollHeight - scroller.clientHeight
+  if (clamp) {
+    if (newValue < 0) {
+      newValue = 0
+    } if (newValue + scroller.clientHeight > scroller.scrollHeight) {
+      // in Edge, scroller is <body>, comparisons should be made to <html>
+      newValue = scroller.scrollHeight - scroller.clientHeight
+    }
   }
 
-  anim = new Animation({
-    duration: 900,
-    easing: easeOutExpo,
-    values: {
-      scroll: {
-        start: value,
-        end: newValue
-      }
-    },
-    update: function () {
-      scroller.scrollTop = this.scroll
+  if (!isAnimationRunning || (newValue !== animation.values.scroll.end)) {
+    if (isAnimationRunning) {
+      animation.stop()
     }
-  })
 
-  anim.run()
+    animation = new Animation({
+      duration: 600,
+      easing: easeOutExpo,
+      values: {
+        scroll: {
+          start: value,
+          end: newValue
+        }
+      },
+      update: function () {
+        scroller.scrollTop = this.scroll
+      }
+    })
+
+    animation.run()
+
+    scroller.mbScrollAnim = animation
+  }
+    
   event.preventDefault()
 }, {
   passive: false
