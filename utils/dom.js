@@ -1,3 +1,21 @@
+/* global Node NodeList */
+
+export function collection (input) {
+  if (input instanceof Node) {
+    return [input]
+  } else if (input instanceof NodeList) {
+    return Array.prototype.slice.call(input)
+  }
+}
+
+export function refreshAnimation (input) {
+  collection(input).forEach(node => {
+    node.style.animation = '0'
+    void node.offsetWidth // trigger reflow
+    node.style.animation = ''
+  })
+}
+
 export function getTag (element, tagName) {
   var value = null
 
@@ -25,7 +43,7 @@ export function offsetGlobal (element, referenceElement = null) {
 }
 
 export function awaitAnimation (element) {
-  return new Promise ((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     var pendingEvents = []
     var hadTransitions = false
     var transitionrun = false
@@ -48,11 +66,11 @@ export function awaitAnimation (element) {
       hadTransitions = true
     }
     var endHandler = function (event) {
-      var index = undefined
+      var index
 
       for (var i = 0; i < pendingEvents.length; i++) {
         let obj = pendingEvents[i]
-        let same = undefined
+        let same
 
         for (var k in obj) {
           if (obj[k] === event[k]) {
