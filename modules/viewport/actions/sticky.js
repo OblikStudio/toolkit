@@ -5,17 +5,28 @@
 
 import query from '../../../utils/context-query'
 
+/**
+ * Can't use shorthand properties for margin, padding, and border
+ * @see https://stackoverflow.com/questions/18675828
+ */
 const PLACEHOLDER_COPIED_PROPERTIES = [
 	'position',
 	'top',
 	'bottom',
 	'float',
 	'flex',
-	'width',
-	'height',
-	'margin',
-	'padding',
-	'border',
+	'marginTop',
+	'marginRight',
+	'marginBottom',
+	'marginLeft',
+	'paddingTop',
+	'paddingRight',
+	'paddingBottom',
+	'paddingLeft',
+	'borderTopWidth',
+	'borderRightWidth',
+	'borderBottomWidth',
+	'borderLeftWidth',
 	'box-sizing'
 ]
 
@@ -38,6 +49,7 @@ export default class {
 		this.isFixed = false
 		this.isAbsolute = false
 		this.boundsElement = null
+		this.boundsRatio = null
 		this.offset = {
 			x: 'auto',
 			y: 0
@@ -60,9 +72,16 @@ export default class {
 	}
 
 	updatePlaceholder () {
+		/**
+		 * getComputedStyle() returns differing values for width/height across
+		 * browsers @see https://stackoverflow.com/questions/19717907
+		 */
+		this.placeholder.style.width = this.element.offsetWidth + 'px'
+		this.placeholder.style.height = this.element.offsetHeight + 'px'
+
 		this.elementLatestStyles = window.getComputedStyle(this.element)
 		PLACEHOLDER_COPIED_PROPERTIES.forEach(property => {
-			this.placeholder.style[property] = this.elementLatestStyles.getPropertyValue(property)
+			this.placeholder.style[property] = this.elementLatestStyles[property]
 		})
 	}
 
@@ -139,12 +158,27 @@ export default class {
 	}
 
 	$refresh (staticRect) {
-		if (!this.isFixed || !this.boundsElement) {
+		if (!this.boundsElement) {
+			return
+		}
+
+		// If the module is not in a fixed state, the user has not yet scrolled to
+		// it, so he couldn't have scolled past it.
+		if (!this.isFixed) {
+			this.boundsRatio = 0
 			return
 		}
 
 		var elementRect = this.element.getBoundingClientRect()
 		var boundsRect = this.boundsElement.getBoundingClientRect()
+
+		if (this.isAbsolute) {
+			this.boundsRatio = 1
+		} else {
+			this.boundsRatio = 
+				(elementRect.top - boundsRect.top) / // difference
+				(boundsRect.height - elementRect.height) // slack
+		}
 
 		if (boundsRect.bottom - elementRect.bottom < 0) {
 			this.applyAbsolute(true, {
