@@ -71,6 +71,10 @@ function parseInstructions (input) {
 }
 
 export default function (element, string) {
+  if (!(element instanceof Element)) {
+    throw new Error('Invalid input element')
+  }
+
   var instructions = parseInstructions(string)
   var activeElement = element
 
