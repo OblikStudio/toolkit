@@ -42,6 +42,23 @@ export function offsetGlobal (element, referenceElement = null) {
   return offset
 }
 
+/**
+ * Returns an object with a DOMRect shape as if getBoundingClientRect was called
+ * on `window`.
+ */
+export function windowClientRect () {
+  return {
+    x: 0,
+    y: 0,
+    width: window.innerWidth,
+    height: window.innerHeight,
+    top: 0,
+    right: window.innerWidth,
+    bottom: window.innerHeight,
+    left: 0
+  }
+}
+
 export function awaitAnimation (element) {
   return new Promise((resolve, reject) => {
     var pendingEvents = []
