@@ -55,7 +55,9 @@ function initModules (node) {
 function destroyModules (node, attributes) {
   attributes.forEach((data) => {
     var instance = node.minibits && node.minibits[data.moduleFullName]
-    factory.destroy(node, instance, data)
+    if (instance) {
+      factory.destroy(node, instance, data)
+    }
   })
 
   delete node.minibits

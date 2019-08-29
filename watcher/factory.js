@@ -86,7 +86,7 @@ export function create (node, module, meta) {
 }
 
 export function destroy (node, instance, meta) {
-  if (instance.destroy === 'function') {
+  if (typeof instance.destroy === 'function') {
     instance.destroy()
   }
 

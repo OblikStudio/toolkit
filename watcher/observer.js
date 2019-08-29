@@ -24,12 +24,11 @@ export default class extends EventEmitter {
       callback(node, attrs)
     }
 
-    var child = node.firstElementChild
-
-    while (child) {
-      this.search(child, callback)
-      child = child.nextElementSibling
-    }
+    // Children must be cached in an array before iteration because the
+    // initialization of some child modules might alter the contents.
+    Array.from(node.children).forEach(node => {
+      this.search(node, callback)
+    })
 
     if (attrs.length) {
       this.emit('searched', node)
