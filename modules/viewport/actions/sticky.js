@@ -3,7 +3,7 @@
 // - support offset left when position absolute
 // - update elements on resize when fixed
 
-import query from '../../../utils/context-query'
+import { query } from '../../../utils/query'
 
 /**
  * Can't use shorthand properties for margin, padding, and border
@@ -67,7 +67,7 @@ export default class {
 		this.updatePlaceholder()
 
 		if (this.options.bounds) {
-			this.boundsElement = query(this.element, this.options.bounds)
+			this.boundsElement = query(this.options.bounds, this.element)
 		}
 	}
 

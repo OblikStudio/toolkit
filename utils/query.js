@@ -17,7 +17,7 @@ const ACTIONS = {
 
     do {
       element = element[prop]
-    } while (element.nodeType !== Node.ELEMENT_NODE)
+    } while (element && element.nodeType !== Node.ELEMENT_NODE)
 
     return element
   },
@@ -70,7 +70,7 @@ function parseInstructions (input) {
   return instructions
 }
 
-export default function (element, string) {
+export function relative (string, element) {
   if (!(element instanceof Element)) {
     throw new Error('Invalid input element')
   }
@@ -106,4 +106,22 @@ export default function (element, string) {
   })
 
   return activeElement
+}
+
+export function query (input, element = null) {
+  var result = null
+
+  if (input instanceof Element) {
+    result = input
+  } else if (typeof input == 'string') {
+    if (input[0] === '@') {
+      if (element) {
+        result = relative(input, element)
+      }
+    } else {
+      result = document.querySelector(input)
+    }
+  }
+
+  return result
 }
