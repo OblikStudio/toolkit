@@ -1,28 +1,69 @@
+import { query } from '../../utils/query'
+
 export default class {
 	constructor (element, options) {
 		this.element = element
-		this.options = options
-		this.targets = [element]
+		this.options = Object.assign({
+			on: 'click',
+			off: null,
+			class: 'is-active'
+		}, options)
 
 		if (this.options.target) {
-			this.targets = [document.querySelector(this.options.target)]
+			this.targets = [query(this.options.target, this.element)]
 		}
 
 		if (this.options.targets) {
 			this.targets = document.querySelectorAll(this.options.targets)
 		}
 
-		this.handler = this.toggle.bind(this)
-		this.element.addEventListener('click', this.handler)
+		this.state = false
+		
+		if (this.options.off && this.options.off !== this.options.on) {
+			this.onHandler = this.on.bind(this)
+			this.offHandler = this.off.bind(this)
+			this.element.addEventListener(this.options.off, this.offHandler)
+		} else {
+			this.onHandler = this.toggle.bind(this)
+		}
+
+		this.element.addEventListener(this.options.on, this.onHandler)
 	}
 
-	toggle () {
-		for (var target of this.targets) {
-			target.classList.toggle(this.options.class)
+	on () {
+		if (this.state === false) {
+			this.state = true
+			this.update()
 		}
 	}
 
-	destroy () {
-		this.element.removeEventListener('click', this.handler)
+	off () {
+		if (this.state === true) {
+			this.state = false
+			this.update()
+		}
+	}
+
+	toggle () {
+		this.state = !this.state
+		this.update()
+	}
+
+	update () {
+		for (var target of this.targets) {
+			if (this.state === true) {
+				target.classList.add(this.options.class)
+			} else {
+				target.classList.remove(this.options.class)
+			}
+		}
+	}
+
+	$destroy () {
+		this.element.removeEventListener(this.options.on, this.onHandler)
+
+		if (this.offHandler) {
+			this.element.removeEventListener(this.options.off, this.offHandler)
+		}
 	}
 }
