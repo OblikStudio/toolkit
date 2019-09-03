@@ -1,4 +1,5 @@
 import { query } from '../../utils/query'
+import { debounce } from 'lodash-es'
 
 export default class {
 	constructor (element, options) {
@@ -6,7 +7,8 @@ export default class {
 		this.options = Object.assign({
 			on: 'click',
 			off: null,
-			class: 'is-active'
+			class: 'is-active',
+			delay: null
 		}, options)
 
 		if (this.options.target) {
@@ -22,6 +24,11 @@ export default class {
 		if (this.options.off && this.options.off !== this.options.on) {
 			this.onHandler = this.on.bind(this)
 			this.offHandler = this.off.bind(this)
+
+			if (typeof this.options.delay === 'number') {
+				this.offHandler = debounce(this.offHandler, this.options.delay)
+			}
+
 			this.element.addEventListener(this.options.off, this.offHandler)
 		} else {
 			this.onHandler = this.toggle.bind(this)
@@ -31,6 +38,10 @@ export default class {
 	}
 
 	on () {
+		if (this.offHandler && this.offHandler.cancel) {
+			this.offHandler.cancel()
+		}
+
 		if (this.state === false) {
 			this.state = true
 			this.update()
