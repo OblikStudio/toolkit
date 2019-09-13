@@ -1,40 +1,41 @@
-import { query } from '../../utils/query'
 import { debounce } from 'lodash-es'
+import Module from '../module'
+import { query } from '../../utils/query'
 
-export default class {
-	constructor (element, options) {
-		this.element = element
-		this.options = Object.assign({
+export default class extends Module {
+	constructor () {
+		super(...arguments)
+		this.$value = Object.assign({
 			on: 'click',
 			off: null,
 			class: 'is-active',
 			delay: null
-		}, options)
+		}, this.$value)
 
-		if (this.options.target) {
-			this.targets = [query(this.options.target, this.element)]
+		if (this.$value.target) {
+			this.targets = [query(this.$value.target, this.$element)]
 		}
 
-		if (this.options.targets) {
-			this.targets = document.querySelectorAll(this.options.targets)
+		if (this.$value.targets) {
+			this.targets = document.querySelectorAll(this.$value.targets)
 		}
 
 		this.state = false
 		
-		if (this.options.off && this.options.off !== this.options.on) {
+		if (this.$value.off && this.$value.off !== this.$value.on) {
 			this.onHandler = this.on.bind(this)
 			this.offHandler = this.off.bind(this)
 
-			if (typeof this.options.delay === 'number') {
-				this.offHandler = debounce(this.offHandler, this.options.delay)
+			if (typeof this.$value.delay === 'number') {
+				this.offHandler = debounce(this.offHandler, this.$value.delay)
 			}
 
-			this.element.addEventListener(this.options.off, this.offHandler)
+			this.$element.addEventListener(this.$value.off, this.offHandler)
 		} else {
 			this.onHandler = this.toggle.bind(this)
 		}
 
-		this.element.addEventListener(this.options.on, this.onHandler)
+		this.$element.addEventListener(this.$value.on, this.onHandler)
 	}
 
 	on () {
@@ -63,18 +64,18 @@ export default class {
 	update () {
 		for (var target of this.targets) {
 			if (this.state === true) {
-				target.classList.add(this.options.class)
+				target.classList.add(this.$value.class)
 			} else {
-				target.classList.remove(this.options.class)
+				target.classList.remove(this.$value.class)
 			}
 		}
 	}
 
 	$destroy () {
-		this.element.removeEventListener(this.options.on, this.onHandler)
+		this.$element.removeEventListener(this.$value.on, this.onHandler)
 
 		if (this.offHandler) {
-			this.element.removeEventListener(this.options.off, this.offHandler)
+			this.$element.removeEventListener(this.$value.off, this.offHandler)
 		}
 	}
 }
