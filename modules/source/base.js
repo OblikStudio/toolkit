@@ -44,7 +44,7 @@ class Source extends Module {
 
   $destroy () {
     // So ongoing conditions can detach whatever they need.
-    this.emit('destroy')
+    this.$emitter.emit('destroy')
   }
 }
 

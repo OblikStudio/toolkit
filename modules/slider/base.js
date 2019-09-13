@@ -51,7 +51,7 @@ export default class extends Module {
         y: -(this.activeSlide.$element.offsetTop - this.$slide[0].$element.offsetTop)
       }
 
-      this.emit('slideChange', this.activeSlide)
+      this.$emitter.emit('slideChange', this.activeSlide)
 
       this.renderItems()
       return true

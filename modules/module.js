@@ -1,12 +1,12 @@
-import EventEmitter from 'events'
+import Emitter from 'events'
 
-export default class extends EventEmitter {
+export default class {
   constructor (element, value) {
-    super()
-
     this.$element = element
     this.$value = value
     this.$parent = null
+    this.$emitter = new Emitter()
+
     this._name = null
     this._children = []
     this._destroyed = false
@@ -15,7 +15,7 @@ export default class extends EventEmitter {
   $addModule (module) {
     if (this._children.indexOf(module) < 0) {
       this._children.push(module)
-      this.emit(module._name + ':added', module)
+      this.$emitter.emit(module._name + ':added', module)
     }
   }
 
@@ -23,7 +23,7 @@ export default class extends EventEmitter {
     var index = this._children.indexOf(module)
     if (index >= 0) {
       this._children.splice(index, 1)
-      this.emit(module._name + ':removed', module)
+      this.$emitter.emit(module._name + ':removed', module)
     }
   }
 

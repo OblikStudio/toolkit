@@ -21,7 +21,7 @@ export default class extends Module {
 		}
 
 		this.state = false
-		
+
 		if (this.$value.off && this.$value.off !== this.$value.on) {
 			this.onHandler = this.on.bind(this)
 			this.offHandler = this.off.bind(this)
@@ -69,6 +69,8 @@ export default class extends Module {
 				target.classList.remove(this.$value.class)
 			}
 		}
+
+		this.$emitter.emit('change', this.state)
 	}
 
 	$destroy () {
