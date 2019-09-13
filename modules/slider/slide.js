@@ -2,7 +2,7 @@ import Module from '../module'
 
 export default class extends Module {
   constructor () {
-    super('slide', ...arguments)
+    super(...arguments)
 
     this.box = null
   }

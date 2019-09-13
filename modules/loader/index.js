@@ -3,8 +3,8 @@ import { getTag } from '../../utils/dom'
 
 export default class extends Module {
   constructor () {
-    super('loader', ...arguments)
-
+    super(...arguments)
+    
     this.$value = Object.assign({
       delay: 0,
       wait: 1000

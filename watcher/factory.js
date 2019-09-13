@@ -62,17 +62,14 @@ export function create (node, module, meta) {
   var parentModule = findParentModule(node, meta)
 
   if (typeof module === 'function') {
-    instance = new module(node, meta.value, parentModule)
-
-    // Handle modules that are plain functions.
-    if (!(instance instanceof Module)) {
-      instance._name = meta.moduleName
-      instance.$parent = parentModule
-    }
+    instance = new module(node, meta.value)
   } else {
-    instance = new Module(meta.moduleName, node, meta.value, parentModule)
+    instance = new Module(node, meta.value)
     instance._unregistered = true
   }
+
+  instance._name = meta.moduleName
+  instance.$parent = parentModule
 
   if (parentModule) {
     if (typeof parentModule.$addModule === 'function') {

@@ -4,7 +4,7 @@ import { getTag } from '../../utils/dom'
 
 export default class extends Module {
   constructor () {
-    super('slider', ...arguments)
+    super(...arguments)
 
     this.$slide = []
 

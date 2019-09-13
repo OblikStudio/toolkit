@@ -2,7 +2,7 @@ import Module from '../module'
 
 export default class extends Module {
   constructor () {
-    super('cursor', ...arguments)
+    super(...arguments)
 
     this.$element.addEventListener('mouseenter', () => {
       this.$element.classList.add('is-cursor-hidden')

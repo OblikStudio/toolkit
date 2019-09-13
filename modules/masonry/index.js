@@ -14,7 +14,7 @@ function nodesIntersect (a, b) {
 
 export default class extends Module {
   constructor () {
-    super('masonry', ...arguments)
+    super(...arguments)
     this.$item = []
   }
 
