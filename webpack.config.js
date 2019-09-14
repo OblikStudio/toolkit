@@ -1,12 +1,21 @@
-const path = require('path')
+const { resolve } = require('path')
 
 module.exports = {
+  watch: true,
+  mode: 'development',
+  devServer: {
+    contentBase: './tests'
+  },
   entry: {
-    main: './index.js'
+    script: './tests/js/index.js'
   },
   output: {
-    filename: 'minibits.js',
-    path: path.resolve(__dirname, 'dist')
+    path: resolve(__dirname, './tests/js')
+  },
+  resolve: {
+    alias: {
+      '@': __dirname
+    }
   },
   module: {
     rules: [

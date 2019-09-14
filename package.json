@@ -1,15 +1,14 @@
 {
-  "name": "minibits",
-  "version": "0.1.0",
-  "description": "Minimal UI functionalities with no styling.",
-  "main": "index.js",
+  "name": "oblik",
+  "version": "0.2.0",
+  "description": "Toolkit with minimal, composable, and renderless UI components and uitilities.",
   "scripts": {
     "test": "jest",
-    "dev": "webpack --watch --mode=development"
+    "dev": "webpack-dev-server"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hdodov/minibits.git"
+    "url": "git+https://github.com/oblikjs/oblik.git"
   },
   "keywords": [
     "ui",
@@ -25,21 +24,21 @@
   "author": "Hristiyan Dodov",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/hdodov/minibits/issues"
+    "url": "https://github.com/oblikjs/oblik/issues"
   },
-  "homepage": "https://github.com/hdodov/minibits#readme",
+  "homepage": "https://github.com/oblikjs/oblik#readme",
   "dependencies": {
-    "@babel/polyfill": "^7.4.4",
-    "babel-loader": "^8.0.6",
-    "core-js": "^3.0.1",
     "lodash-es": "^4.17.15"
   },
   "devDependencies": {
     "@babel/core": "^7.4.4",
+    "@babel/polyfill": "^7.4.4",
     "@babel/preset-env": "^7.4.4",
+    "babel-loader": "^8.0.6",
     "jest": "^24.8.0",
     "mutation-observer": "^1.0.3",
     "webpack": "^4.35.3",
-    "webpack-cli": "^3.3.5"
+    "webpack-cli": "^3.3.5",
+    "webpack-dev-server": "^3.8.0"
   }
 }
