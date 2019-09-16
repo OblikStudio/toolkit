@@ -28,7 +28,8 @@
   },
   "homepage": "https://github.com/oblikjs/oblik#readme",
   "dependencies": {
-    "lodash-es": "^4.17.15"
+    "lodash-es": "^4.17.15",
+    "slic": "^1.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.4.4",

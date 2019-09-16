@@ -1,4 +1,6 @@
-const RE_NUMBER = /^\d*\.?\d+$/
+import { Parser } from 'slic'
+
+const slic = new Parser()
 
 export function parseName (input, separator) {
 	var split = input.split(separator)
@@ -30,35 +32,9 @@ export function parseValue (input) {
 
 	if (input.length && input[0] === '{') {
 		return JSON.parse(input)
+	} else {
+		return slic.parse(input)
 	}
-
-	var result = {}
-	var values = input.split(';')
-
-	values.forEach(value => {
-		var split = value.split(':')
-		if (split.length >= 2) {
-			var key = split[0].trim()
-			split.shift()
-			var value = split.join(':')
-
-      if (RE_NUMBER.test(value)) {
-        value = parseFloat(value)
-      } else if (value === 'true') {
-        value = true
-      } else if (value === 'false') {
-        value = false
-      }
-
-      result[key] = value
-		}
-	})
-
-	if (Object.keys(result) === 0) {
-		result.default = input
-	}
-
-	return result
 }
 
 export function get (element, settings) {
