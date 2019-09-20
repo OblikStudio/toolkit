@@ -1,4 +1,4 @@
-import { query } from '../../utils/query'
+import query from 'querel'
 import { windowClientRect } from '../../utils/dom'
 import { clamp } from '../../utils/math'
 import { linear } from '../../utils/easings'
@@ -49,7 +49,7 @@ export default class {
     if (!this.options.reference) {
       this.reference = window
     } else {
-      this.reference = query(this.options.reference, this.element)
+      this.reference = query(this.element, this.options.reference).first()
     }
 
     this.transform = transformers[this.options.type]

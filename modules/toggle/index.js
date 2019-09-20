@@ -1,6 +1,6 @@
+import query from 'querel'
 import { debounce } from 'lodash-es'
 import Module from '../module'
-import { query } from '../../utils/query'
 
 export default class extends Module {
 	constructor () {
@@ -12,13 +12,7 @@ export default class extends Module {
 			delay: null
 		}, this.$value)
 
-		if (this.$value.target) {
-			this.targets = [query(this.$value.target, this.$element)]
-		}
-
-		if (this.$value.targets) {
-			this.targets = document.querySelectorAll(this.$value.targets)
-		}
+		this.targets = query(this.$element, this.$value.target)
 
 		this.state = false
 
@@ -62,13 +56,13 @@ export default class extends Module {
 	}
 
 	update () {
-		for (var target of this.targets) {
+		this.targets.each(element => {
 			if (this.state === true) {
-				target.classList.add(this.$value.class)
+				element.classList.add(this.$value.class)
 			} else {
-				target.classList.remove(this.$value.class)
+				element.classList.remove(this.$value.class)
 			}
-		}
+		})
 
 		this.$emitter.emit('change', this.state)
 	}
