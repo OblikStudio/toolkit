@@ -26,9 +26,11 @@ export default class extends EventEmitter {
 
     // Children must be cached in an array before iteration because the
     // initialization of some child modules might alter the contents.
-    Array.from(node.children).forEach(node => {
-      this.search(node, callback)
-    })
+    if (node.children) {
+      Array.from(node.children).forEach(node => {
+        this.search(node, callback)
+      })
+    }
 
     if (attrs.length) {
       this.emit('searched', node)
