@@ -8,10 +8,10 @@ import source from './source'
 import toggle from './toggle'
 import tweet from './tweet'
 
-import { default as viewport, register as viewportRegister } from './viewport'
-import viewportPartials from './viewport/partials'
+import { default as sensor, register as sensorRegister } from './sensor'
+import * as sensorPartials from './sensor/partials'
 
-viewportRegister(viewportPartials)
+sensorRegister(sensorPartials)
 
 export default {
   cursor,
@@ -23,5 +23,5 @@ export default {
   source,
   toggle,
   tweet,
-  viewport
+  sensor
 }
