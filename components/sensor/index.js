@@ -1,5 +1,5 @@
-const observers = {}
-const actions = {}
+export const observers = {}
+export const actions = {}
 
 class Effect {
 	constructor (sensor) {
@@ -140,11 +140,6 @@ class Sensor {
 		window.removeEventListener('scroll', this.updateHandler)
 		window.removeEventListener('resize', this.updateHandler)
 	}
-}
-
-export function register (data) {
-	Object.assign(observers, data.observers)
-	Object.assign(actions, data.actions)
 }
 
 export default Sensor
