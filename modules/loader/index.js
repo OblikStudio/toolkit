@@ -5,10 +5,10 @@ export default class extends Module {
   constructor () {
     super(...arguments)
     
-    this.$value = Object.assign({
+    this.$options = Object.assign({
       delay: 0,
       wait: 1000
-    }, this.$value)
+    }, this.$options)
 
     this.activeLink = null
     this.animating = false
@@ -41,10 +41,10 @@ export default class extends Module {
 
   $init () {
     window.requestAnimationFrame(() => {
-      if (this.$value.delay > 0) {
+      if (this.$options.delay > 0) {
         setTimeout(() => {
           this.animateIn()
-        }, this.$value.delay)
+        }, this.$options.delay)
       } else {
         this.animateIn()
       }
@@ -67,7 +67,7 @@ export default class extends Module {
     // https://stackoverflow.com/questions/56321027
     setTimeout(() => {
       this.redirect()
-    }, this.$value.wait)
+    }, this.$options.wait)
   }
 
   redirect () {

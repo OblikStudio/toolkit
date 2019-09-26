@@ -3,7 +3,7 @@ import Emitter from 'events'
 export default class {
   constructor (element, value) {
     this.$element = element
-    this.$value = value
+    this.$options = value
     this.$parent = null
     this.$emitter = new Emitter()
 

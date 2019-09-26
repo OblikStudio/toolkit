@@ -7,18 +7,18 @@ class Source extends Module {
     super(...arguments)
 
     var hasSet = false
-    var defaultSource = this.$value && this.$value.default
+    var defaultSource = this.$options && this.$options.default
 
-    for (var k in this.$value) {
+    for (var k in this.$options) {
       if (k === 'default') {
         continue
       }
 
       if (conditions[k]) {
         if (typeof conditions[k] === 'function') {
-          let result = conditions[k].call(this, this.$value[k])
+          let result = conditions[k].call(this, this.$options[k])
           if (result === true) {
-            this.setSource(this.$value[k])
+            this.setSource(this.$options[k])
             hasSet = true
           }
         } else {
