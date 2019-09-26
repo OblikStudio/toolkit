@@ -1,12 +1,12 @@
-import modules from '@/modules'
+import components from '@/components'
 import * as watcher from '@/watcher'
 import * as utils from '@/utils'
 
-watcher.register(modules)
+watcher.register(components)
 watcher.init()
 
 window.Minibits = {
-  modules,
+  components,
   utils,
   watcher
 }

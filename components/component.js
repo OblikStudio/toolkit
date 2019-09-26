@@ -12,18 +12,18 @@ export default class {
     this._destroyed = false
   }
 
-  $addModule (module) {
-    if (this._children.indexOf(module) < 0) {
-      this._children.push(module)
-      this.$emitter.emit(module._name + ':added', module)
+  $addComponent (component) {
+    if (this._children.indexOf(component) < 0) {
+      this._children.push(component)
+      this.$emitter.emit(component._name + ':added', component)
     }
   }
 
-  $removeModule (module) {
-    var index = this._children.indexOf(module)
+  $removeComponent (component) {
+    var index = this._children.indexOf(component)
     if (index >= 0) {
       this._children.splice(index, 1)
-      this.$emitter.emit(module._name + ':removed', module)
+      this.$emitter.emit(component._name + ':removed', component)
     }
   }
 
@@ -33,7 +33,7 @@ export default class {
     }
 
     if (this.$parent) {
-      this.$parent.$removeModule(this)
+      this.$parent.$removeComponent(this)
       this.$parent = null
     }
 

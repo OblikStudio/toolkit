@@ -1,4 +1,4 @@
-import Module from '../module'
+import Component from '../component'
 
 function getNodeBottom (node) {
   return node.offsetTop + node.offsetHeight + parseInt(window.getComputedStyle(node).marginBottom)
@@ -12,7 +12,7 @@ function nodesIntersect (a, b) {
   return Math.abs(centerA - centerB) < (halfA + halfB - 1) // -1 for threshold because widths are rounded
 }
 
-export default class extends Module {
+export default class extends Component {
   constructor () {
     super(...arguments)
     this.$item = []

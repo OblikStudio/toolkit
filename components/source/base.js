@@ -1,8 +1,8 @@
-import Module from '../module'
+import Component from '../component'
 
 const conditions = {}
 
-class Source extends Module {
+class Source extends Component {
   constructor () {
     super(...arguments)
 

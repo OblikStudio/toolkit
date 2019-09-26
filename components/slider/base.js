@@ -1,8 +1,8 @@
-import Module from '../module'
+import Component from '../component'
 import Drag from '../../utils/drag'
 import { getTag } from '../../utils/dom'
 
-export default class extends Module {
+export default class extends Component {
   constructor () {
     super(...arguments)
 

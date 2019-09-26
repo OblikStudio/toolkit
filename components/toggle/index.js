@@ -1,8 +1,8 @@
 import { query } from '../../utils'
 import { debounce } from 'lodash-es'
-import Module from '../module'
+import Component from '../component'
 
-export default class extends Module {
+export default class extends Component {
 	constructor () {
 		super(...arguments)
 		this.$options = Object.assign({

@@ -5,8 +5,8 @@ const slic = new Parser()
 export function parseName (input, separator) {
 	var split = input.split(separator)
 	var prefix = split.shift()
-	var moduleFullName = split.join(separator)
-	var moduleName = split.pop()
+	var componentFullName = split.join(separator)
+	var componentName = split.pop()
 
 	var parentName = null
 	var parentAttribute = null
@@ -18,8 +18,8 @@ export function parseName (input, separator) {
 
 	return {
 		prefix,
-		moduleName,
-		moduleFullName,
+		componentName,
+		componentFullName,
 		parentName,
 		parentAttribute
 	}

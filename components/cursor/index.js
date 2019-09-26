@@ -1,6 +1,6 @@
-import Module from '../module'
+import Component from '../component'
 
-export default class extends Module {
+export default class extends Component {
   constructor () {
     super(...arguments)
 

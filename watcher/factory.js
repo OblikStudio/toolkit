@@ -1,4 +1,4 @@
-import Module from '../modules/module'
+import Component from '../components/component'
 
 function findAncestorByAttribute (node, attribute) {
   while (node = node.parentElement) {
@@ -10,33 +10,33 @@ function findAncestorByAttribute (node, attribute) {
   return null
 }
 
-function findParentModule (node, meta) {
+function findParentComponent (node, meta) {
   var parent = null
-  var parentModule = null
+  var parentComponent = null
 
   if (meta.parentAttribute) {
     parent = findAncestorByAttribute(node, meta.parentAttribute)
 
     if (parent) {
-      parentModule = parent.minibits && parent.minibits[meta.parentName]
+      parentComponent = parent.minibits && parent.minibits[meta.parentName]
 
-      if (!parentModule) {
-        throw new Error(`Module instance of parent ${ meta.parentAttribute } not found.`)
+      if (!parentComponent) {
+        throw new Error(`Component instance of parent ${ meta.parentAttribute } not found.`)
       }
     } else {
       throw new Error(`Parent ${ meta.parentAttribute } not found.`)
     }
   }
 
-  return parentModule
+  return parentComponent
 }
 
-function updateChildStorage (parentModule, childModule, remove = false) {
-  var key = '$' + childModule._name
-  var value = parentModule[key]
+function updateChildStorage (parentComponent, childComponent, remove = false) {
+  var key = '$' + childComponent._name
+  var value = parentComponent[key]
 
   if (Array.isArray(value)) {
-    var index = value.indexOf(childModule)
+    var index = value.indexOf(childComponent)
     var added = index >= 0
 
     if (remove) {
@@ -44,39 +44,39 @@ function updateChildStorage (parentModule, childModule, remove = false) {
         value.splice(index, 1)
       }
     } else if (!added) {
-      value.push(childModule)
+      value.push(childComponent)
     }
   } else {
     if (remove) {
-      if (value === childModule) {
-        parentModule[key] = null
+      if (value === childComponent) {
+        parentComponent[key] = null
       }
     } else {
-      parentModule[key] = childModule
+      parentComponent[key] = childComponent
     }
   }
 }
 
-export function create (node, module, meta) {
+export function create (node, component, meta) {
   var instance = null
-  var parentModule = findParentModule(node, meta)
+  var parentComponent = findParentComponent(node, meta)
 
-  if (typeof module === 'function') {
-    instance = new module(node, meta.value)
+  if (typeof component === 'function') {
+    instance = new component(node, meta.value)
   } else {
-    instance = new Module(node, meta.value)
+    instance = new Component(node, meta.value)
     instance._unregistered = true
   }
 
-  instance._name = meta.moduleName
-  instance.$parent = parentModule
+  instance._name = meta.componentName
+  instance.$parent = parentComponent
 
-  if (parentModule) {
-    if (typeof parentModule.$addModule === 'function') {
-      parentModule.$addModule(instance)
+  if (parentComponent) {
+    if (typeof parentComponent.$addComponent === 'function') {
+      parentComponent.$addComponent(instance)
     }
 
-    updateChildStorage(parentModule, instance)
+    updateChildStorage(parentComponent, instance)
   }
 
   return instance
@@ -87,12 +87,12 @@ export function destroy (node, instance, meta) {
     instance.destroy()
   }
 
-  var parentModule = instance.$parent
-  if (parentModule) {
-    if (typeof parentModule.$removeModule === 'function') {
-      parentModule.$removeModule(instance)
+  var parentComponent = instance.$parent
+  if (parentComponent) {
+    if (typeof parentComponent.$removeComponent === 'function') {
+      parentComponent.$removeComponent(instance)
     }
 
-    updateChildStorage(parentModule, instance, true)
+    updateChildStorage(parentComponent, instance, true)
   }
 }

@@ -1,11 +1,11 @@
 import * as factory from './factory'
 import Observer from './observer'
 
-const _modules = {}
+const _components = {}
 
-function findModuleDefinition (moduleFullName) {
-  var obj = _modules
-  var path = moduleFullName.split('-')
+function findComponentDefinition (componentFullName) {
+  var obj = _components
+  var path = componentFullName.split('-')
 
   for (var part of path) {
     if (obj) {
@@ -22,29 +22,29 @@ function findModuleDefinition (moduleFullName) {
   return null
 }
 
-function createModules (node, attributes) {
+function createComponents (node, attributes) {
   if (!node.minibits) {
     node.minibits = {}
   }
 
   attributes.forEach((data) => {
-    if (!node.minibits[data.moduleFullName]) {
-      var definition = findModuleDefinition(data.moduleFullName)
+    if (!node.minibits[data.componentFullName]) {
+      var definition = findComponentDefinition(data.componentFullName)
       if (!definition && !data.parentAttribute) {
-        // If a module has no definition and it's not a child module, ignore it.
-        console.warn(`Definition of module ${ data.moduleFullName } not found.`)
+        // If a component has no definition and it's not a child component, ignore it.
+        console.warn(`Definition of component ${ data.componentFullName } not found.`)
         return
       }
 
       var instance = factory.create(node, definition, data)
       if (instance) {
-        node.minibits[data.moduleFullName] = instance
+        node.minibits[data.componentFullName] = instance
       }
     }
   })
 }
 
-function initModules (node) {
+function initComponents (node) {
   for (var k in node.minibits) {
     if (typeof node.minibits[k].$init === 'function') {
       node.minibits[k].$init()
@@ -52,9 +52,9 @@ function initModules (node) {
   }
 }
 
-function destroyModules (node, attributes) {
+function destroyComponents (node, attributes) {
   attributes.forEach((data) => {
-    var instance = node.minibits && node.minibits[data.moduleFullName]
+    var instance = node.minibits && node.minibits[data.componentFullName]
     if (instance) {
       factory.destroy(node, instance, data)
     }
@@ -63,8 +63,8 @@ function destroyModules (node, attributes) {
   delete node.minibits
 }
 
-export function register (modules) {
-  Object.assign(_modules, modules)
+export function register (components) {
+  Object.assign(_components, components)
 }
 
 export function init (element = document.body) {
@@ -73,9 +73,9 @@ export function init (element = document.body) {
     separator: '-'
   })
 
-  observer.on('added', createModules)
-  observer.on('searched', initModules)
-  observer.on('removed', destroyModules)
+  observer.on('added', createComponents)
+  observer.on('searched', initComponents)
+  observer.on('removed', destroyComponents)
 
   observer.addNode(observer.element)
 }

@@ -162,7 +162,7 @@ export default class {
 			return
 		}
 
-		// If the module is not in a fixed state, the user has not yet scrolled to
+		// If the component is not in a fixed state, the user has not yet scrolled to
 		// it, so he couldn't have scolled past it.
 		if (!this.isFixed) {
 			this.boundsRatio = 0
