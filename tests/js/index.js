@@ -1,6 +1,6 @@
 import modules from '@/modules'
 import * as watcher from '@/watcher'
-import utils from '@/utils'
+import * as utils from '@/utils'
 
 watcher.register(modules)
 watcher.init()

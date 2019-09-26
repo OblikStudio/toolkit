@@ -1,4 +1,4 @@
-import query from 'querel'
+import { query } from '../../utils'
 import { windowClientRect } from '../../utils/dom'
 import { clamp } from '../../utils/math'
 import { linear } from '../../utils/easings'

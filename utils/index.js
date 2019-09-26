@@ -1,5 +1,7 @@
+import query from 'querel'
 import * as overflow from './overflow'
 
-export default {
-  ...overflow
+export {
+  query,
+  overflow
 }

@@ -1,4 +1,4 @@
-import query from 'querel'
+import { query } from '../../utils'
 import { debounce } from 'lodash-es'
 import Module from '../module'
 

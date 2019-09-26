@@ -3,7 +3,7 @@
 // - support offset left when position absolute
 // - update elements on resize when fixed
 
-import query from 'querel'
+import { query } from '../../../utils'
 
 /**
  * Can't use shorthand properties for margin, padding, and border
