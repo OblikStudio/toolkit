@@ -1,21 +1,11 @@
 const { resolve } = require('path')
 
 module.exports = {
-  watch: true,
-  mode: 'development',
-  devServer: {
-    contentBase: './tests'
-  },
-  entry: {
-    script: './tests/js/index.js'
-  },
+  entry: './src/index.js',
   output: {
-    path: resolve(__dirname, './tests/js')
-  },
-  resolve: {
-    alias: {
-      '@': __dirname
-    }
+    path: resolve(__dirname, 'build'),
+    filename: 'oblik.js',
+    library: 'Oblik'
   },
   module: {
     rules: [
