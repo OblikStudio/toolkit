@@ -1,3 +1,5 @@
+import 'core-js'
+
 import * as components from './components'
 import * as watcher from './watcher'
 import * as utils from './utils'
@@ -8,14 +10,11 @@ import * as sensorPartials from './components/sensor/partials'
 Object.assign(actions, sensorPartials.actions)
 Object.assign(observers, sensorPartials.observers)
 
-export function init () {
-  watcher.register(components)
-  watcher.init()
-}
+watcher.register(components)
+watcher.init()
 
-export default {
+export {
   components,
   watcher,
-  utils,
-  init
+  utils
 }

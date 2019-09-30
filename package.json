@@ -3,8 +3,7 @@
   "version": "0.2.0",
   "description": "Toolkit with minimal, composable, and renderless UI components and uitilities.",
   "scripts": {
-    "test": "jest",
-    "dev": "webpack-dev-server"
+    "dev": "webpack-cli --watch --mode=development"
   },
   "repository": {
     "type": "git",
@@ -28,6 +27,7 @@
   },
   "homepage": "https://github.com/oblikjs/oblik#readme",
   "dependencies": {
+    "core-js": "^3.2.1",
     "lodash-es": "^4.17.15",
     "querel": "^1.0.0",
     "slic": "^1.0.0"
