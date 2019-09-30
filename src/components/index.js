@@ -1,23 +1,13 @@
-import cursor from './cursor'
-import height from './height'
-import loader from './loader'
-import masonry from './masonry'
-import scrollto from './scrollto'
-import sensor from './sensor'
-import slider from './slider'
-import source from './source'
-import toggle from './toggle'
-import tweet from './tweet'
+export { default as height } from './functional/height'
+export { default as masonry } from './functional/masonry'
+export { default as parallax } from './functional/parallax'
+export { default as scrollto } from './functional/scroll-to'
+export { default as sensor } from './functional/sensor'
+export { default as toggle } from './functional/toggle'
 
-export {
-  cursor,
-  height,
-  loader,
-  masonry,
-  scrollto,
-  sensor,
-  slider,
-  source,
-  toggle,
-  tweet
-}
+export { default as slider } from './interface/slider'
+
+export { default as cursor } from './misc/cursor'
+export { default as loader } from './misc/loader'
+export { default as source } from './misc/source'
+export { default as tweet } from './misc/tweet'

@@ -1,7 +1,7 @@
-import { query } from '../../utils'
-import { windowClientRect } from '../../utils/dom'
-import { clamp } from '../../utils/math'
-import { linear } from '../../utils/easings'
+import { query } from '../../../utils'
+import { windowClientRect } from '../../../utils/dom'
+import { clamp } from '../../../utils/math'
+import { linear } from '../../../utils/easings'
 
 const transformers = {
   ratio: function (value) {

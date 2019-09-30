@@ -1,5 +1,5 @@
-import Component from '../component'
-import { getTag } from '../../utils/dom'
+import Component from '../../component'
+import { getTag } from '../../../utils/dom'
 
 export default class extends Component {
   constructor () {

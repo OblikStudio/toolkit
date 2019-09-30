@@ -1,6 +1,6 @@
-import { query } from '../../utils'
+import { query } from '../../../utils'
 import { debounce } from 'lodash-es'
-import Component from '../component'
+import Component from '../../component'
 
 export default class extends Component {
 	constructor () {

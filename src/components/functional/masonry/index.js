@@ -1,4 +1,4 @@
-import Component from '../component'
+import Component from '../../component'
 
 function getNodeBottom (node) {
   return node.offsetTop + node.offsetHeight + parseInt(window.getComputedStyle(node).marginBottom)

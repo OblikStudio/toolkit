@@ -4,11 +4,12 @@ import * as components from './components'
 import * as watcher from './watcher'
 import * as utils from './utils'
 
-import { actions, observers } from './components/sensor'
-import * as sensorPartials from './components/sensor/partials'
+import { actions, observers } from './components/functional/sensor'
+import * as allActions from './components/functional/sensor/actions'
+import * as allObservers from './components/functional/sensor/observers'
 
-Object.assign(actions, sensorPartials.actions)
-Object.assign(observers, sensorPartials.observers)
+Object.assign(actions, allActions)
+Object.assign(observers, allObservers)
 
 watcher.register(components)
 watcher.init()

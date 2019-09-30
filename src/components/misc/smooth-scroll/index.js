@@ -1,7 +1,7 @@
-import Animation from '../../utils/animation'
-import { easeOutExpo } from '../../utils/easings'
-import { browser } from '../../utils/detect-browser'
-import { getViewportOverflow, getViewportScroller } from '../../utils/overflow'
+import Animation from '../../../utils/animation'
+import { easeOutExpo } from '../../../utils/easings'
+import { browser } from '../../../utils/detect-browser'
+import { getViewportOverflow, getViewportScroller } from '../../../utils/overflow'
 
 // https://www.w3.org/TR/uievents/#events-wheelevents
 // - handle deltaMode (firefox uses different one)

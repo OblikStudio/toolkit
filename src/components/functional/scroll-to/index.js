@@ -1,11 +1,12 @@
-// todo:
-// - when clicking on a link, the document fragment is not added to the address bar (due to preventDefault)
-// - the cliecked element should be focused as per default behavior
+/**
+ * @todo when clicking on a link, the document fragment is not added to the
+ * address bar (due to preventDefault)
+ * @todo the cliecked element should be focused as per default behavior
+ */
 
-import Component from '../component'
-import Animation from '../../utils/animation'
-import { offsetGlobal, getTag } from '../../utils/dom'
-import { browser } from '../../utils/detect-browser'
+import Animation from '../../../utils/animation'
+import { offsetGlobal, getTag } from '../../../utils/dom'
+import { browser } from '../../../utils/detect-browser'
 
 const useBody = browser().match(/safari|edge/)
 
