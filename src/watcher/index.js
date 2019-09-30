@@ -69,7 +69,7 @@ export function register (components) {
 
 export function init (element = document.body) {
   var observer = new Observer(element, {
-    prefix: 'mb',
+    prefix: 'ob',
     separator: '-'
   })
 
