@@ -1,6 +1,6 @@
 import EventEmitter from 'events'
 
-export default class extends EventEmitter {
+export class Drag extends EventEmitter {
   constructor (element, options) {
     super()
     this.element = element

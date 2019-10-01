@@ -1,7 +1,7 @@
-import query from 'querel'
-import * as overflow from './overflow'
+export { default as query } from 'querel'
 
-export {
-  query,
-  overflow
-}
+export * from './animation'
+export * from './detect'
+export * from './dom'
+export * from './drag'
+export * from './overflow'

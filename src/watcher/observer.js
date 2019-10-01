@@ -1,5 +1,5 @@
 import EventEmitter from 'events'
-import { get as getAttributes } from '../utils/attributes'
+import getAttributes from './attributes'
 
 export default class extends EventEmitter {
   constructor (element, settings) {

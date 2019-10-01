@@ -4,9 +4,9 @@
  * @todo the cliecked element should be focused as per default behavior
  */
 
-import Animation from '../../../utils/animation'
+import { Animation } from '../../../utils/animation'
 import { offsetGlobal, getTag } from '../../../utils/dom'
-import { browser } from '../../../utils/detect-browser'
+import { browser } from '../../../utils/detect'
 
 const useBody = browser().match(/safari|edge/)
 

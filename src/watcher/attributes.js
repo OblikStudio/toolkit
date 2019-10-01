@@ -2,7 +2,7 @@ import { Parser } from 'slic'
 
 const slic = new Parser()
 
-export function parseName (input, separator) {
+function parseName (input, separator) {
 	var split = input.split(separator)
 	var prefix = split.shift()
 	var componentFullName = split.join(separator)
@@ -25,7 +25,7 @@ export function parseName (input, separator) {
 	}
 }
 
-export function parseValue (input) {
+function parseValue (input) {
   if (!input || typeof input !== 'string') {
     return undefined
   }
@@ -37,7 +37,7 @@ export function parseValue (input) {
 	}
 }
 
-export function get (element, settings) {
+export default function getAttributes (element, settings) {
 	var values = []
 
 	for (var attribute of element.attributes) {

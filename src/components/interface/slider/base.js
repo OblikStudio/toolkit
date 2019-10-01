@@ -1,5 +1,5 @@
 import Component from '../../component'
-import Drag from '../../../utils/drag'
+import { Drag } from '../../../utils/drag'
 import { getTag } from '../../../utils/dom'
 
 export default class extends Component {
