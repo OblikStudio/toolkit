@@ -3,7 +3,9 @@
   "version": "0.2.0",
   "description": "Toolkit with minimal, composable, and renderless UI components and uitilities.",
   "scripts": {
-    "dev": "webpack-cli --watch --mode=development"
+    "transpile": "tsc",
+    "serve": "webpack-dev-server",
+    "dev": "run-p transpile serve"
   },
   "repository": {
     "type": "git",
@@ -27,16 +29,15 @@
   },
   "homepage": "https://github.com/oblikjs/oblik#readme",
   "dependencies": {
-    "@types/lodash-es": "^4.17.3",
     "core-js": "^3.2.1",
     "lodash-es": "^4.17.15",
     "querel": "^1.0.0",
     "slic": "^1.0.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.4.4",
-    "@babel/preset-env": "^7.4.4",
-    "babel-loader": "^8.0.6",
+    "@types/lodash-es": "^4.17.3",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^3.6.3",
     "webpack": "^4.35.3",
     "webpack-cli": "^3.3.9",
     "webpack-dev-server": "^3.8.1"
