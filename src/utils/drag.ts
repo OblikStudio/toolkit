@@ -1,7 +1,25 @@
-import EventEmitter from 'events'
+import { EventEmitter } from 'events'
+
+function isTouchEvent (event: Event): event is TouchEvent {
+  return (event.type && event.type.indexOf('touch') === 0)
+}
+
+interface Point {
+  x: number
+  y: number
+}
 
 export class Drag extends EventEmitter {
-  constructor (element, options) {
+  element: HTMLElement
+  activeTouch: Touch
+  angles: number[]
+  direction: number
+  startHandler: () => any
+  moveHandler: () => any
+  endHandler: () => any
+  lastClientPosition: Point
+  
+  constructor (element) {
     super()
     this.element = element
     this.activeTouch = null
@@ -38,8 +56,8 @@ export class Drag extends EventEmitter {
     return assigned
   }
 
-  start (event) {
-    if (event.type === 'touchstart') {
+  start (event: MouseEvent | TouchEvent) {
+    if (isTouchEvent(event)) {
       var previousTouch = this.activeTouch
 
       this.activeTouch = event.changedTouches[0]
@@ -50,6 +68,13 @@ export class Drag extends EventEmitter {
         return
       }
     }
+
+    /**
+     * Touch properties are assigned to the TouchEvent so clientX and clientY
+     * are available, like a MouseEvent.
+     * @todo let's not do that.
+     */
+    event = event as MouseEvent
 
     this.angles = []
     this.direction = null

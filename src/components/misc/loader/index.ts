@@ -1,10 +1,18 @@
 import Component from '../../component'
 import { getTag } from '../../../utils/dom'
 
+interface LoaderOptions {
+  delay: number
+  wait: number
+}
+
 export default class extends Component {
-  constructor () {
-    super(...arguments)
-    
+  $options: LoaderOptions
+  activeLink: HTMLElement
+  animating: boolean
+  redirecting: boolean
+
+  $create () {
     this.$options = Object.assign({
       delay: 0,
       wait: 1000

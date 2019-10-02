@@ -1,7 +1,19 @@
 import { linear } from './easings'
 
 export class Tween {
-  constructor (callback, duration, easing) {
+  callback: Function
+  duration: number
+  easing: Function
+
+  elapsed: number
+  progress: number
+  value: number
+  stamp: number
+  delta: number
+
+  isComplete: boolean
+
+  constructor (callback: Function, duration: number, easing: Function) {
     this.callback = callback
     this.duration = duration
     this.easing = easing
@@ -51,8 +63,19 @@ export class Tween {
   }
 }
 
+interface AnimationOptions {
+  update: Function
+  duration: number
+  easing: Function
+  values: object
+}
+
 export class Animation extends Tween {
-  constructor (options) {
+  isRunning: boolean
+  isTicking: boolean
+  values: object
+
+  constructor (options: AnimationOptions) {
     super(options.update, options.duration, options.easing)
     this.isRunning = false
     this.isTicking = false

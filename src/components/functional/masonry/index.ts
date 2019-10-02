@@ -13,10 +13,8 @@ function nodesIntersect (a, b) {
 }
 
 export default class extends Component {
-  constructor () {
-    super(...arguments)
-    this.$item = []
-  }
+  $item: Component[] = []
+  updateHandler: () => any
 
   $init () {
     this.updateHandler = this.updateItems.bind(this)

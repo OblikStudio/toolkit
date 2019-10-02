@@ -2,9 +2,23 @@ import { query } from '../../../utils'
 import { debounce } from 'lodash-es'
 import Component from '../../component'
 
-export default class extends Component {
-	constructor () {
-		super(...arguments)
+interface ToggleOptions {
+	on: keyof GlobalEventHandlersEventMap
+	off: keyof GlobalEventHandlersEventMap
+	class: string
+	delay: null
+	target: string
+}
+
+export default class Toggle extends Component {
+	$options: ToggleOptions
+	targets: ReturnType<typeof query>
+	state = false
+	onHandler: () => void
+	offHandler: () => void
+	offHandlerDebounced: ReturnType<typeof debounce>
+
+	$create () {
 		this.$options = Object.assign({
 			on: 'click',
 			off: null,
@@ -14,14 +28,13 @@ export default class extends Component {
 
 		this.targets = query(this.$element, this.$options.target)
 
-		this.state = false
-
 		if (this.$options.off && this.$options.off !== this.$options.on) {
 			this.onHandler = this.on.bind(this)
 			this.offHandler = this.off.bind(this)
 
 			if (typeof this.$options.delay === 'number') {
-				this.offHandler = debounce(this.offHandler, this.$options.delay)
+				this.offHandlerDebounced = debounce(this.offHandler, this.$options.delay)
+				this.offHandler = this.offHandlerDebounced
 			}
 
 			this.$element.addEventListener(this.$options.off, this.offHandler)
@@ -33,8 +46,8 @@ export default class extends Component {
 	}
 
 	on () {
-		if (this.offHandler && this.offHandler.cancel) {
-			this.offHandler.cancel()
+		if (this.offHandlerDebounced) {
+			this.offHandlerDebounced.cancel()
 		}
 
 		if (this.state === false) {

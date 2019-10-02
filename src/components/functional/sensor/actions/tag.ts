@@ -1,5 +1,14 @@
-export default class {
-	constructor (effect, options) {
+import { Action } from '..'
+
+interface TagOptions {
+	class: string
+}
+
+export default class Tag implements Action {
+	element: HTMLElement
+	options: TagOptions
+
+	constructor (effect, options: TagOptions) {
 		this.element = effect.sensor.element
 		this.options = Object.assign({
 			class: 'is-active'

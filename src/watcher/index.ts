@@ -1,22 +1,35 @@
 import * as factory from './factory'
 import Observer from './observer'
 
-const _components = {}
+interface ComponentSchema {
+  // @ts-ignore
+  $base: Function,
+  [key: string]: Component
+}
 
-function findComponentDefinition (componentFullName) {
+type Component = ComponentSchema | object
+
+interface ComponentRegistry {
+  [key: string]: Component
+}
+
+const _components: ComponentRegistry = {}
+
+function findComponentDefinition (componentFullName: string) {
   var obj = _components
   var path = componentFullName.split('-')
+  var component: Component
 
   for (var part of path) {
     if (obj) {
-      obj = obj[part]
+      component = obj[part]
     }
   }
 
-  if (typeof obj === 'function') {
-    return obj
-  } else if (obj && typeof obj.$base === 'function') {
-    return obj.$base
+  if (typeof component === 'function') {
+    return component
+  } else if (component && "$base" in component) {
+    return component.$base
   }
 
   return null

@@ -1,6 +1,5 @@
-import Animation from '../../../utils/animation'
+import { Animation } from '../../../utils/animation'
 import { easeOutExpo } from '../../../utils/easings'
-import { browser } from '../../../utils/detect-browser'
 import { getViewportOverflow, getViewportScroller } from '../../../utils/overflow'
 
 // https://www.w3.org/TR/uievents/#events-wheelevents
@@ -46,12 +45,12 @@ function findScroller (element, delta) {
       }
 
       if (isRoot) {
-        var overflow = getViewportOverflow()
+        let overflow = getViewportOverflow()
         if (overflow.y !== 'auto') {
           continue
         }
       } else {
-        var overflow = window.getComputedStyle(element).overflowY
+        let overflow = window.getComputedStyle(element).overflowY
         if (overflow && !overflow.match(/auto|scroll/)) {
           continue
         }

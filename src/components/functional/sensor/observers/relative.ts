@@ -1,4 +1,21 @@
-export default class {
+import { Observer } from '..'
+
+interface RelativeOptions {
+	offset: number
+	target: string
+	area: string
+}
+
+export default class Relative implements Observer {
+	options: RelativeOptions
+	targetElement: HTMLElement
+	areaCompare: string
+	areaEdge: string
+	$stickyOffset = {
+		x: 0,
+		y: 0
+	}
+
 	constructor (effect, options) {
 		this.options = Object.assign({
 			offset: 0,
@@ -7,10 +24,6 @@ export default class {
 		}, options)
 
 		this.targetElement = null
-		this.$stickyOffset = {
-			x: 0,
-			y: 0
-		}
 
 		var area = this.options.area.split(' ')
 		this.areaCompare = area[0]

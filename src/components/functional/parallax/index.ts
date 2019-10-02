@@ -35,6 +35,20 @@ export function registerEasigns (input) {
 }
 
 export default class {
+  element: HTMLElement
+  options: {
+    type: string
+    reference: string
+    easing: string
+    axis: string
+    name: string,
+    clamp: boolean
+  }
+  reference: Window
+  transform: (value: number) => any
+  easing: () => any
+  handler: () => any
+
   constructor (element, options) {
     this.element = element
     this.options = Object.assign({

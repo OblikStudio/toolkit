@@ -83,6 +83,16 @@ export function easings (values) {
 }
 
 export default class {
+  element: HTMLElement
+  options: {
+    duration: number
+    event: string
+    target: string
+    easing: string
+  }
+  target: HTMLElement
+  handler: (event) => any
+
   constructor (element, options) {
     this.element = element
     this.options = Object.assign({

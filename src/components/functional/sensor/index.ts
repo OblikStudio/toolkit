@@ -1,13 +1,26 @@
 export const observers = {}
 export const actions = {}
 
-class Effect {
-	constructor (sensor) {
-		this.sensor = sensor
+export interface Observer {
+	$check: (data: any) => boolean
+	$destroy?: () => void
+	$stickyOffset?: object
+}
 
-		this.observer = null
-		this.action = null
-		this.observerResult = undefined
+export interface Action {
+	$update: (result: boolean, observer: Observer) => void
+	$refresh?: (data: any) => void
+	$destroy?: () => any
+}
+
+export class Effect {
+	sensor: Sensor
+	observer: Observer
+	action: Action
+	observerResult: any
+
+	constructor (sensor: Sensor) {
+		this.sensor = sensor
 	}
 
 	setObserver (observer) {
@@ -42,7 +55,11 @@ class Effect {
 	}
 }
 
-class Sensor {
+export class Sensor {
+	element: HTMLElement
+	effects: Effect[]
+	updateHandler: () => void
+
 	constructor (element, options) {
 		this.element = element
 		this.effects = []

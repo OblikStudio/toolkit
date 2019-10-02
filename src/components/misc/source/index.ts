@@ -1,11 +1,19 @@
 import Component from '../../component'
 
-const conditions = {}
+interface Conditions {
+  [key: string]: (options: object) => boolean
+}
+
+interface SourceOptions {
+  default: string
+}
+
+const conditions: Conditions = {}
 
 class Source extends Component {
-  constructor () {
-    super(...arguments)
+  $options: SourceOptions
 
+  $create () {
     var hasSet = false
     var defaultSource = this.$options && this.$options.default
 

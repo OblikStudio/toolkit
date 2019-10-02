@@ -1,4 +1,10 @@
 export default class {
+  element: HTMLElement
+  varName: string
+  varElement: HTMLElement
+  updateHandler: () => any
+  observer: MutationObserver
+
 	constructor (element, options) {
 		this.element = element
 
@@ -34,7 +40,7 @@ export default class {
     var value
     var element = this.element.firstElementChild
 
-    if (element) {
+    if (element instanceof HTMLElement) {
       value = element.offsetHeight + 'px'
     }
 

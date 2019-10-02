@@ -4,6 +4,7 @@
  * @todo update elements on resize when fixed
  */
 
+import { Action, Effect, Sensor } from '../index'
 import { query } from '../../../../utils'
 
 /**
@@ -31,8 +32,43 @@ const PLACEHOLDER_COPIED_PROPERTIES = [
 	'box-sizing'
 ]
 
-export default class {
-	constructor (effect, options) {
+interface StickyOptions {
+	animate: boolean
+	animationTarget: string
+	initialAnimation: boolean
+	setWidth: boolean
+	classFixed: string
+	classUnfixed: string
+	classTransition: string
+	bounds: string
+}
+
+interface Offset {
+	x?: number,
+	y?: number
+}
+
+export default class Sticky implements Action {
+	effect: Effect
+	sensor: Sensor
+	options: StickyOptions
+
+	element: HTMLElement
+	static: HTMLElement
+	boundsElement: HTMLElement = null
+	animationElement: HTMLElement
+	placeholder: HTMLElement
+
+	isFixed = false
+	isAbsolute = false
+	boundsRatio = 0
+	offset = {
+		y: 0
+	}
+	animationHandler: () => void
+	elementLatestStyles: CSSStyleDeclaration
+
+	constructor (effect, options: StickyOptions) {
 		this.effect = effect
 		this.sensor = effect.sensor
 		this.options = Object.assign({
@@ -47,22 +83,13 @@ export default class {
 
 		this.element = this.sensor.element
 		this.static = this.element
-		this.isFixed = false
-		this.isAbsolute = false
-		this.boundsElement = null
-		this.boundsRatio = null
-		this.offset = {
-			x: 'auto',
-			y: 0
-		}
-
 		this.animationElement = (this.options.animationTarget)
 			? document.querySelector(this.options.animationTarget)
 			: this.element
 
 		this.placeholder = document.createElement('div')
 		this.placeholder.style.display = 'none'
-		this.placeholder.style.opacity = 0
+		this.placeholder.style.opacity = '0'
 		this.placeholder.style.pointerEvents = 'none'
 		this.element.parentNode.insertBefore(this.placeholder, this.element.nextSibling)
 		this.updatePlaceholder()
@@ -105,9 +132,9 @@ export default class {
 	}
 
 	applyFixed (value) {
-		var value = !!value
-		if (this.isFixed !== value) {
-			this.isFixed = value
+		var state = !!value
+		if (this.isFixed !== state) {
+			this.isFixed = state
 		} else {
 			return
 		}
@@ -141,7 +168,7 @@ export default class {
 		this.sensor.element = this.static
 	}
 
-	applyAbsolute (value, location) {
+	applyAbsolute (value, location?: Offset) {
 		this.isAbsolute = !!value
 
 		if (this.isAbsolute) {

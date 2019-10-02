@@ -1,22 +1,30 @@
 import Component from '../../component'
 import { Drag } from '../../../utils/drag'
 import { getTag } from '../../../utils/dom'
+import { Slide } from './slide'
 
-export default class extends Component {
-  constructor () {
-    super(...arguments)
+interface Point {
+  x: number
+  y: number
+}
 
-    this.$slide = []
+export class Slider extends Component {
+  $slide: Slide[] = []
+  rect: ClientRect
+  activeSlide: Slide
+  currentSlide: Slide
+  centerSlide: Slide
+  origin: Point
+  dragOrigin: Point
+  deltas: Point[]
+  totalDelta: Point
+  center: number
+  clickThreshold = 40
+  isDraggingLink: boolean
+  isDrag: boolean
+  drag: Drag
 
-    this.activeSlide = null
-    this.currentSlide = null
-    this.centerSlide = null
-
-    this.dragOrigin = null
-    this.deltas = null
-    this.totalDelta = null
-
-    this.rect = null
+  $create () {
     this.clickThreshold = 40
     this.isDraggingLink = null
     this.isDrag = null
@@ -175,19 +183,19 @@ export default class extends Component {
     var nextSlide = this.$slide[index + 1]
 
     if (direction === 1) {
-      if (nextSlide && this.rect.centerX > this.currentSlide.rect.thresholdRight) {
+      if (nextSlide && this.center > this.currentSlide.rect.thresholdRight) {
         this.setCurrentSlide(nextSlide)
       }
 
-      if (prevSlide && this.rect.centerX < prevSlide.rect.thresholdRight) {
+      if (prevSlide && this.center < prevSlide.rect.thresholdRight) {
         this.setCurrentSlide(prevSlide)
       }
     } else if (direction === -1) {
-      if (prevSlide && this.rect.centerX < this.currentSlide.rect.thresholdLeft) {
+      if (prevSlide && this.center < this.currentSlide.rect.thresholdLeft) {
         this.setCurrentSlide(prevSlide)
       }
 
-      if (nextSlide && this.rect.centerX > nextSlide.rect.thresholdLeft) {
+      if (nextSlide && this.center > nextSlide.rect.thresholdLeft) {
         this.setCurrentSlide(nextSlide)
       }
     }
@@ -217,7 +225,7 @@ export default class extends Component {
     }
 
     this.rect = this.$element.getBoundingClientRect()
-    this.rect.centerX = this.rect.left + (this.rect.width / 2)
+    this.center = this.rect.left + (this.rect.width / 2)
 
     this.$slide.forEach(slide => slide.update())
     this.updateCenterSlide()
@@ -279,4 +287,9 @@ export default class extends Component {
       slide.$element.style.transform = `translateX(${ itemsX }px)`
     })
   }
+}
+
+export default {
+  $base: Slider,
+  slide: Slide
 }

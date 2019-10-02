@@ -68,12 +68,8 @@ export function getViewportScroller () {
  * Checks if the element can be scrolled by a certain amount on the specified
  * axis. If the result is boolean, it can either be scrolled or not. If it's a
  * number, it can only be scrolled by the returned amount.
- * @param {Element} element 
- * @param {number} delta 
- * @param {string} axis "x" or "y"
- * @return {boolean|number}
  */
-export function canBeScrolled (element, delta = 0, axis = 'y') {
+export function canBeScrolled (element: HTMLElement, delta = 0): number | boolean {
   var current = element.scrollLeft
   var limit = element.scrollWidth - element.offsetWidth
   var value = current + delta

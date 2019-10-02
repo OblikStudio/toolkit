@@ -27,6 +27,7 @@
   },
   "homepage": "https://github.com/oblikjs/oblik#readme",
   "dependencies": {
+    "@types/lodash-es": "^4.17.3",
     "core-js": "^3.2.1",
     "lodash-es": "^4.17.15",
     "querel": "^1.0.0",

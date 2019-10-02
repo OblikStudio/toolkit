@@ -1,25 +1,37 @@
-import Emitter from 'events'
+import { EventEmitter } from 'events'
 
-export default class {
-  constructor (element, value) {
+export default class Component {
+  $element: HTMLElement
+  $options: object
+  $parent: Component
+  $emitter: EventEmitter
+
+  _name: string
+  _children: Component[]
+  _destroyed: boolean
+
+  constructor (element: HTMLElement, options: object) {
     this.$element = element
-    this.$options = value
+    this.$options = options
     this.$parent = null
-    this.$emitter = new Emitter()
+    this.$emitter = new EventEmitter()
 
     this._name = null
     this._children = []
     this._destroyed = false
+    this.$create()
   }
 
-  $addComponent (component) {
+  $create () {}
+
+  $addComponent (component: Component) {
     if (this._children.indexOf(component) < 0) {
       this._children.push(component)
       this.$emitter.emit(component._name + ':added', component)
     }
   }
 
-  $removeComponent (component) {
+  $removeComponent (component: Component) {
     var index = this._children.indexOf(component)
     if (index >= 0) {
       this._children.splice(index, 1)
