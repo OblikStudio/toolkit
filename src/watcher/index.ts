@@ -16,20 +16,20 @@ interface ComponentRegistry {
 const _components: ComponentRegistry = {}
 
 function findComponentDefinition (componentFullName: string) {
-  var obj = _components
+  var value = _components
   var path = componentFullName.split('-')
-  var component: Component
 
   for (var part of path) {
-    if (obj) {
-      component = obj[part]
+    if (value) {
+      // @ts-ignore
+      value = value[part]
     }
   }
 
-  if (typeof component === 'function') {
-    return component
-  } else if (component && "$base" in component) {
-    return component.$base
+  if (typeof value === 'function') {
+    return value
+  } else if (value && "$base" in value) {
+    return value.$base
   }
 
   return null
