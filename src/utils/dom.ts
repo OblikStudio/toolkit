@@ -9,7 +9,11 @@ export function collection (input) {
 }
 
 export function refreshAnimation (input) {
-  collection(input).forEach(node => {
+  if (!Array.isArray(input)) {
+    input = collection(input)
+  }
+
+  input.forEach(node => {
     node.style.animation = '0'
     void node.offsetWidth // trigger reflow
     node.style.animation = ''
