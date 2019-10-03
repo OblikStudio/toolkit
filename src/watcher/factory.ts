@@ -83,8 +83,8 @@ export function create (node, component, meta) {
 }
 
 export function destroy (node, instance, meta) {
-  if (typeof instance.destroy === 'function') {
-    instance.destroy()
+  if (typeof instance.$destroy === 'function') {
+    instance.$destroy()
   }
 
   var parentComponent = instance.$parent

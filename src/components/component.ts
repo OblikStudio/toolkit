@@ -44,13 +44,11 @@ export default class Component {
       return
     }
 
-    if (this.$parent) {
-      this.$parent.$removeComponent(this)
-      this.$parent = null
-    }
-
-    this._children.forEach(child => child.$destroy())
-    this._children = null
+    /**
+     * No need to destroy children because the observer will walk over them and
+     * destroy them.
+     */
+    
     this._destroyed = true
   }
 }
