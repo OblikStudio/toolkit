@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
     "watch": true,
-    "outDir": "js"
+    "outDir": "js",
+    "declaration": true
   },
   "include": [
     "src/**/*"

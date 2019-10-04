@@ -1,7 +1,12 @@
 import { Emitter } from '../utils'
 import getAttributes from './attributes'
 
-export default class extends Emitter {
+export default interface Observer {
+  on(event: 'added' | 'removed', callback: (node: HTMLElement, result: any) => void): this
+  on(event: string, callback: (...args: any[]) => void): this
+}
+
+export default class Observer extends Emitter {
   element: Element
   settings: object
   observer: MutationObserver
