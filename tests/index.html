@@ -23,10 +23,23 @@
       li {
         margin: 11px;
       }
+
+    [ob-height] {
+      overflow: hidden;
+      transition: height 0.4s ease;
+    }
+    [ob-height]:not(.is-active) {
+      height: 0 !important;
+    }
   </style>
 </head>
 <body style="overflow-x: hidden; min-height: 200vh;">
   <p style="width: 120vw;">wrapper</p>
+
+  <button ob-toggle="target: @sibling">toggle</button>
+  <div ob-height>
+    <p style="margin: 0; max-width: 200px;">It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as opposed to using 'Content here, content here', making it look like readable English.</p>
+  </div>
 
   <div class="container">
     <p ob-scrollto="target: #last, easing: easeOutQuint">last</p>

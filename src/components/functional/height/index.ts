@@ -1,33 +1,38 @@
-export default class {
-  element: HTMLElement
+import Component from '../../component'
+
+interface Options {
+  var: string
+  target: string
+}
+
+export class Height extends Component {
+  $options: Options
   varName: string
   varElement: HTMLElement
   updateHandler: () => any
   observer: MutationObserver
 
-	constructor (element, options) {
-		this.element = element
-
+	$create () {
     this.varName = 'height'
     this.varElement = null
 		this.updateHandler = this.update.bind(this)
 
 		this.observer = new MutationObserver(this.updateHandler)
-		this.observer.observe(this.element, {
+		this.observer.observe(this.$element, {
 			attributes: true,
 			childList: true,
 			subtree: true
 		})
 
-    if (options && options.var) {
-      if (typeof options.var === 'string') {
-        this.varName = options.var
+    if (this.$options && this.$options.var) {
+      if (typeof this.$options.var === 'string') {
+        this.varName = this.$options.var
       }
 
-      if (options.target) {
-        this.varElement = document.querySelector(options.target)
+      if (this.$options.target) {
+        this.varElement = document.querySelector(this.$options.target)
       } else {
-        this.varElement = this.element.parentElement
+        this.varElement = this.$element.parentElement
       }
     }
 
@@ -38,7 +43,7 @@ export default class {
 
 	update () {
     var value
-    var element = this.element.firstElementChild
+    var element = this.$element.firstElementChild
 
     if (element instanceof HTMLElement) {
       value = element.offsetHeight + 'px'
@@ -47,7 +52,7 @@ export default class {
     if (this.varElement) {
       this.varElement.style.setProperty('--' + this.varName, value)
     } else if (value) {
-      this.element.style.height = value
+      this.$element.style.height = value
     }
 	}
 
@@ -56,4 +61,8 @@ export default class {
 		window.removeEventListener('load', this.updateHandler)
 		this.observer.disconnect()
 	}
+}
+
+export default {
+  $base: Height
 }
