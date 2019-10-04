@@ -31,10 +31,48 @@
     [ob-height]:not(.is-active) {
       height: 0 !important;
     }
+
+    [ob-slider] {
+      display: flex;
+      flex-wrap: nowrap;
+    }
+
+    [ob-slider-slide] {
+      width: 100%;
+      flex: 1 0 auto;
+    }
+
+    [ob-slider]:not(.is-dragged) > [ob-slider-slide] {
+      transition: transform 0.3s ease;
+    }
+  </style>
+
+  <style>
+    [ob-slider] {
+      overflow: hidden;
+    }
+    [ob-slider-slide] {
+      box-sizing: border-box;
+      padding: 20px;
+    }
   </style>
 </head>
 <body style="overflow-x: hidden; min-height: 200vh;">
   <p style="width: 120vw;">wrapper</p>
+
+  <div ob-slider style="margin: 40px; width: 200px;">
+    <div ob-slider-slide style="background: #666">1</div>
+    <div ob-slider-slide style="background: #888">
+      <div ob-slider style="width: 100%;">
+        <div ob-slider-slide style="background: #444">1</div>
+        <div ob-slider-slide style="background: #666">2</div>
+        <div ob-slider-slide style="background: #aaa">3</div>
+        <div ob-slider-slide style="background: #ccc">4</div>
+      </div>
+    </div>
+    <div ob-slider-slide style="background: #aaa">3</div>
+    <div ob-slider-slide style="background: #ccc">4</div>
+  </div>
 
   <button ob-toggle="target: @sibling">toggle</button>
   <div ob-height>

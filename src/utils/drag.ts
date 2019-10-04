@@ -1,4 +1,4 @@
-import { EventEmitter } from 'events'
+import { Emitter } from '.'
 
 function isTouchEvent (event: Event): event is TouchEvent {
   return (event.type && event.type.indexOf('touch') === 0)
@@ -9,7 +9,7 @@ interface Point {
   y: number
 }
 
-export class Drag extends EventEmitter {
+export class Drag extends Emitter {
   element: HTMLElement
   activeTouch: Touch
   angles: number[]

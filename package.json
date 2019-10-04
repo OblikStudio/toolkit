@@ -32,7 +32,8 @@
     "core-js": "^3.2.1",
     "lodash-es": "^4.17.15",
     "querel": "^1.0.0",
-    "slic": "^1.0.0"
+    "slic": "^1.0.0",
+    "tiny-emitter": "^2.1.0"
   },
   "devDependencies": {
     "@types/lodash-es": "^4.17.3",

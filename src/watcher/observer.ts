@@ -1,7 +1,7 @@
-import { EventEmitter } from 'events'
+import { Emitter } from '../utils'
 import getAttributes from './attributes'
 
-export default class extends EventEmitter {
+export default class extends Emitter {
   element: Element
   settings: object
   observer: MutationObserver

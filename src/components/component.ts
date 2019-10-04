@@ -1,10 +1,10 @@
-import { EventEmitter } from 'events'
+import { Emitter } from '../utils'
 
 export default class Component {
   $element: HTMLElement
   $options: object
   $parent: Component
-  $emitter: EventEmitter
+  $emitter: Emitter
 
   _name: string
   _children: Component[]
@@ -14,7 +14,7 @@ export default class Component {
     this.$element = element
     this.$options = options
     this.$parent = null
-    this.$emitter = new EventEmitter()
+    this.$emitter = new Emitter()
 
     this._name = null
     this._children = []
