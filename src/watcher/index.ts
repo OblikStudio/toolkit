@@ -1,5 +1,6 @@
+import { Observer } from '../utils'
 import * as factory from './factory'
-import Observer from './observer'
+import getAttributes from './attributes'
 
 interface ComponentSchema {
   // @ts-ignore
@@ -35,7 +36,12 @@ function findComponentDefinition (componentFullName: string) {
   return null
 }
 
-function createComponents (node, attributes) {
+function createComponents (node) {
+  let attributes = getAttributes(node, {
+    prefix: 'ob',
+    separator: '-'
+  })
+
   if (!node.minibits) {
     node.minibits = {}
   }
@@ -65,7 +71,12 @@ function initComponents (node) {
   }
 }
 
-function destroyComponents (node, attributes) {
+function destroyComponents (node) {
+  let attributes = getAttributes(node, {
+    prefix: 'ob',
+    separator: '-'
+  })
+
   attributes.forEach((data) => {
     var instance = node.minibits && node.minibits[data.componentFullName]
     if (instance) {
@@ -81,16 +92,22 @@ export function register (components) {
 }
 
 export function init (element = document.body) {
-  var observer = new Observer(element, {
-    prefix: 'ob',
-    separator: '-'
+  var observer = new Observer(element, element => {
+    if (element instanceof HTMLElement) {
+      // @ts-ignore
+      for (let attribute of element.attributes) {
+        if (attribute.name.match(/^ob\-/)) {
+          return true
+        }
+      }
+    }
   })
 
   observer.on('added', createComponents)
   observer.on('searched', initComponents)
   observer.on('removed', destroyComponents)
 
-  observer.addNode(observer.element)
+  observer.add(element)
 }
 
 export default {

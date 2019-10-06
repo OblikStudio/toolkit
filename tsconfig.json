@@ -2,7 +2,9 @@
   "compilerOptions": {
     "watch": true,
     "outDir": "js",
-    "declaration": true
+    "declaration": true,
+    "strictBindCallApply": true,
+    "downlevelIteration": true
   },
   "include": [
     "src/**/*"
