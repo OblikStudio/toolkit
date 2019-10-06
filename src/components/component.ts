@@ -10,10 +10,11 @@ export default class Component {
   _children: Component[]
   _destroyed: boolean
 
-  constructor (element: HTMLElement, options: object) {
+  constructor (element: HTMLElement, options: object, parent: Component | null) {
     this.$element = element
     this.$options = options
-    this.$parent = null
+    this.$parent = parent
+
     this.$emitter = new Emitter()
 
     this._name = null
