@@ -1,8 +1,8 @@
 import { query } from '../../../utils'
 import { debounce } from 'lodash-es'
-import Component from '../../component'
+import { Component, Schema } from '../../component'
 
-interface ToggleOptions {
+interface Options {
 	on: keyof GlobalEventHandlersEventMap
 	off: keyof GlobalEventHandlersEventMap
 	class: string
@@ -10,8 +10,16 @@ interface ToggleOptions {
 	target: string
 }
 
-export default class Toggle extends Component {
-	$options: ToggleOptions
+export default class Toggle extends Component<Options> {
+	static $model: Schema<Options> = {
+		options: {
+			on: 'click',
+			off: null,
+			class: 'is-active',
+			delay: null
+		}
+	}
+
 	targets: ReturnType<typeof query>
 	state = false
 	onHandler: () => void
@@ -19,13 +27,6 @@ export default class Toggle extends Component {
 	offHandlerDebounced: ReturnType<typeof debounce>
 
 	$create () {
-		this.$options = Object.assign({
-			on: 'click',
-			off: null,
-			class: 'is-active',
-			delay: null
-		}, this.$options)
-
 		this.targets = query(this.$element, this.$options.target)
 
 		if (this.$options.off && this.$options.off !== this.$options.on) {

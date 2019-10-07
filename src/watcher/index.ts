@@ -1,22 +1,13 @@
 import { Parser } from 'slic'
-import { Observer } from '../utils'
-import * as factory from './factory'
-import getAttributes from './attributes'
+import { Observer, findAncestor } from '../utils'
 import Component from '../components/component'
 
-const slic = new Parser()
-
 interface ComponentList {
-  [key: string]: ComponentSchema
-}
-
-interface ComponentSchema {
-  definition: typeof Component,
-  components: ComponentList
+  [key: string]: new (...args: any[]) => Component<any>
 }
 
 interface ComponentInstances {
-  [key: string]: Component
+  [key: string]: Component<any>
 }
 
 interface ComponentMeta {
@@ -31,45 +22,11 @@ interface ComponentMeta {
 }
 
 interface WatcherSettings {
-  prefix: string
+  prefix?: string
   components: ComponentList
 }
 
-let defaults: Partial<WatcherSettings> = {
-  prefix: 'ob',
-  components: {}
-}
-
-function findAncestorByAttribute (element: Element, attribute: string) {
-  while (element = element.parentElement) {
-    if (element.hasAttribute(attribute)) {
-      return element
-    }
-  }
-
-  return null
-}
-
-function findParentComponent (node, meta) {
-  var parent = null
-  var parentComponent = null
-
-  if (meta.parentAttribute) {
-    parent = findAncestorByAttribute(node, meta.parentAttribute)
-
-    if (parent) {
-      parentComponent = parent.minibits && parent.minibits[meta.parentName]
-
-      if (!parentComponent) {
-        throw new Error(`Component instance of parent ${ meta.parentAttribute } not found.`)
-      }
-    } else {
-      throw new Error(`Parent ${ meta.parentAttribute } not found.`)
-    }
-  }
-
-  return parentComponent
-}
+const slic = new Parser()
 
 function parseValue (input) {
   if (!input || typeof input !== 'string') {
@@ -84,6 +41,11 @@ function parseValue (input) {
 }
 
 export class Watcher {
+  static defaults: Partial<WatcherSettings> = {
+    prefix: 'ob',
+    components: {}
+  }
+
   element: HTMLElement
   components: ComponentList
   attrRegex: RegExp
@@ -91,26 +53,31 @@ export class Watcher {
   hosts: Map<Element, ComponentInstances>
 
   constructor (element: HTMLElement, settings: WatcherSettings) {
-    settings = Object.assign(settings, defaults)
+    settings = Object.assign(Watcher.defaults, settings)
 
     this.element = element
     this.components = settings.components
+    this.hosts = new Map()
     this.attrRegex = new RegExp(`^${ settings.prefix }\\-(.*)`)
 
     this.observer = new Observer(this.element, node => {
-      if (element instanceof HTMLElement) {
+      if (node instanceof HTMLElement) {
         // @ts-ignore
-        for (let attribute of element.attributes) {
+        for (let attribute of node.attributes) {
           if (this.attrRegex.exec(attribute.name)) {
             return true
           }
         }
       }
     })
+
+    this.observer.on('added', this.createComponents.bind(this))
+    this.observer.on('removed', this.destroyComponents.bind(this))
+    this.observer.on('searched', this.initComponents.bind(this))
   }
 
   getInstance (element: Element): ComponentInstances
-  getInstance (element: Element, componentName: string): Component
+  getInstance (element: Element, componentName: string): Component<any>
   getInstance (element: Element, componentName?: string): any {
     let instances = this.hosts.get(element)
 
@@ -125,29 +92,29 @@ export class Watcher {
     return null
   }
 
-  getDefinition (componentId: string) {
+  getConstructor (componentId: string) {
     let path = componentId.split('-')
     let name = path.shift()
-    let model = this.components[name]
+    let ctor = this.components[name] as typeof Component
 
-    if (model) {
+    if (path.length) {
       for (let childName of path) {
-        let subcomponents = model.components
-        if (subcomponents && subcomponents[childName]) {
-          model = subcomponents[childName]
+        let model = ctor && ctor.$model
+        let child = model && model.components && model.components[childName]
+
+        if (child) {
+          ctor = child
         } else {
           throw new Error(`Missing subcomponent of ${ name }: ${ childName }`)
         }
       }
-      
-      if (typeof model.definition === 'function') {
-        return model.definition
-      } else {
-        throw new Error(`Missing definition: ${ componentId }`)
-      } 
-    } else {
+    }
+
+    if (typeof ctor !== 'function') {
       throw new Error(`Missing component: ${ name }`)
     }
+
+    return ctor
   }
 
   parseComponentAttribute (attr: Attr): ComponentMeta {
@@ -205,134 +172,45 @@ export class Watcher {
         return
       }
 
-      let definition = this.getDefinition(meta.name)
+      let Constructor = this.getConstructor(meta.id)
+      let parentElement = null
       let parent = null
 
       if (meta.parentAttr) {
-        let parentElement = findAncestorByAttribute(element, meta.parentAttr)
-        let parentInstance = this.getInstance(parentElement, meta.parentId)
-
-        let instance = new definition(element, parseValue(meta.value), parentInstance)
-        instance._name = meta.name
-
-        var parentComponent = findParentComponent(node, meta)
-        instance.$parent = parentComponent
-
-        if (parentComponent) {
-          if (typeof parentComponent.$addComponent === 'function') {
-            parentComponent.$addComponent(instance)
-          }
-
-          updateChildStorage(parentComponent, instance)
-        }
-
-        instances[meta.name] = factory.create(element, definition, meta)
-      } else if (!meta.parentName) {
+        parentElement = findAncestor(element, element => element.hasAttribute(meta.parentAttr))
+        parent = this.getInstance(parentElement, meta.parentId)
       }
-      return console.warn(`Component definition not found: ${ meta.name }`)
+
+      let instance = new Constructor(element, parseValue(meta.value), parent)
+      instances[meta.name] = instance
     })
   }
-}
 
+  destroyComponents (element: HTMLElement) {
+    let instances = this.hosts.get(element)
 
-
-const _components: ComponentList = {}
-
-function findComponentDefinition (componentFullName: string) {
-  var value = _components
-  var path = componentFullName.split('-')
-
-  for (var part of path) {
-    if (value) {
-      // @ts-ignore
-      value = value[part]
-    }
-  }
-
-  if (typeof value === 'function') {
-    return value
-  } else if (value && "$base" in value) {
-    return value.$base
-  }
-
-  return null
-}
-
-function createComponents (node) {
-  let attributes = getAttributes(node, {
-    prefix: 'ob',
-    separator: '-'
-  })
-
-  if (!node.minibits) {
-    node.minibits = {}
-  }
-
-  attributes.forEach((data) => {
-    if (!node.minibits[data.componentFullName]) {
-      var definition = findComponentDefinition(data.componentFullName)
-      if (!definition && !data.parentAttribute) {
-        // If a component has no definition and it's not a child component, ignore it.
-        console.warn(`Definition of component ${ data.componentFullName } not found.`)
-        return
+    if (instances) {
+      for (let name in instances) {
+        instances[name]._destroy()
+        delete instances[name]
       }
 
-      var instance = factory.create(node, definition, data)
-      if (instance) {
-        node.minibits[data.componentFullName] = instance
+      this.hosts.delete(element)
+    }
+  }
+
+  initComponents (element: HTMLElement) {
+    let instances = this.hosts.get(element)
+    if (instances) {
+      for (let name in instances) {
+        instances[name]._init()
       }
     }
-  })
-}
+  }
 
-function initComponents (node) {
-  for (var k in node.minibits) {
-    if (typeof node.minibits[k].$init === 'function') {
-      node.minibits[k].$init()
-    }
+  init () {
+    this.observer.add(this.element)
   }
 }
 
-function destroyComponents (node) {
-  let attributes = getAttributes(node, {
-    prefix: 'ob',
-    separator: '-'
-  })
-
-  attributes.forEach((data) => {
-    var instance = node.minibits && node.minibits[data.componentFullName]
-    if (instance) {
-      factory.destroy(node, instance, data)
-    }
-  })
-
-  delete node.minibits
-}
-
-export function register (components) {
-  Object.assign(_components, components)
-}
-
-export function init (element = document.body) {
-  var observer = new Observer(element, element => {
-    if (element instanceof HTMLElement) {
-      // @ts-ignore
-      for (let attribute of element.attributes) {
-        if (attribute.name.match(/^ob\-/)) {
-          return true
-        }
-      }
-    }
-  })
-
-  observer.on('added', createComponents)
-  observer.on('searched', initComponents)
-  observer.on('removed', destroyComponents)
-
-  observer.add(element)
-}
-
-export default {
-  register,
-  init
-}
+export default Watcher

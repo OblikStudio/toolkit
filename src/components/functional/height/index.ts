@@ -1,12 +1,11 @@
-import Component from '../../component'
+import { Component, Schema } from '../../component'
 
 interface Options {
   var: string
   target: string
 }
 
-export class Height extends Component {
-  $options: Options
+export default class Height extends Component<Options> {
   varName: string
   varElement: HTMLElement
   updateHandler: () => any
@@ -63,6 +62,4 @@ export class Height extends Component {
 	}
 }
 
-export default {
-  $base: Height
-}
+new Height(document.body)

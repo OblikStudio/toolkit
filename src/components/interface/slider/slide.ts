@@ -1,5 +1,5 @@
 import Component from '../../component'
-import { Slider } from './index'
+import Slider from './index'
 
 interface SlideRect extends ClientRect {
   centerX: number
@@ -8,7 +8,11 @@ interface SlideRect extends ClientRect {
   thresholdRight: number
 }
 
-export class Slide extends Component {
+export default class Slide extends Component<any> {
+  static $model = {
+    name: 'slide'
+  }
+
   $parent: Slider
   rect: SlideRect
 

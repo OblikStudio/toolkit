@@ -1,14 +1,20 @@
 import Component from '../../component'
+import Slide from './slide'
 import { Drag } from '../../../utils/drag'
 import { getTag } from '../../../utils/dom'
-import { Slide } from './slide'
 
 interface Point {
   x: number
   y: number
 }
 
-export class Slider extends Component {
+export default class Slider extends Component<any> {
+  static $model = {
+    components: {
+      slide: Slide
+    }
+  }
+
   $slide: Slide[] = []
   rect: ClientRect
   activeSlide: Slide
@@ -287,9 +293,4 @@ export class Slider extends Component {
       slide.$element.style.transform = `translateX(${ itemsX }px)`
     })
   }
-}
-
-export default {
-  $base: Slider,
-  slide: Slide
 }
