@@ -1,4 +1,12 @@
-/* global Node NodeList */
+export function findAncestor (element: Element, predicate: (element: Element) => boolean): Element {
+  while (element = element.parentElement) {
+    if (predicate(element) === true) {
+      return element
+    }
+  }
+
+  return null
+}
 
 export function collection (input) {
   if (input instanceof Node) {
