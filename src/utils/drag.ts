@@ -14,9 +14,9 @@ export class Drag extends Emitter {
   activeTouch: Touch
   angles: number[]
   direction: number
-  startHandler: () => any
-  moveHandler: () => any
-  endHandler: () => any
+  startHandler: Drag['start']
+  moveHandler: Drag['move']
+  endHandler: Drag['end']
   lastClientPosition: Point
   
   constructor (element) {
