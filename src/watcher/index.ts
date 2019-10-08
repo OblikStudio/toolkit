@@ -125,7 +125,14 @@ export class Watcher {
       let name = split.pop()
       let parentId = split.join('-')
       let parentName = split.pop()
-      let parentAttr = attr.name.replace(id, parentId)
+      let parentAttr = null
+
+      if (parentName) {
+        parentAttr = attr.name.replace(id, parentId)
+      } else {
+        parentId = null
+        parentName = null
+      }
 
       return {
         attr: attr.name,
@@ -178,10 +185,13 @@ export class Watcher {
       if (meta.parentAttr) {
         parentElement = findAncestor(element, element => element.hasAttribute(meta.parentAttr))
         parent = this.getInstance(parentElement, meta.parentId)
+
+        if (!parent) {
+          throw new Error(`Parent of ${ meta.name } not found: ${ meta.parentAttr }`)
+        }
       }
 
-      let instance = new Constructor(element, parseValue(meta.value), parent)
-      instances[meta.name] = instance
+      instances[meta.name] = new Constructor(element, parseValue(meta.value), parent)
     })
   }
 

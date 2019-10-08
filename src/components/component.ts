@@ -5,7 +5,7 @@ type ConfigFunction<O> = (component: Component<any>, options: Input<O>) => Optio
 type Config<O> = Partial<O> | ConfigFunction<O>
 type Options<O> = Partial<O> & { $preset?: string, value?: any }
 
-export class Component<O> {
+export default class Component<O> {
   ['constructor']: typeof Component
 
   static readonly $name: string
@@ -31,7 +31,7 @@ export class Component<O> {
     this.$element = element
     this.$parent = parent
     this.$emitter = new Emitter()
-    this.$options = this._options(options)
+    this.$options = this._resolveOptions(options)
 
     if (!this.constructor.$name && this.$parent) {
       throw new Error(`Child component missing name: ${ this.constructor.name }`)
@@ -48,28 +48,10 @@ export class Component<O> {
     if (this._isInit) {
       this.$init()
       this._isInit = false
-      console.log('init', this.constructor.$name)
     }
   }
 
-  _destroy () {
-    if (!this._isDestroyed) {
-      Array.from(this._children).forEach(child => {
-        child._destroy()
-      })
-
-      this.$destroy()
-
-      if (this.$parent) {
-        this.$parent.$removeComponent(this)
-      }
-
-      this._isDestroyed = true
-      console.log('destroy', this.constructor.$name)
-    }
-  }
-
-  _config (config: Config<O>, input: Input<O>): Options<O> {
+  _resolveConfig (config: Config<O>, input: Input<O>): Options<O> {
     if (typeof config === 'object' && config !== null) {
       return config
     } else if (typeof config === 'function') {
@@ -79,13 +61,13 @@ export class Component<O> {
     }
   }
 
-  _options (input: Input<O>): Options<O> {
+  _resolveOptions (input: Input<O>): Options<O> {
     let preset = null
     let presets = this.constructor.$presets
     let defaults = this.constructor.$defaults
 
     let options = {} as Options<O>
-    let defaultOptions = this._config(defaults, input)
+    let defaultOptions = this._resolveConfig(defaults, input)
     let presetOptions = {}
 
     if (input && typeof input === 'object') {
@@ -107,35 +89,51 @@ export class Component<O> {
     }
     
     if (preset) {
-      presetOptions = this._config(preset, input)
+      presetOptions = this._resolveConfig(preset, input)
     }
 
     return { ...defaultOptions, ...presetOptions, ...options }
   }
 
-  _update (parentComponent, childComponent, remove = false) {
-    var key = '$' + childComponent.constructor.$name
-    var value = parentComponent[key]
+  _ref (component: Component<any>, remove = false) {
+    let prop = '$' + component.constructor.$name
+    let value = this[prop]
   
     if (Array.isArray(value)) {
-      var index = value.indexOf(childComponent)
-      var added = index >= 0
+      let index = value.indexOf(component)
+      let added = index >= 0
   
       if (remove) {
         if (added) {
           value.splice(index, 1)
         }
       } else if (!added) {
-        value.push(childComponent)
+        value.push(component)
       }
     } else {
       if (remove) {
-        if (value === childComponent) {
-          parentComponent[key] = null
+        if (value === component) {
+          this[prop] = null
         }
       } else {
-        parentComponent[key] = childComponent
+        this[prop] = component
       }
+    }
+  }
+
+  _destroy () {
+    if (!this._isDestroyed) {
+      Array.from(this._children).forEach(child => {
+        child._destroy()
+      })
+
+      this.$destroy()
+
+      if (this.$parent) {
+        this.$parent.$removeComponent(this)
+      }
+
+      this._isDestroyed = true
     }
   }
 
@@ -146,8 +144,8 @@ export class Component<O> {
   $addComponent (component: Component<any>) {
     if (this._children.indexOf(component) < 0) {
       this._children.push(component)
-      this._update(this, component)
-      this.$emitter.emit(this.constructor.$name + ':added', component)
+      this._ref(component)
+      this.$emitter.emit(component.constructor.$name + ':added', component)
     }
   }
 
@@ -155,12 +153,10 @@ export class Component<O> {
     var index = this._children.indexOf(component)
     if (index >= 0) {
       this._children.splice(index, 1)
-      this._update(this, component, true)
-      this.$emitter.emit(this.constructor.$name + ':removed', component)
+      this._ref(component, true)
+      this.$emitter.emit(component.constructor.$name + ':removed', component)
     }
   }
 
   $destroy () {}
 }
-
-export default Component
