@@ -1,4 +1,4 @@
-import { Component, Schema } from '../../component'
+import { Component } from '../../component'
 
 interface Options {
   var: string
@@ -14,7 +14,7 @@ export default class Height extends Component<Options> {
 	$create () {
     this.varName = 'height'
     this.varElement = null
-		this.updateHandler = this.update.bind(this)
+    this.updateHandler = this.update.bind(this)
 
 		this.observer = new MutationObserver(this.updateHandler)
 		this.observer.observe(this.$element, {
@@ -61,5 +61,3 @@ export default class Height extends Component<Options> {
 		this.observer.disconnect()
 	}
 }
-
-new Height(document.body)

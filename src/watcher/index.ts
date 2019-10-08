@@ -3,7 +3,7 @@ import { Observer, findAncestor } from '../utils'
 import Component from '../components/component'
 
 interface ComponentList {
-  [key: string]: new (...args: any[]) => Component<any>
+  [key: string]: Partial<typeof Component>
 }
 
 interface ComponentInstances {
@@ -99,8 +99,7 @@ export class Watcher {
 
     if (path.length) {
       for (let childName of path) {
-        let model = ctor && ctor.$model
-        let child = model && model.components && model.components[childName]
+        let child = ctor && ctor.$components && ctor.$components[childName]
 
         if (child) {
           ctor = child

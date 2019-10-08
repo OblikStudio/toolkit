@@ -1,6 +1,6 @@
 import { query } from '../../../utils'
 import { debounce } from 'lodash-es'
-import { Component, Schema } from '../../component'
+import { Component } from '../../component'
 
 interface Options {
 	on: keyof GlobalEventHandlersEventMap
@@ -11,12 +11,16 @@ interface Options {
 }
 
 export default class Toggle extends Component<Options> {
-	static $model: Schema<Options> = {
-		options: {
-			on: 'click',
-			off: null,
-			class: 'is-active',
-			delay: null
+	static $defaults = {
+		on: 'click',
+		off: null,
+		class: 'is-active',
+		delay: null
+	}
+	static $presets = {
+		mouse: {
+			on: 'mouseover',
+			off: 'mouseout'
 		}
 	}
 

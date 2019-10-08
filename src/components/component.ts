@@ -1,64 +1,40 @@
 import { Emitter } from '../utils'
 
-export interface Schema<O> {
-  name?: string
-  options?: Partial<O>
-  presets?: {
-    [index: string]: Partial<O>
-  }
-  components?: {
-    [index: string]: typeof Component
-  }
-}
+type Input<O> = boolean | number | string | Partial<O> & { $preset?: string }
+type ConfigFunction<O> = (component: Component<any>, options: Input<O>) => Options<O>
+type Config<O> = Partial<O> | ConfigFunction<O>
+type Options<O> = Partial<O> & { $preset?: string, value?: any }
 
 export class Component<O> {
-  static $model: Schema<object>
-  
-  _name: string = null
+  ['constructor']: typeof Component
+
+  static readonly $name: string
+  static readonly $components: {
+    [key: string]: typeof Component
+  }
+
+  static $defaults: Config<object>
+  static $presets: {
+    [key: string]: Config<object>
+  }
+
   _isInit: boolean = true
   _isDestroyed: boolean = false
   _children: Component<any>[] = []
 
   $element: HTMLElement
-  $emitter: Emitter
-  $options: O
+  $options: Options<O>
   $parent: Component<any>
+  $emitter: Emitter
   
-  constructor (element: HTMLElement, options?: string | O, parent?: Component<any>) {
+  constructor (element: HTMLElement, options?: Input<O>, parent?: Component<any>) {
     this.$element = element
     this.$parent = parent
     this.$emitter = new Emitter()
+    this.$options = this._options(options)
 
-    let ctor = (this.constructor as typeof Component)
-    let model = ctor.$model
-    let defaults = null
-
-    if (model) {
-      this._name = model.name
-
-      if (typeof options === 'string') {
-        defaults = model.presets && model.presets[options]
-
-        if (defaults) {
-          options = null
-        }
-      } else {
-        defaults = model.options
-      }
-    }
-
-    if (typeof options === 'string') {
-      options = { value: options }
-    }
-
-    if (defaults) {
-      options = { ...defaults, ...options }
-    }
-
-    this.$options = options
-
-    if (!this._name && this.$parent) {
-      throw new Error(`Child component missing name: ${ ctor.name }`)
+    if (!this.constructor.$name && this.$parent) {
+      throw new Error(`Child component missing name: ${ this.constructor.name }`)
     }
 
     this.$create()
@@ -72,7 +48,7 @@ export class Component<O> {
     if (this._isInit) {
       this.$init()
       this._isInit = false
-      console.log('init', this._name)
+      console.log('init', this.constructor.$name)
     }
   }
 
@@ -89,12 +65,56 @@ export class Component<O> {
       }
 
       this._isDestroyed = true
-      console.log('destroy', this._name)
+      console.log('destroy', this.constructor.$name)
     }
   }
 
+  _config (config: Config<O>, input: Input<O>): Options<O> {
+    if (typeof config === 'object' && config !== null) {
+      return config
+    } else if (typeof config === 'function') {
+      return config(this, input)
+    } else {
+      return {}
+    }
+  }
+
+  _options (input: Input<O>): Options<O> {
+    let preset = null
+    let presets = this.constructor.$presets
+    let defaults = this.constructor.$defaults
+
+    let options = {} as Options<O>
+    let defaultOptions = this._config(defaults, input)
+    let presetOptions = {}
+
+    if (input && typeof input === 'object') {
+      options = input
+    }
+    
+    if (presets) {
+      if (typeof input === 'string') {
+        preset = presets[input]
+
+        if (preset) {
+          options.$preset = input
+        } else {
+          options.value = input
+        }
+      } else if (input && typeof input === 'object') {
+        preset = presets[input.$preset]
+      }
+    }
+    
+    if (preset) {
+      presetOptions = this._config(preset, input)
+    }
+
+    return { ...defaultOptions, ...presetOptions, ...options }
+  }
+
   _update (parentComponent, childComponent, remove = false) {
-    var key = '$' + childComponent._name
+    var key = '$' + childComponent.constructor.$name
     var value = parentComponent[key]
   
     if (Array.isArray(value)) {
@@ -127,7 +147,7 @@ export class Component<O> {
     if (this._children.indexOf(component) < 0) {
       this._children.push(component)
       this._update(this, component)
-      this.$emitter.emit(component._name + ':added', component)
+      this.$emitter.emit(this.constructor.$name + ':added', component)
     }
   }
 
@@ -136,7 +156,7 @@ export class Component<O> {
     if (index >= 0) {
       this._children.splice(index, 1)
       this._update(this, component, true)
-      this.$emitter.emit(component._name + ':removed', component)
+      this.$emitter.emit(this.constructor.$name + ':removed', component)
     }
   }
 

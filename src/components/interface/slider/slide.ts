@@ -9,9 +9,7 @@ interface SlideRect extends ClientRect {
 }
 
 export default class Slide extends Component<any> {
-  static $model = {
-    name: 'slide'
-  }
+  static $name = 'slide'
 
   $parent: Slider
   rect: SlideRect

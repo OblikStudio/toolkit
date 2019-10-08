@@ -9,10 +9,8 @@ interface Point {
 }
 
 export default class Slider extends Component<any> {
-  static $model = {
-    components: {
-      slide: Slide
-    }
+  static $components = {
+    slide: Slide
   }
 
   $slide: Slide[] = []
