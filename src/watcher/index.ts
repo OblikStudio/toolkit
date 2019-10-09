@@ -1,13 +1,13 @@
 import { Parser } from 'slic'
 import { Observer, findAncestor } from '../utils'
-import Component from '../components/component'
+import { Component, ComponentConstructor } from '../components/component'
 
 interface ComponentList {
-  [key: string]: Partial<typeof Component>
+  [key: string]: ComponentConstructor<any>
 }
 
 interface ComponentInstances {
-  [key: string]: Component<any>
+  [key: string]: Component
 }
 
 interface ComponentMeta {
@@ -77,13 +77,13 @@ export class Watcher {
   }
 
   getInstance (element: Element): ComponentInstances
-  getInstance (element: Element, componentName: string): Component<any>
-  getInstance (element: Element, componentName?: string): any {
+  getInstance (element: Element, id: string): Component
+  getInstance (element: Element, id?: string): any {
     let instances = this.hosts.get(element)
 
     if (instances) {
-      if (componentName) {
-        return instances[componentName] || null
+      if (id) {
+        return instances[id] || null
       } else {
         return instances
       }
@@ -95,7 +95,7 @@ export class Watcher {
   getConstructor (componentId: string) {
     let path = componentId.split('-')
     let name = path.shift()
-    let ctor = this.components[name] as typeof Component
+    let ctor = this.components[name]
 
     if (path.length) {
       for (let childName of path) {
@@ -191,7 +191,7 @@ export class Watcher {
         }
       }
 
-      instances[meta.name] = new Constructor(element, parseValue(meta.value), parent)
+      instances[meta.id] = new Constructor(element, parseValue(meta.value), parent)
     })
   }
 
@@ -200,7 +200,10 @@ export class Watcher {
 
     if (instances) {
       for (let name in instances) {
-        instances[name]._destroy()
+        if (typeof instances[name]._destroy === 'function') {
+          instances[name]._destroy()
+        }
+
         delete instances[name]
       }
 
@@ -212,7 +215,9 @@ export class Watcher {
     let instances = this.hosts.get(element)
     if (instances) {
       for (let name in instances) {
-        instances[name]._init()
+        if (typeof instances[name]._init === 'function') {
+          instances[name]._init()
+        }
       }
     }
   }

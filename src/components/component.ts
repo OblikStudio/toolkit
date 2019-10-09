@@ -1,33 +1,45 @@
 import { Emitter } from '../utils'
 
 type Input<O> = boolean | number | string | Partial<O> & { $preset?: string }
-type ConfigFunction<O> = (component: Component<any>, options: Input<O>) => Options<O>
+type ConfigFunction<O> = (component: Component, options: Input<O>) => Options<O>
 type Config<O> = Partial<O> | ConfigFunction<O>
 type Options<O> = Partial<O> & { $preset?: string, value?: any }
 
-export default class Component<O> {
-  ['constructor']: typeof Component
-
-  static readonly $name: string
-  static readonly $components: {
-    [key: string]: typeof Component
+export interface ComponentConstructor<O> {
+  new (element: HTMLElement, options?: Input<O>, parent?: Component): Component
+  readonly $name?: string
+  readonly $components?: {
+    [key: string]: ComponentConstructor<any>
   }
-
-  static $defaults: Config<object>
-  static $presets: {
-    [key: string]: Config<object>
+  $defaults?: Config<O>
+  $presets?: {
+    [key: string]: Config<O>
   }
+}
 
-  _isInit: boolean = true
-  _isDestroyed: boolean = false
-  _children: Component<any>[] = []
+export interface Component {
+  _init?: () => void
+  _destroy?: () => void
+  $init?: () => void
+  $addComponent?: (component: Component) => void
+  $removeComponent?: (component: Component) => void
+  $destroy?: () => void
+  constructor: ComponentConstructor<any>
+}
+
+export class OblikComponent<O = object> implements Component {
+  ['constructor']: ComponentConstructor<O>
+
+  _isInit = true
+  _isDestroyed = false
+  _children: Component[] = []
 
   $element: HTMLElement
   $options: Options<O>
-  $parent: Component<any>
+  $parent: Component
   $emitter: Emitter
   
-  constructor (element: HTMLElement, options?: Input<O>, parent?: Component<any>) {
+  constructor (element: HTMLElement, options?: Input<O>, parent?: Component) {
     this.$element = element
     this.$parent = parent
     this.$emitter = new Emitter()
@@ -39,7 +51,7 @@ export default class Component<O> {
 
     this.$create()
 
-    if (this.$parent) {
+    if (this.$parent && typeof this.$parent.$addComponent === 'function') {
       this.$parent.$addComponent(this)
     }
   }
@@ -95,7 +107,7 @@ export default class Component<O> {
     return { ...defaultOptions, ...presetOptions, ...options }
   }
 
-  _ref (component: Component<any>, remove = false) {
+  _ref (component: Component, remove = false) {
     let prop = '$' + component.constructor.$name
     let value = this[prop]
   
@@ -123,13 +135,15 @@ export default class Component<O> {
 
   _destroy () {
     if (!this._isDestroyed) {
-      Array.from(this._children).forEach(child => {
-        child._destroy()
-      })
-
       this.$destroy()
 
-      if (this.$parent) {
+      Array.from(this._children).forEach(child => {
+        if (typeof child._destroy === 'function') {
+          child._destroy()
+        }
+      })
+
+      if (this.$parent && typeof this.$parent.$removeComponent === 'function') {
         this.$parent.$removeComponent(this)
       }
 
@@ -141,7 +155,7 @@ export default class Component<O> {
 
   $init () {}
 
-  $addComponent (component: Component<any>) {
+  $addComponent (component: Component) {
     if (this._children.indexOf(component) < 0) {
       this._children.push(component)
       this._ref(component)
@@ -149,7 +163,7 @@ export default class Component<O> {
     }
   }
 
-  $removeComponent (component: Component<any>) {
+  $removeComponent (component: Component) {
     var index = this._children.indexOf(component)
     if (index >= 0) {
       this._children.splice(index, 1)
@@ -160,3 +174,5 @@ export default class Component<O> {
 
   $destroy () {}
 }
+
+export default OblikComponent
