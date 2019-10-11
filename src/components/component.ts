@@ -54,6 +54,8 @@ export class OblikComponent<O = object> implements Component {
 
   _init () {
     if (this._isInit) {
+      this._children.forEach(child => child._init())
+
       this.$init()
       this._isInit = false
     }
