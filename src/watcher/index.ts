@@ -32,7 +32,6 @@ export class Watcher {
 
     this.observer = new Observer(this.element, node => {
       if (node instanceof HTMLElement) {
-        // @ts-ignore
         for (let attribute of node.attributes) {
           if (this.attrRegex.exec(attribute.name)) {
             return true
