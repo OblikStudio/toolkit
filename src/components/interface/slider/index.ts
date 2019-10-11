@@ -8,7 +8,7 @@ interface Point {
   y: number
 }
 
-export default class Slider extends Component<any> {
+export default class Slider extends Component {
   static $components = {
     slide: Slide
   }

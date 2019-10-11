@@ -8,9 +8,7 @@ interface SlideRect extends ClientRect {
   thresholdRight: number
 }
 
-export default class Slide extends Component<any> {
-  static $name = 'slide'
-
+export default class Slide extends Component {
   $parent: Slider
   rect: SlideRect
 

@@ -5,11 +5,10 @@ type ConfigFunction<O> = (component: Component, options: Input<O>) => Options<O>
 type Config<O> = Partial<O> | ConfigFunction<O>
 type Options<O> = Partial<O> & { $preset?: string, value?: any }
 
-export interface ComponentConstructor<O> {
+export interface ComponentConstructor<O = object> {
   new (element: HTMLElement, options?: Input<O>, parent?: Component): Component
-  readonly $name?: string
   readonly $components?: {
-    [key: string]: ComponentConstructor<any>
+    [key: string]: ComponentConstructor
   }
   $defaults?: Config<O>
   $presets?: {
@@ -18,13 +17,14 @@ export interface ComponentConstructor<O> {
 }
 
 export interface Component {
+  constructor: ComponentConstructor
   _init?: () => void
+  _addChild?: (component: Component) => void
+  _removeChild?: (component: Component) => void
   _destroy?: () => void
+  $create?: () => void
   $init?: () => void
-  $addComponent?: (component: Component) => void
-  $removeComponent?: (component: Component) => void
   $destroy?: () => void
-  constructor: ComponentConstructor<any>
 }
 
 export class OblikComponent<O = object> implements Component {
@@ -41,18 +41,14 @@ export class OblikComponent<O = object> implements Component {
   
   constructor (element: HTMLElement, options?: Input<O>, parent?: Component) {
     this.$element = element
+    this.$options = this._resolveOptions(options)
     this.$parent = parent
     this.$emitter = new Emitter()
-    this.$options = this._resolveOptions(options)
-
-    if (!this.constructor.$name && this.$parent) {
-      throw new Error(`Child component missing name: ${ this.constructor.name }`)
-    }
 
     this.$create()
 
-    if (this.$parent && typeof this.$parent.$addComponent === 'function') {
-      this.$parent.$addComponent(this)
+    if (this.$parent) {
+      this.$parent._addChild(this)
     }
   }
 
@@ -107,8 +103,27 @@ export class OblikComponent<O = object> implements Component {
     return { ...defaultOptions, ...presetOptions, ...options }
   }
 
-  _ref (component: Component, remove = false) {
-    let prop = '$' + component.constructor.$name
+  _childName (child: Component) {
+    let subcomponents = this.constructor.$components
+    if (subcomponents) {
+      let names = Object.entries(subcomponents)
+        .filter(entry => entry[1] === child.constructor)
+        .map(tuple => tuple[0])
+
+      if (names.length === 1) {
+        return names[0]
+      } else if (names.length < 1) {
+        throw new Error(`${ this.constructor.name } has no child: ${ child.constructor.name }`)
+      } else if (names.length > 1) {
+        throw new Error(`Child has multiple names: ${ names }`)
+      }
+    } else {
+      throw new Error(`Parent has no children: ${ this.constructor.name }`)
+    }
+  }
+
+  _ref (component: Component, name: string, remove = false) {
+    let prop = '$' + name
     let value = this[prop]
   
     if (Array.isArray(value)) {
@@ -133,6 +148,25 @@ export class OblikComponent<O = object> implements Component {
     }
   }
 
+  _addChild (component: Component) {
+    if (this._children.indexOf(component) < 0) {
+      let name = this._childName(component)
+      this._children.push(component)
+      this._ref(component, name)
+      this.$emitter.emit(name + ':added', component)
+    }
+  }
+
+  _removeChild (component: Component) {
+    let index = this._children.indexOf(component)
+    if (index >= 0) {
+      let name = this._childName(component)
+      this._children.splice(index, 1)
+      this._ref(component, name, true)
+      this.$emitter.emit(name + ':removed', component)
+    }
+  }
+
   _destroy () {
     if (!this._isDestroyed) {
       this.$destroy()
@@ -143,8 +177,8 @@ export class OblikComponent<O = object> implements Component {
         }
       })
 
-      if (this.$parent && typeof this.$parent.$removeComponent === 'function') {
-        this.$parent.$removeComponent(this)
+      if (this.$parent) {
+        this.$parent._removeChild(this)
       }
 
       this._isDestroyed = true
@@ -154,23 +188,6 @@ export class OblikComponent<O = object> implements Component {
   $create () {}
 
   $init () {}
-
-  $addComponent (component: Component) {
-    if (this._children.indexOf(component) < 0) {
-      this._children.push(component)
-      this._ref(component)
-      this.$emitter.emit(component.constructor.$name + ':added', component)
-    }
-  }
-
-  $removeComponent (component: Component) {
-    var index = this._children.indexOf(component)
-    if (index >= 0) {
-      this._children.splice(index, 1)
-      this._ref(component, true)
-      this.$emitter.emit(component.constructor.$name + ':removed', component)
-    }
-  }
 
   $destroy () {}
 }
