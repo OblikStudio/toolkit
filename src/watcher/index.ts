@@ -1,24 +1,13 @@
-import { Parser } from 'slic'
+import { value, attribute, ComponentMeta } from './parse'
 import { Observer, findAncestor } from '../utils'
 import { Component, ComponentConstructor } from '../components/component'
 
 interface ComponentList {
-  [key: string]: ComponentConstructor<any>
+  [key: string]: ComponentConstructor
 }
 
 interface ComponentInstances {
   [key: string]: Component
-}
-
-interface ComponentMeta {
-  attr: string
-  value: string
-
-  id: string
-  name: string
-  parentId: string
-  parentName: string
-  parentAttr: string
 }
 
 interface WatcherSettings {
@@ -26,26 +15,7 @@ interface WatcherSettings {
   components: ComponentList
 }
 
-const slic = new Parser()
-
-function parseValue (input) {
-  if (!input || typeof input !== 'string') {
-    return undefined
-  }
-
-	if (input.length && input[0] === '{') {
-		return JSON.parse(input)
-	} else {
-		return slic.parse(input)
-	}
-}
-
 export class Watcher {
-  static defaults: Partial<WatcherSettings> = {
-    prefix: 'ob',
-    components: {}
-  }
-
   element: HTMLElement
   components: ComponentList
   attrRegex: RegExp
@@ -53,12 +23,12 @@ export class Watcher {
   hosts: Map<Element, ComponentInstances>
 
   constructor (element: HTMLElement, settings: WatcherSettings) {
-    settings = Object.assign(Watcher.defaults, settings)
-
     this.element = element
-    this.components = settings.components
+    this.components = settings.components || {}
+    let prefix = settings.prefix || 'ob'
+
     this.hosts = new Map()
-    this.attrRegex = new RegExp(`^${ settings.prefix }\\-(.*)`)
+    this.attrRegex = new RegExp(`^${ prefix }\\-(.*)`)
 
     this.observer = new Observer(this.element, node => {
       if (node instanceof HTMLElement) {
@@ -97,14 +67,14 @@ export class Watcher {
     let name = path.shift()
     let ctor = this.components[name]
 
-    if (path.length) {
+    if (path.length && ctor) {
       for (let childName of path) {
-        let child = ctor && ctor.$components && ctor.$components[childName]
+        let child = ctor.$components && ctor.$components[childName]
 
         if (child) {
           ctor = child
         } else {
-          throw new Error(`Missing subcomponent of ${ name }: ${ childName }`)
+          throw new Error(`Missing child ${ childName } in: ${ componentId }`)
         }
       }
     }
@@ -116,45 +86,11 @@ export class Watcher {
     return ctor
   }
 
-  parseComponentAttribute (attr: Attr): ComponentMeta {
-    let matches = this.attrRegex.exec(attr.name)
-    
-    if (matches) {
-      let id = matches[1]
-      let split = id.split('-')
-      let name = split.pop()
-      let parentId = split.join('-')
-      let parentName = split.pop()
-      let parentAttr = null
-
-      if (parentName) {
-        parentAttr = attr.name.replace(id, parentId)
-      } else {
-        parentId = null
-        parentName = null
-      }
-
-      return {
-        attr: attr.name,
-        value: attr.value,
-        id,
-        name,
-        parentId,
-        parentName,
-        parentAttr
-      }
-    }
-
-    return null
-  }
-
-  getComponentAttributes (element: Element): ComponentMeta[] {
+  getComponentAttributes (element: Element) {
     let results: ComponentMeta[] = []
 
-    // @ts-ignore
     for (let entry of element.attributes) {
-      let attr = entry as Attr
-      let meta = this.parseComponentAttribute(attr)
+      let meta = attribute(entry, this.attrRegex)
 
       if (meta) {
         results.push(meta)
@@ -187,11 +123,11 @@ export class Watcher {
         parent = this.getInstance(parentElement, meta.parentId)
 
         if (!parent) {
-          throw new Error(`Parent of ${ meta.name } not found: ${ meta.parentAttr }`)
+          throw new Error(`Parent element of ${ meta.name } not found: ${ meta.parentAttr }`)
         }
       }
 
-      instances[meta.id] = new Constructor(element, parseValue(meta.value), parent)
+      instances[meta.id] = new Constructor(element, value(meta.value), parent)
     })
   }
 
