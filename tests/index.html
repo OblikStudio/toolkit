@@ -32,26 +32,27 @@
       height: 0 !important;
     }
 
-    [ob-slider] {
+    [ob-slider], #slider {
       display: flex;
       flex-wrap: nowrap;
     }
 
-    [ob-slider-slide] {
+    [ob-slider-slide], .slide {
       width: 100%;
       flex: 1 0 auto;
     }
 
-    [ob-slider]:not(.is-dragged) > [ob-slider-slide] {
+    [ob-slider]:not(.is-dragged) > [ob-slider-slide],
+    #slider:not(.is-dragged) > .slide {
       transition: transform 0.3s ease;
     }
   </style>
 
   <style>
-    [ob-slider] {
+    [ob-slider], #slider {
       overflow: hidden;
     }
-    [ob-slider-slide] {
+    [ob-slider-slide], .slide {
       box-sizing: border-box;
       padding: 20px;
     }
@@ -72,6 +73,13 @@
     </div>
     <div ob-slider-slide style="background: #aaa">3</div>
     <div ob-slider-slide style="background: #ccc">4</div>
+  </div>
+
+  <div id="slider" style="width: 100%;">
+    <div class="slide" style="background: #444">1</div>
+    <div class="slide" style="background: #666">2</div>
+    <div class="slide" style="background: #aaa">3</div>
+    <div class="slide" style="background: #ccc">4</div>
   </div>
 
   <button ob-toggle="target: @sibling">toggle</button>
