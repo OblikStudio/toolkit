@@ -7,6 +7,8 @@
 import { Animation } from '../../../utils/animation'
 import { offsetGlobal, getTag } from '../../../utils/dom'
 import { browser } from '../../../utils/detect'
+import Component from '../../component'
+import { query } from '../../../utils'
 
 const useBody = browser().match(/safari|edge/)
 
@@ -82,41 +84,41 @@ export function easings (values) {
   Object.assign(_easings, values)
 }
 
-export default class {
-  element: HTMLElement
-  options: {
-    duration: number
-    event: string
-    target: string
-    easing: string
+interface Options {
+  event: keyof GlobalEventHandlersEventMap
+  duration: number
+  easing: string
+  target: string
+}
+
+export default class ScrollTo extends Component<Options> {
+  static $defaults = {
+    event: 'click',
+    duration: 650,
+    easing: 'linear'
   }
+
   target: HTMLElement
-  handler: (event) => any
+  handler: any
 
-  constructor (element, options) {
-    this.element = element
-    this.options = Object.assign({
-      duration: 650,
-      event: 'click'
-    }, options)
-
-    if (!this.options.target) {
+  $create () {
+    if (!this.$options.target) {
       throw new Error('No scroll target specified')
     }
 
-    this.target = document.querySelector(this.options.target)
+    this.target = query(this.$element, this.$options.target).first()
     this.handler = (event) => {
       scroll({
-        duration: this.options.duration,
-        easing: _easings[this.options.easing],
+        duration: this.$options.duration,
+        easing: _easings[this.$options.easing],
         target: this.target
       })
     }
 
-    this.element.addEventListener(this.options.event, this.handler)
+    this.$element.addEventListener(this.$options.event, this.handler)
   }
 
   $destroy () {
-    this.element.removeEventListener(this.options.event, this.handler)
+    this.$element.removeEventListener(this.$options.event, this.handler)
   }
 }
