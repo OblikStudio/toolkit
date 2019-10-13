@@ -215,8 +215,120 @@ new Toggle(document.getElementById('three'), {
 
 ## Customization
 
+You'll often need special solutions to certain problems. Oblik might not be able to provide them right away, but it could help you create them yourself.
+
 ### Custom Components
+
+As mentioned earlier, a component is just a simple constructor function or an [ES6 class](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes) which is syntactic sugar for a constructor function. Here's an example:
+
+```js
+import Watcher from 'oblik/watcher'
+
+let w = new Watcher(document.body, {
+  components: {
+    foo: function (element, options) {
+      element.style.color = options.color
+    }
+  }
+})
+```
+
+Then we use the component like so:
+
+```html
+<div ob-foo="color: red"></div>
+```
 
 ### Extending the Base Component
 
+We can achieve much more by [extending](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes#Sub_classing_with_extends) the base Oblik component. It's the foundation of all other components and provides useful functionality like the `$defaults` and `$presets` shown earlier, an [event emitter](https://github.com/scottcorgan/tiny-emitter#readme) so you can handle asynchronous actions, managing references to subcomponents, and hooks.
+
+```js
+import Watcher from 'oblik/watcher'
+import Component from 'oblik/components/component'
+
+let w = new Watcher(document.body, {
+  components: {
+    foo: class extends Component {
+      static $defaults = {
+        test: 42
+      }
+
+      $create () {
+        console.log('created', this.$element, this.$options)
+      }
+
+      $init () {
+        console.log('ready')
+      }
+
+      $destroy () {
+        console.log('removed')
+      }
+    }
+  }
+})
+
+w.init()
+```
+
+We just created a component with a few hooks:
+
+- `$create` is called just after the component's creation and after its options have been resolved
+
+- `$init` is called when all subcomponents are initialized
+
+- `$destroy` is called when the component is removed from the DOM
+
+Because the Watcher uses a [MutationObserver](https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver), adding and removing components is handled automatically. This means new instances of our component will be created and destroyed accordingly when changing HTML or when using reactive frameworks like [Vue](https://vuejs.org/) and [React](https://reactjs.org/).
+
+#### Subcomponents
+
+When a component has child elements of interest, it makes sense to use a subcomponent. Such component is defined with the `$components` property:
+
+```js
+class Child extends Component { }
+
+class Parent extends Component {
+  static $components = {
+    bar: Child
+  }
+
+  $create () {
+    this.$emitter.on('bar:added', component => {
+      console.log('added', component)
+    })
+  }
+
+  $init () {
+    console.log('child', this.$bar)
+  }
+}
+
+let w = new Watcher(document.body, {
+  components: {
+    foo: Parent
+  }
+})
+```
+
+Several things happen:
+
+1. We declare class `Parent` as component `foo` that has class `Child` as subcomponent `bar`.
+1. The `$create` hook is called before the child is created and we use the base component's `$emitter` to know when a `bar` subcomponent is added.
+1. To easily reference the child, `$bar` is automatically set on the parent.
+1. The `$init` hook is called when all subcomponents are initialized.
+
+Then, we use these components like so:
+
+```html
+<div ob-foo>
+  <span ob-foo-bar></span>
+</div>
+```
+
+{{ multiple subcomponents as array }}
+
 ### Extending Built-In Components
+
+### Wrapping Other Libraries
