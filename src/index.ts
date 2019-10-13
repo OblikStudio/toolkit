@@ -1,3 +1,11 @@
+/**
+ * @todo add component hooks
+ * @todo make component resolveOptions static
+ * @todo scrollto turn `scroll()` to static method
+ * @todo allow components using querel to accept HTMLElement input
+ * @todo extend $defaults and $presets with methods
+ */
+
 import 'core-js'
 
 import * as components from './components'

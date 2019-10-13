@@ -11,7 +11,7 @@ interface Options {
 }
 
 export default class Toggle extends OblikComponent<Options> {
-	static $defaults = {
+	static $defaults: Partial<Options> = {
 		on: 'click',
 		off: null,
 		class: 'is-active',
