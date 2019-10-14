@@ -11,7 +11,7 @@ Core values and goals:
 
 # Usage
 
-First, you have to install Oblik. It's currently not available on npm, but you could add it as a submodule with Git:
+First, you have to install Oblik. It's currently not available on the npm registry, but you could add it as a submodule with Git:
 
 ```
 git submodule add https://github.com/oblikjs/oblik
@@ -19,7 +19,7 @@ git submodule add https://github.com/oblikjs/oblik
 
 ## Utility
 
-The most minimal way to use the Toolkit is to import a single utility. For example, the Drag class. It allows you to handle drag gestures on mobile and desktop at once:
+The most minimal way to use the Toolkit is to import a single utility. For example, the `Drag` class. It allows you to handle drag gestures on mobile and desktop at once:
 
 ```js
 import { Drag } from 'oblik/utils/drag'
@@ -44,10 +44,13 @@ To be more organized, components are divided into three groups:
 - _interface_ provide the usual slider, accordion, masonry grid...
 - _misc_ do random stuff like allowing you to use an HTML element as cursor, splitting text in an element by words so you can animate them...
 
-The Slider component, for example, uses the Drag utility shown earlier. You can use it like this:
+The _slider_ component, for example, uses the `Drag` utility shown earlier. You can use it like this:
 
 ```js
+// main component
 import Slider from 'oblik/components/interface/slider'
+
+// subcomponent
 let Slide = Slider.$components.slide
 
 let sliderEl = document.getElementById('slider')
@@ -68,7 +71,7 @@ slider.$init()
 
 ## Watcher
 
-Initializing components in JavaScript with class hooks can become problematic as a project grows. The Watcher allows you to register all components you need and then use attributes to both initialize them and specify options. The slider example from earlier can be done like this:
+Initializing components in JavaScript with `id` or `class` hooks can become problematic as a project grows. The `Watcher` class allows you to register all components you need and then use HTML attributes to both initialize them and specify options. The slider example from earlier can be done like this:
 
 ```js
 import Watcher from 'oblik/watcher'
@@ -109,7 +112,13 @@ Now, you'll see an example with the _toggle_ component. Based on an `on` and `of
 </div>
 ```
 
-Here, we set the `target` option to `@sibling` which is used by the [Query](https://github.com/oblikjs/querel) utility to find elements relative to other elements. In this case, the target would be `.tooltip`. The default on/off event is `click` and the added class is set to `is-shown`. The final result is - click events on `<i>` toggle the `is-shown` class on `.tooltip`
+Here, we set the `target` option to `@sibling` which is used by the [Query](https://github.com/oblikjs/querel) utility to find elements relative to other elements. In this case, the target would be `.tooltip`. The default event is `click` and the added class is set to `is-shown`. The final result is—click events on `<i>` toggle the `is-shown` class on `.tooltip`.
+
+If the SLIC format doesn't suit you, JSON can be used for options as well:
+
+```html
+<i ob-toggle='{"target": "@sibling", "class": "is-shown"}'>?</i>
+```
 
 #### Defaults
 
@@ -188,7 +197,7 @@ Now we have default options and a preset that will override those defaults when 
 ```
 
 1. Default options are used and `.drawer` has `is-active` toggled on `click`
-2. When the attribute value is a plain string, it is interpreted as a preset. In this case, `tooltip` is used and the component's sibling would have `is-shown` toggled on mouse events.
+2. When the attribute value is a plain string, it is interpreted as a preset. In this case, the `tooltip` preset is used and the component's next sibling would have `is-shown` toggled on mouse events.
 3. The same preset is used here too, but the `target` option is overridden. Instead of targeting the component's sibling, we target the sibling of its parent.
 
 #### JavaScript
@@ -199,7 +208,7 @@ Keep in mind that you can use the same patterns in JavaScript as well. If you do
 import Toggle from 'oblik/components/functional/toggle'
 
 Toggle.$defaults = { ... }
-Toggle.$presets = { ... }
+Toggle.$presets = { tooltip: { ... } }
 
 new Toggle(document.getElementById('one'), {
   target: '@parent'
@@ -215,11 +224,11 @@ new Toggle(document.getElementById('three'), {
 
 ## Customization
 
-You'll often need special solutions to certain problems. Oblik might not be able to provide them right away, but it could help you create them yourself.
+You'll often need special solutions to certain problems. Oblik might not be able to provide them right away, but it could still help you create them yourself.
 
 ### Custom Components
 
-As mentioned earlier, a component is just a simple constructor function or an [ES6 class](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes) which is syntactic sugar for a constructor function. Here's an example:
+As mentioned earlier, a component is just a simple constructor function or an [ES6 class](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes), which is syntactic sugar for a constructor function. Here's an example with a plain function:
 
 ```js
 import Watcher from 'oblik/watcher'
@@ -227,7 +236,7 @@ import Watcher from 'oblik/watcher'
 let w = new Watcher(document.body, {
   components: {
     foo: function (element, options) {
-      element.style.color = options.color
+      element.style.backgroundColor = options.color
     }
   }
 })
@@ -241,7 +250,7 @@ Then we use the component like so:
 
 ### Extending the Base Component
 
-We can achieve much more by [extending](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes#Sub_classing_with_extends) the base Oblik component. It's the foundation of all other components and provides useful functionality like the `$defaults` and `$presets` shown earlier, an [event emitter](https://github.com/scottcorgan/tiny-emitter#readme) so you can handle asynchronous actions, managing references to subcomponents, and hooks.
+We can achieve much more by [extending](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes#Sub_classing_with_extends) the base Oblik component. It's the foundation of all components and provides useful functionality like the `$defaults` and `$presets` shown earlier, an [event emitter](https://github.com/scottcorgan/tiny-emitter#readme), managing references to subcomponents, and hooks. It can also specify other components as subcomponents. Let's create a component:
 
 ```js
 import Watcher from 'oblik/watcher'
@@ -275,12 +284,12 @@ w.init()
 We just created a component with a few hooks:
 
 - `$create` is called just after the component's creation and after its options have been resolved
-
 - `$init` is called when all subcomponents are initialized
-
 - `$destroy` is called when the component is removed from the DOM
 
 Because the Watcher uses a [MutationObserver](https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver), adding and removing components is handled automatically. This means new instances of our component will be created and destroyed accordingly when changing HTML or when using reactive frameworks like [Vue](https://vuejs.org/) and [React](https://reactjs.org/).
+
+**Note:** While the base component is good for building something new, you can also extend pre-existing components.
 
 #### Subcomponents
 
@@ -312,12 +321,12 @@ let w = new Watcher(document.body, {
 })
 ```
 
-Several things happen:
+A few things happen:
 
 1. We declare class `Parent` as component `foo` that has class `Child` as subcomponent `bar`.
-1. The `$create` hook is called before the child is created and we use the base component's `$emitter` to know when a `bar` subcomponent is added.
-1. To easily reference the child, `$bar` is automatically set on the parent.
-1. The `$init` hook is called when all subcomponents are initialized.
+1. The `$create` hook is called before the child is created and we use the base component's `$emitter` so we can know when a new `bar` subcomponent is added.
+1. To easily reference the child, the `$bar` property is automatically set on the parent when the child is created.
+1. The `$init` hook is called after all subcomponents have initialized.
 
 Then, we use these components like so:
 
@@ -327,8 +336,83 @@ Then, we use these components like so:
 </div>
 ```
 
-{{ multiple subcomponents as array }}
+If we need multiple `bar` instances, all we have to do is set `$bar` to an empty array beforehand. Multiple occurrences of `ob-foo-bar` will be tracked in that array:
 
-### Extending Built-In Components
+```js
+class Parent extends Component {
+  static $components = {
+    bar: Child
+  }
+
+  $create () {
+    this.$bar = []
+    this.$emitter.on('bar:added', component => {
+      console.log('added', component)
+    })
+  }
+
+  $init () {
+    console.log('children', this.$bar)
+  }
+}
+```
+
+```html
+<div ob-foo>
+  <span ob-foo-bar></span>
+  <span ob-foo-bar></span>
+  <span ob-foo-bar></span>
+</div>
+```
+
+The logged message in `$init` would contain all three `<span>` tags.
 
 ### Wrapping Other Libraries
+
+Perhaps there's already a solution to your problem. Well, Oblik's base component and Watcher can still help you a lot. Let's wrap the [Tippy.js](https://atomiks.github.io/tippyjs/) tooltip library in an Oblik component:
+
+```js
+import Watcher from 'oblik/watcher'
+import Component from 'oblik/components/component'
+import tippy from 'tippy.js'
+
+class Tooltip extends Component {
+  static $defaults = {
+    theme: 'dark',
+    trigger: 'click',
+    interactie: true
+  }
+
+  $create () {
+    this.instance = tippy(this.$element, this.$options)
+  }
+
+  $destroy () {
+    this.instance.destroy()
+  }
+}
+
+let w = new Watcher(document.body, {
+  components: {
+    tooltip: Tooltip
+  }
+})
+```
+
+```html
+<span ob-tooltip="content: Lorem Ipsum!">Hello</span>
+```
+
+By doing this, we get the following benefits:
+
+- New tooltips are added with just markup
+- Tippy's options can be specified in the markup
+- Dynamically added tooltips to the DOM are initialized automatically
+- Removed tooltips from the DOM are cleared automatically
+- Default options could be specified with `$defaults`
+- Multiple option configurations can be added as `$presets` for even greater flexibility
+
+# About
+
+- Developer: [Oblik Studio](https://oblik.studio/)
+- License: MIT

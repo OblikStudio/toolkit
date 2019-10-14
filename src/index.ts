@@ -20,34 +20,11 @@ import * as allObservers from './components/functional/sensor/observers'
 Object.assign(actions, allActions)
 Object.assign(observers, allObservers)
 
-import Component from './components/component'
-
-class Child extends Component { }
-
-class Parent extends Component {
-  static $components = {
-    bar: Child
-  }
-
-  $create () {
-    this.$emitter.on('bar:added', component => {
-      console.log('added', component)
-    })
-  }
-
-  $init () {
-    console.log('child', this.$bar)
-  }
-}
-
 let w = new Watcher(document.body, {
-  components: {
-    foo: Parent
-  }
+  components
 })
 
 w.init()
-
 
 export {
   components,
