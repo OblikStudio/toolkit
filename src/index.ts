@@ -1,10 +1,8 @@
 /**
- * @todo add component hooks
  * @todo make component resolveOptions static
  * @todo scrollto turn `scroll()` to static method
  * @todo allow components using querel to accept HTMLElement input
- * @todo extend $defaults and $presets with methods
- * @todo store components in Watcher with lowercase keys
+ * @todo extend $defaults and $presets with merge methods
  */
 
 import 'core-js'

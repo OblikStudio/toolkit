@@ -5,7 +5,13 @@ type ConfigFunction<O> = (component: Component, options: Input<O>) => Options<O>
 type Config<O> = Partial<O> | ConfigFunction<O>
 type Options<O> = Partial<O> & { $preset?: string, value?: any }
 
-export interface ComponentConstructor<O = object> {
+interface Hooks {
+  $create?: () => void
+  $init?: () => void
+  $destroy?: () => void
+}
+
+export interface ComponentConstructor<O = object> extends Hooks {
   new (element: HTMLElement, options?: Input<O>, parent?: Component): Component
   readonly $components?: {
     [key: string]: ComponentConstructor
@@ -16,15 +22,12 @@ export interface ComponentConstructor<O = object> {
   }
 }
 
-export interface Component {
+export interface Component extends Hooks {
   constructor: ComponentConstructor
   _init?: () => void
   _addChild?: (component: Component) => void
   _removeChild?: (component: Component) => void
   _destroy?: () => void
-  $create?: () => void
-  $init?: () => void
-  $destroy?: () => void
 }
 
 export class OblikComponent<O = object> implements Component {
@@ -45,10 +48,23 @@ export class OblikComponent<O = object> implements Component {
     this.$parent = parent
     this.$emitter = new Emitter()
 
-    this.$create()
+    this._hook('$create')
 
     if (this.$parent) {
       this.$parent._addChild(this)
+    }
+  }
+
+  _hook (name: string, ...args: any[]) {
+    let instanceFn = this[name]
+    let ctorFn = this.constructor[name]
+
+    if (typeof instanceFn === 'function') {
+      instanceFn.apply(this, args)
+    }
+
+    if (typeof ctorFn === 'function') {
+      ctorFn.apply(this, args)
     }
   }
 
@@ -56,7 +72,7 @@ export class OblikComponent<O = object> implements Component {
     if (this._isInit) {
       this._children.forEach(child => child._init())
 
-      this.$init()
+      this._hook('$init')
       this._isInit = false
     }
   }
@@ -171,7 +187,7 @@ export class OblikComponent<O = object> implements Component {
 
   _destroy () {
     if (!this._isDestroyed) {
-      this.$destroy()
+      this._hook('$destroy')
 
       Array.from(this._children).forEach(child => {
         if (typeof child._destroy === 'function') {
@@ -186,12 +202,6 @@ export class OblikComponent<O = object> implements Component {
       this._isDestroyed = true
     }
   }
-
-  $create () {}
-
-  $init () {}
-
-  $destroy () {}
 }
 
 export default OblikComponent
