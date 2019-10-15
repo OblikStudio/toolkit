@@ -1,8 +1,8 @@
 /**
- * @todo make component resolveOptions static
  * @todo scrollto turn `scroll()` to static method
  * @todo allow components using querel to accept HTMLElement input
  * @todo extend $defaults and $presets with merge methods
+ * @todo add static $merge method
  */
 
 import 'core-js'
@@ -19,6 +19,7 @@ Object.assign(actions, allActions)
 Object.assign(observers, allObservers)
 
 let w = new Watcher(document.body, {
+  // @ts-ignore
   components
 })
 

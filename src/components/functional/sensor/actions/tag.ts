@@ -9,7 +9,7 @@ export default class Tag implements Action {
 	options: TagOptions
 
 	constructor (effect, options: TagOptions) {
-		this.element = effect.sensor.element
+		this.element = effect.sensor.$element
 		this.options = Object.assign({
 			class: 'is-active'
 		}, options)

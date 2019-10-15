@@ -81,7 +81,7 @@ export default class Sticky implements Action {
 			bounds: null
 		}, options)
 
-		this.element = this.sensor.element
+		this.element = this.sensor.$element
 		this.static = this.element
 		this.animationElement = (this.options.animationTarget)
 			? document.querySelector(this.options.animationTarget)
@@ -165,7 +165,7 @@ export default class Sticky implements Action {
 
 		// Change the element that the sensor uses to element that is part of the
 		// document flow. I.E. the default location of the element.
-		this.sensor.element = this.static
+		this.sensor.$element = this.static
 	}
 
 	applyAbsolute (value, location?: Offset) {

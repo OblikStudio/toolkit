@@ -1,3 +1,5 @@
+import Component from "../../component"
+
 export const observers = {}
 export const actions = {}
 
@@ -55,23 +57,25 @@ export class Effect {
 	}
 }
 
-export class Sensor {
-	element: HTMLElement
-	effects: Effect[]
+interface Options {
+	effects?: object[]
+	observer?: string | object
+	action?: string | object
+}
+
+export class Sensor extends Component<Options> {
+	effects: Effect[] = []
 	updateHandler: () => void
 
-	constructor (element, options) {
-		this.element = element
-		this.effects = []
-
-		if (Array.isArray(options.effects)) {
-			this.effects = options.effects.map(data => this.createEffect(data))
+	$init () {
+		if (Array.isArray(this.$options.effects)) {
+			this.effects = this.$options.effects.map(data => this.createEffect(data))
 		}
 
-		if (options.observer && options.action) {
+		if (this.$options.observer && this.$options.action) {
 			this.effects.push(this.createEffect({
-				observer: options.observer,
-				action: options.action
+				observer: this.$options.observer,
+				action: this.$options.action
 			}))
 		}
 
@@ -143,14 +147,14 @@ export class Sensor {
 	}
 
 	update () {
-		var rect = this.element.getBoundingClientRect()
+		var rect = this.$element.getBoundingClientRect()
 
 		this.effects.forEach(effect => {
 			effect.update(rect)
 		})
 	}
 
-	destroy () {
+	$destroy () {
 		this.effects.forEach(effect => effect.destroy())
 		this.effects = null
 
