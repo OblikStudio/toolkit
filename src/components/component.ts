@@ -1,28 +1,20 @@
 import { Emitter } from '../utils'
 
 type Input<O> = boolean | number | string | Partial<O> & { $preset?: string }
-type ConfigFunction<O> = (component: Component, options: Input<O>) => Options<O>
-type Config<O> = Partial<O> | ConfigFunction<O>
 type Options<O> = Partial<O> & { $preset?: string, value?: any }
 
-interface Hooks {
-  $create?: () => void
-  $init?: () => void
-  $destroy?: () => void
-}
-
-export interface ComponentConstructor<O = object> extends Hooks {
+export interface ComponentConstructor<O = object> {
   new (element: HTMLElement, options?: Input<O>, parent?: Component): Component
   readonly $components?: {
     [key: string]: ComponentConstructor
   }
-  $defaults?: Config<O>
+  $defaults?: Partial<O>
   $presets?: {
-    [key: string]: Config<O>
+    [key: string]: Partial<O>
   }
 }
 
-export interface Component extends Hooks {
+export interface Component {
   constructor: ComponentConstructor
   _init?: () => void
   _addChild?: (component: Component) => void
@@ -44,27 +36,14 @@ export class OblikComponent<O = object> implements Component {
   
   constructor (element: HTMLElement, options?: Input<O>, parent?: Component) {
     this.$element = element
-    this.$options = this._resolveOptions(options)
+    this.$options = this._options(options)
     this.$parent = parent
     this.$emitter = new Emitter()
 
-    this._hook('$create')
+    this.$create()
 
     if (this.$parent) {
       this.$parent._addChild(this)
-    }
-  }
-
-  _hook (name: string, ...args: any[]) {
-    let instanceFn = this[name]
-    let ctorFn = this.constructor[name]
-
-    if (typeof instanceFn === 'function') {
-      instanceFn.apply(this, args)
-    }
-
-    if (typeof ctorFn === 'function') {
-      ctorFn.apply(this, args)
     }
   }
 
@@ -72,32 +51,26 @@ export class OblikComponent<O = object> implements Component {
     if (this._isInit) {
       this._children.forEach(child => child._init())
 
-      this._hook('$init')
+      this.$init()
       this._isInit = false
     }
   }
 
-  _resolveConfig (config: Config<O>, input: Input<O>): Options<O> {
-    if (typeof config === 'object' && config !== null) {
-      return config
-    } else if (typeof config === 'function') {
-      return config(this, input)
-    } else {
-      return {}
-    }
-  }
-
-  _resolveOptions (input: Input<O>): Options<O> {
+  _options (input: Input<O>): Options<O> {
     let preset = null
     let presets = this.constructor.$presets
     let defaults = this.constructor.$defaults
 
     let options = {} as Options<O>
-    let defaultOptions = this._resolveConfig(defaults, input)
+    let defaultOptions = {}
     let presetOptions = {}
 
     if (input && typeof input === 'object') {
       options = input
+    }
+
+    if (defaults && typeof defaults === 'object') {
+      defaultOptions = defaults
     }
     
     if (presets) {
@@ -112,10 +85,10 @@ export class OblikComponent<O = object> implements Component {
       } else if (input && typeof input === 'object') {
         preset = presets[input.$preset]
       }
-    }
-    
-    if (preset) {
-      presetOptions = this._resolveConfig(preset, input)
+
+      if (preset) {
+        presetOptions = preset
+      }
     }
 
     return { ...defaultOptions, ...presetOptions, ...options }
@@ -187,7 +160,7 @@ export class OblikComponent<O = object> implements Component {
 
   _destroy () {
     if (!this._isDestroyed) {
-      this._hook('$destroy')
+      this.$destroy()
 
       Array.from(this._children).forEach(child => {
         if (typeof child._destroy === 'function') {
@@ -202,6 +175,10 @@ export class OblikComponent<O = object> implements Component {
       this._isDestroyed = true
     }
   }
+
+  $create () {}
+  $init () {}
+  $destroy () {}
 }
 
 export default OblikComponent
