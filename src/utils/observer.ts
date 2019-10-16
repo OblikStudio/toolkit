@@ -1,4 +1,4 @@
-import { Emitter } from '.'
+import { TinyEmitter } from 'tiny-emitter'
 
 type EventName = 'added' | 'removed' | 'searched'
 
@@ -7,7 +7,7 @@ export interface Observer {
   on(event: EventName, callback: (node: Node) => void): this
 }
 
-export class Observer extends Emitter {
+export class Observer extends TinyEmitter {
   node: Node
   predicate: (input: Node) => boolean
   observer: MutationObserver

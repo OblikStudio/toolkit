@@ -1,4 +1,4 @@
-import { Emitter } from '.'
+import { TinyEmitter } from 'tiny-emitter'
 
 function isTouchEvent (event: Event): event is TouchEvent {
   return (event.type && event.type.indexOf('touch') === 0)
@@ -9,7 +9,7 @@ interface Point {
   y: number
 }
 
-export class Drag extends Emitter {
+export class Drag extends TinyEmitter {
   element: HTMLElement
   activeTouch: Touch
   angles: number[]
