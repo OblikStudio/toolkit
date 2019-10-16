@@ -1,4 +1,5 @@
-import { Emitter } from '../utils'
+import { TinyEmitter } from 'tiny-emitter'
+import { isObject, defaultsDeep } from 'lodash-es'
 
 type Input<O> = boolean | number | string | Partial<O> & { $preset?: string }
 type Options<O> = Partial<O> & { $preset?: string, value?: any }
@@ -24,21 +25,21 @@ export interface Component {
 
 export class OblikComponent<O = object> implements Component {
   ['constructor']: ComponentConstructor<O>
-
+  
   _isInit = true
   _isDestroyed = false
   _children: Component[] = []
-
+  
   $element: HTMLElement
   $options: Options<O>
   $parent: Component
-  $emitter: Emitter
-  
+  $emitter: TinyEmitter
+
   constructor (element: HTMLElement, options?: Input<O>, parent?: Component) {
     this.$element = element
     this.$options = this._options(options)
     this.$parent = parent
-    this.$emitter = new Emitter()
+    this.$emitter = new TinyEmitter()
 
     this.$create()
 
@@ -57,41 +58,31 @@ export class OblikComponent<O = object> implements Component {
   }
 
   _options (input: Input<O>): Options<O> {
-    let preset = null
     let presets = this.constructor.$presets
     let defaults = this.constructor.$defaults
 
     let options = {} as Options<O>
-    let defaultOptions = {}
-    let presetOptions = {}
+    let preset = null
+    let presetName: string = null
 
-    if (input && typeof input === 'object') {
+    if (typeof input === 'string') {
+      presetName = input
+    } else if (isObject(input)) {
       options = input
+      presetName = input.$preset
     }
 
-    if (defaults && typeof defaults === 'object') {
-      defaultOptions = defaults
-    }
-    
-    if (presets) {
-      if (typeof input === 'string') {
-        preset = presets[input]
-
-        if (preset) {
-          options.$preset = input
-        } else {
-          options.value = input
-        }
-      } else if (input && typeof input === 'object') {
-        preset = presets[input.$preset]
-      }
-
-      if (preset) {
-        presetOptions = preset
-      }
+    if (presets && presetName) {
+      preset = presets[presetName]
     }
 
-    return { ...defaultOptions, ...presetOptions, ...options }
+    if (preset) {
+      options.$preset = presetName
+    } else if (typeof input === 'string') {
+      options.value = input
+    }
+
+    return defaultsDeep(options, preset, defaults)
   }
 
   _childName (child: Component) {

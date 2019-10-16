@@ -1,8 +1,6 @@
 /**
  * @todo scrollto turn `scroll()` to static method
  * @todo allow components using querel to accept HTMLElement input
- * @todo extend $defaults and $presets with merge methods
- * @todo add static $merge method
  */
 
 import 'core-js'
