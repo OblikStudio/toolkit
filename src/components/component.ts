@@ -13,14 +13,35 @@ export interface ComponentConstructor<O = object> {
   $presets?: {
     [key: string]: Partial<O>
   }
+  $options (input: Input<O>): Options<O>
 }
 
 export interface Component {
   constructor: ComponentConstructor
+  _name?: string
   _init?: () => void
   _addChild?: (component: Component) => void
   _removeChild?: (component: Component) => void
   _destroy?: () => void
+}
+
+function name (child: ComponentConstructor, parent: ComponentConstructor) {
+  let subcomponents = parent.$components
+  if (subcomponents) {
+    let names = Object.entries(subcomponents)
+      .filter(entry => entry[1] === child)
+      .map(tuple => tuple[0])
+
+    if (names.length === 1) {
+      return names[0]
+    } else if (names.length < 1) {
+      throw new Error(`${ parent.name } has no child: ${ child.name }`)
+    } else if (names.length > 1) {
+      throw new Error(`Child has multiple names: ${ names }`)
+    }
+  } else {
+    throw new Error(`Parent has no children: ${ parent.name }`)
+  }
 }
 
 export class OblikComponent<O = object> implements Component {
@@ -28,6 +49,7 @@ export class OblikComponent<O = object> implements Component {
   
   _isInit = true
   _isDestroyed = false
+  _name: string = null
   _children: Component[] = []
   
   $element: HTMLElement
@@ -35,33 +57,12 @@ export class OblikComponent<O = object> implements Component {
   $parent: Component
   $emitter: TinyEmitter
 
-  constructor (element: HTMLElement, options?: Input<O>, parent?: Component) {
-    this.$element = element
-    this.$options = this._options(options)
-    this.$parent = parent
-    this.$emitter = new TinyEmitter()
+  static $options (input: Input<object>): Options<object> {
+    let self = this as ComponentConstructor
+    let presets = self.$presets
+    let defaults = self.$defaults
 
-    this.$create()
-
-    if (this.$parent) {
-      this.$parent._addChild(this)
-    }
-  }
-
-  _init () {
-    if (this._isInit) {
-      this._children.forEach(child => child._init())
-
-      this.$init()
-      this._isInit = false
-    }
-  }
-
-  _options (input: Input<O>): Options<O> {
-    let presets = this.constructor.$presets
-    let defaults = this.constructor.$defaults
-
-    let options = {} as Options<O>
+    let options = {} as Options<object>
     let preset = null
     let presetName: string = null
 
@@ -85,27 +86,31 @@ export class OblikComponent<O = object> implements Component {
     return defaultsDeep(options, preset, defaults)
   }
 
-  _childName (child: Component) {
-    let subcomponents = this.constructor.$components
-    if (subcomponents) {
-      let names = Object.entries(subcomponents)
-        .filter(entry => entry[1] === child.constructor)
-        .map(tuple => tuple[0])
+  constructor (element: HTMLElement, options?: Input<O>, parent?: Component) {
+    this.$element = element
+    this.$options = this.constructor.$options(options)
+    this.$parent = parent
+    this.$emitter = new TinyEmitter()
 
-      if (names.length === 1) {
-        return names[0]
-      } else if (names.length < 1) {
-        throw new Error(`${ this.constructor.name } has no child: ${ child.constructor.name }`)
-      } else if (names.length > 1) {
-        throw new Error(`Child has multiple names: ${ names }`)
-      }
-    } else {
-      throw new Error(`Parent has no children: ${ this.constructor.name }`)
+    this.$create()
+
+    if (this.$parent) {
+      this._name = name(this.constructor, this.$parent.constructor)
+      this.$parent._addChild(this)
     }
   }
 
-  _ref (component: Component, name: string, remove = false) {
-    let prop = '$' + name
+  _init () {
+    if (this._isInit) {
+      this._children.forEach(child => child._init())
+
+      this.$init()
+      this._isInit = false
+    }
+  }
+
+  _ref (component: Component, remove = false) {
+    let prop = '$' + component._name
     let value = this[prop]
   
     if (Array.isArray(value)) {
@@ -132,20 +137,18 @@ export class OblikComponent<O = object> implements Component {
 
   _addChild (component: Component) {
     if (this._children.indexOf(component) < 0) {
-      let name = this._childName(component)
       this._children.push(component)
-      this._ref(component, name)
-      this.$emitter.emit(name + ':added', component)
+      this._ref(component)
+      this.$emitter.emit('add:' + component._name, component)
     }
   }
 
   _removeChild (component: Component) {
     let index = this._children.indexOf(component)
     if (index >= 0) {
-      let name = this._childName(component)
       this._children.splice(index, 1)
-      this._ref(component, name, true)
-      this.$emitter.emit(name + ':removed', component)
+      this._ref(component, true)
+      this.$emitter.emit('remove:' + component._name, component)
     }
   }
 
