@@ -44,7 +44,7 @@ export default class {
     name: string,
     clamp: boolean
   }
-  reference: Window
+  reference: Window | Element
   transform: (value: number) => any
   easing: () => any
   handler: () => any
@@ -63,7 +63,7 @@ export default class {
     if (!this.options.reference) {
       this.reference = window
     } else {
-      this.reference = query(this.element, this.options.reference).first()
+      this.reference = query(this.element, this.options.reference)[0]
     }
 
     this.transform = transformers[this.options.type]

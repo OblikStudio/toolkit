@@ -95,7 +95,7 @@ export default class Sticky implements Action {
 		this.updatePlaceholder()
 
 		if (this.options.bounds) {
-			this.boundsElement = query(this.element, this.options.bounds).first()
+			this.boundsElement = query(this.element, this.options.bounds, HTMLElement)[0]
 		}
 	}
 

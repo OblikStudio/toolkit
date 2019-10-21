@@ -24,7 +24,7 @@ export default class Toggle extends OblikComponent<Options> {
 		}
 	}
 
-	targets: ReturnType<typeof query>
+	targets: Element[]
 	state = false
 	onHandler: () => void
 	offHandler: () => void
@@ -74,7 +74,7 @@ export default class Toggle extends OblikComponent<Options> {
 	}
 
 	update () {
-		this.targets.each(element => {
+		this.targets.forEach(element => {
 			if (this.state === true) {
 				element.classList.add(this.$options.class)
 			} else {

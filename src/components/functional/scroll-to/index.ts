@@ -106,7 +106,7 @@ export default class ScrollTo extends Component<Options> {
       throw new Error('No scroll target specified')
     }
 
-    this.target = query(this.$element, this.$options.target).first()
+    this.target = query(this.$options.target, this.$options.target, HTMLElement)[0]
     this.handler = (event) => {
       scroll({
         duration: this.$options.duration,
