@@ -13,26 +13,8 @@ export interface ComponentConstructor<O = object> {
   presets?: {
     [key: string]: Partial<O>
   }
+  $name (ctor: ComponentConstructor): string
   $options (input: Input<O>): Options<O>
-}
-
-function name (child: ComponentConstructor, parent: ComponentConstructor) {
-  let subcomponents = parent.components
-  if (subcomponents) {
-    let names = Object.entries(subcomponents)
-      .filter(entry => entry[1] === child)
-      .map(tuple => tuple[0])
-
-    if (names.length === 1) {
-      return names[0]
-    } else if (names.length < 1) {
-      throw new Error(`${ parent.name } has no child: ${ child.name }`)
-    } else if (names.length > 1) {
-      throw new Error(`Child has multiple names: ${ names }`)
-    }
-  } else {
-    throw new Error(`Parent has no children: ${ parent.name }`)
-  }
 }
 
 export class Component<O = object> {
@@ -48,10 +30,28 @@ export class Component<O = object> {
   $parent: Component
   $emitter: TinyEmitter
 
-  static $options (input: Input<object>): Options<object> {
-    let self = this as ComponentConstructor
-    let presets = self.presets
-    let defaults = self.defaults
+  static $name (this: ComponentConstructor, ctor: ComponentConstructor) {
+    let subcomponents = this.components
+    if (subcomponents) {
+      let names = Object.entries(subcomponents)
+        .filter(entry => entry[1] === ctor)
+        .map(tuple => tuple[0])
+
+      if (names.length === 1) {
+        return names[0]
+      } else if (names.length < 1) {
+        throw new Error(`${ parent.name } has no child: ${ ctor.name }`)
+      } else if (names.length > 1) {
+        throw new Error(`Child has multiple names: ${ names }`)
+      }
+    } else {
+      throw new Error(`Parent has no children: ${ parent.name }`)
+    }
+  }
+
+  static $options (this: ComponentConstructor, input: Input<object>): Options<object> {
+    let presets = this.presets
+    let defaults = this.defaults
 
     let options = {} as Options<object>
     let preset = null
@@ -86,7 +86,7 @@ export class Component<O = object> {
     this.create()
 
     if (this.$parent) {
-      this._name = name(this.constructor, this.$parent.constructor)
+      this._name = this.$parent.constructor.$name(this.constructor)
       this.$parent._addChild(this)
     }
   }
