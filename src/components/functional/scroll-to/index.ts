@@ -92,7 +92,7 @@ interface Options {
 }
 
 export default class ScrollTo extends Component<Options> {
-  static $defaults = {
+  static defaults = {
     event: 'click',
     duration: 650,
     easing: 'linear'

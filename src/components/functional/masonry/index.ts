@@ -13,7 +13,7 @@ function nodesIntersect (a, b) {
 }
 
 export default class extends Component {
-  static $components = {
+  static components = {
     item: class extends Component {}
   }
 

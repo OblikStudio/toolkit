@@ -11,13 +11,13 @@ interface Options {
 }
 
 export default class Toggle extends Component<Options> {
-	static $defaults: Partial<Options> = {
+	static defaults: Partial<Options> = {
 		on: 'click',
 		off: null,
 		class: 'is-active',
 		delay: null
 	}
-	static $presets = {
+	static presets = {
 		mouse: {
 			on: 'mouseover',
 			off: 'mouseout'

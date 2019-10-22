@@ -39,7 +39,7 @@ interface Options {
 }
 
 export default class Splitter extends Component<Options> {
-  static $defaults: Options = {
+  static defaults: Options = {
     chars: false,
     class: {
       char: 'text-char',

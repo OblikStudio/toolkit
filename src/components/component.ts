@@ -6,18 +6,18 @@ type Options<O> = Partial<O> & { $preset?: string, value?: any }
 
 export interface ComponentConstructor<O = object> {
   new (element: HTMLElement, options?: Input<O>, parent?: Component): Component
-  readonly $components?: {
+  readonly components?: {
     [key: string]: ComponentConstructor
   }
-  $defaults?: Partial<O>
-  $presets?: {
+  defaults?: Partial<O>
+  presets?: {
     [key: string]: Partial<O>
   }
   $options (input: Input<O>): Options<O>
 }
 
 function name (child: ComponentConstructor, parent: ComponentConstructor) {
-  let subcomponents = parent.$components
+  let subcomponents = parent.components
   if (subcomponents) {
     let names = Object.entries(subcomponents)
       .filter(entry => entry[1] === child)
@@ -50,8 +50,8 @@ export class Component<O = object> {
 
   static $options (input: Input<object>): Options<object> {
     let self = this as ComponentConstructor
-    let presets = self.$presets
-    let defaults = self.$defaults
+    let presets = self.presets
+    let defaults = self.defaults
 
     let options = {} as Options<object>
     let preset = null
