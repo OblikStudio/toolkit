@@ -13,7 +13,7 @@ const conditions: Conditions = {}
 class Source extends Component {
   $options: SourceOptions
 
-  $create () {
+  create () {
     var hasSet = false
     var defaultSource = this.$options && this.$options.default
 
@@ -50,7 +50,7 @@ class Source extends Component {
     }
   }
 
-  $destroy () {
+  destroy () {
     // So ongoing conditions can detach whatever they need.
     this.$emitter.emit('destroy')
   }

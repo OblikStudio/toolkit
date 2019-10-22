@@ -12,19 +12,15 @@ function nodesIntersect (a, b) {
   return Math.abs(centerA - centerB) < (halfA + halfB - 1) // -1 for threshold because widths are rounded
 }
 
-class Item extends Component {
-  static $name = 'item'
-}
-
 export default class extends Component {
   static $components = {
-    item: Item
+    item: class extends Component {}
   }
 
   $item: Component[] = []
   updateHandler: () => any
 
-  $init () {
+  init () {
     this.updateHandler = this.updateItems.bind(this)
     window.addEventListener('resize', this.updateHandler)
 
@@ -75,7 +71,7 @@ export default class extends Component {
     })
   }
 
-  $destroy () {
+  destroy () {
     window.removeEventListener('resize', this.updateHandler)
   }
 }

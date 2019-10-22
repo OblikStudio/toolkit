@@ -12,7 +12,7 @@ export default class extends Component {
   animating: boolean
   redirecting: boolean
 
-  $create () {
+  create () {
     this.$options = Object.assign({
       delay: 0,
       wait: 1000
@@ -47,7 +47,7 @@ export default class extends Component {
     this.$element.classList.add('is-animate-in')
   }
 
-  $init () {
+  init () {
     window.requestAnimationFrame(() => {
       if (this.$options.delay > 0) {
         setTimeout(() => {

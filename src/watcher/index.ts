@@ -135,8 +135,8 @@ export class Watcher {
 
     if (instances) {
       for (let name in instances) {
-        if (typeof instances[name]._destroy === 'function') {
-          instances[name]._destroy()
+        if (typeof instances[name].$destroy === 'function') {
+          instances[name].$destroy()
         }
 
         delete instances[name]
@@ -150,8 +150,8 @@ export class Watcher {
     let instances = this.hosts.get(element)
     if (instances) {
       for (let name in instances) {
-        if (typeof instances[name]._init === 'function') {
-          instances[name]._init()
+        if (typeof instances[name].$init === 'function') {
+          instances[name].$init()
         }
       }
     }

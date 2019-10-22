@@ -101,7 +101,7 @@ export default class ScrollTo extends Component<Options> {
   target: HTMLElement
   handler: any
 
-  $create () {
+  create () {
     if (!this.$options.target) {
       throw new Error('No scroll target specified')
     }
@@ -118,7 +118,7 @@ export default class ScrollTo extends Component<Options> {
     this.$element.addEventListener(this.$options.event, this.handler)
   }
 
-  $destroy () {
+  destroy () {
     this.$element.removeEventListener(this.$options.event, this.handler)
   }
 }

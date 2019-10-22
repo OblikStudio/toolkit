@@ -130,7 +130,7 @@ export default class {
     }
   }
 
-  $destroy () {
+  destroy () {
     this.reference.removeEventListener('scroll', this.handler)
   }
 }

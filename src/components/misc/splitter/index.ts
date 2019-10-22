@@ -123,7 +123,7 @@ export default class Splitter extends Component<Options> {
     }
   }
 
-  $init () {
+  init () {
     findTexts(this.$element).forEach(text => {
       let words = this.splitWords(text)
       

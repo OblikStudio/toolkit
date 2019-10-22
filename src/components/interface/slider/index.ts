@@ -28,7 +28,7 @@ export default class Slider extends Component {
   isDrag: boolean
   drag: Drag
 
-  $create () {
+  create () {
     this.clickThreshold = 40
     this.isDraggingLink = null
     this.isDrag = null
@@ -47,7 +47,7 @@ export default class Slider extends Component {
     })
   }
 
-  $init () {
+  init () {
     this.setSlide(0)
   }
 

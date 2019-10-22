@@ -83,7 +83,7 @@ export class Component<O = object> {
     this.$parent = parent
     this.$emitter = new TinyEmitter()
 
-    this.$create()
+    this.create()
 
     if (this.$parent) {
       this._name = name(this.constructor, this.$parent.constructor)
@@ -91,11 +91,11 @@ export class Component<O = object> {
     }
   }
 
-  _init () {
+  $init () {
     if (this._isInit) {
-      this._children.forEach(child => child._init())
+      this._children.forEach(child => child.$init())
 
-      this.$init()
+      this.init()
       this._isInit = false
     }
   }
@@ -143,14 +143,12 @@ export class Component<O = object> {
     }
   }
 
-  _destroy () {
+  $destroy () {
     if (!this._isDestroyed) {
-      this.$destroy()
+      this.destroy()
 
       Array.from(this._children).forEach(child => {
-        if (typeof child._destroy === 'function') {
-          child._destroy()
-        }
+        child.$destroy()
       })
 
       if (this.$parent) {
@@ -161,9 +159,9 @@ export class Component<O = object> {
     }
   }
 
-  $create () {}
-  $init () {}
-  $destroy () {}
+  create () {}
+  init () {}
+  destroy () {}
 }
 
 export default Component

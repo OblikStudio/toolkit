@@ -11,7 +11,7 @@ export default class Height extends Component<Options> {
   updateHandler: () => any
   observer: MutationObserver
 
-	$create () {
+	create () {
     this.varName = 'height'
     this.varElement = null
     this.updateHandler = this.update.bind(this)
@@ -55,7 +55,7 @@ export default class Height extends Component<Options> {
     }
 	}
 
-	$destroy () {
+	destroy () {
 		window.removeEventListener('resize', this.updateHandler)
 		window.removeEventListener('load', this.updateHandler)
 		this.observer.disconnect()

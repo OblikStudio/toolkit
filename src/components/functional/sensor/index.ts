@@ -67,7 +67,7 @@ export class Sensor extends Component<Options> {
 	effects: Effect[] = []
 	updateHandler: () => void
 
-	$init () {
+	init () {
 		if (Array.isArray(this.$options.effects)) {
 			this.effects = this.$options.effects.map(data => this.createEffect(data))
 		}
@@ -154,7 +154,7 @@ export class Sensor extends Component<Options> {
 		})
 	}
 
-	$destroy () {
+	destroy () {
 		this.effects.forEach(effect => effect.destroy())
 		this.effects = null
 

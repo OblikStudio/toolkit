@@ -30,7 +30,7 @@ export default class Toggle extends Component<Options> {
 	offHandler: () => void
 	offHandlerDebounced: ReturnType<typeof debounce>
 
-	$create () {
+	create () {
 		this.targets = query(this.$element, this.$options.target)
 
 		if (this.$options.off && this.$options.off !== this.$options.on) {
@@ -85,7 +85,7 @@ export default class Toggle extends Component<Options> {
 		this.$emitter.emit('change', this.state)
 	}
 
-	$destroy () {
+	destroy () {
 		this.$element.removeEventListener(this.$options.on, this.onHandler)
 
 		if (this.offHandler) {

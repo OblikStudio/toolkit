@@ -3,7 +3,7 @@ import Component from '../../component'
 export default class extends Component {
   $visual: Component
 
-  $create () {
+  create () {
     this.$element.addEventListener('mouseenter', () => {
       this.$element.classList.add('is-cursor-hidden')
       this.$visual.$element.classList.add('is-visible')
