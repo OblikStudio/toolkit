@@ -40,7 +40,7 @@ export class Watcher {
       }
     })
 
-    this.observer.on('added', this.createComponents.bind(this))
+    this.observer.on('added', this.processAttributes.bind(this))
     this.observer.on('removed', this.destroyComponents.bind(this))
     this.observer.on('searched', this.initComponents.bind(this))
   }
@@ -99,7 +99,24 @@ export class Watcher {
     return results
   }
 
-  createComponents (element: HTMLElement) {
+  createComponent (element: HTMLElement, meta: ComponentMeta) {
+    let Constructor = this.getConstructor(meta.id)
+    let parentElement = null
+    let parent = null
+
+    if (meta.parentAttr) {
+      parentElement = findAncestor(element, element => element.hasAttribute(meta.parentAttr))
+      parent = this.getInstance(parentElement, meta.parentId)
+
+      if (!parent) {
+        throw new Error(`Parent element of ${ meta.name } not found: ${ meta.parentAttr }`)
+      }
+    }
+
+    return new Constructor(element, value(meta.value), parent)
+  }
+
+  processAttributes (element: HTMLElement) {
     let attributes = this.getComponentAttributes(element)
     let instances = this.hosts.get(element)
 
@@ -109,30 +126,18 @@ export class Watcher {
     }
 
     attributes.forEach(meta => {
-      if (instances[meta.name]) {
-        return
-      }
-
-      let Constructor = this.getConstructor(meta.id)
-      let parentElement = null
-      let parent = null
-
-      if (meta.parentAttr) {
-        parentElement = findAncestor(element, element => element.hasAttribute(meta.parentAttr))
-        parent = this.getInstance(parentElement, meta.parentId)
-
-        if (!parent) {
-          throw new Error(`Parent element of ${ meta.name } not found: ${ meta.parentAttr }`)
+      if (!instances[meta.name]) {
+        try {
+          instances[meta.name] = this.createComponent(element, meta)
+        } catch (e) {
+          console.warn(e)
         }
       }
-
-      instances[meta.id] = new Constructor(element, value(meta.value), parent)
     })
   }
 
   destroyComponents (element: HTMLElement) {
     let instances = this.hosts.get(element)
-
     if (instances) {
       for (let name in instances) {
         if (typeof instances[name].$destroy === 'function') {
