@@ -16,15 +16,6 @@ export interface ComponentConstructor<O = object> {
   $options (input: Input<O>): Options<O>
 }
 
-export interface Component {
-  constructor: ComponentConstructor
-  _name?: string
-  _init?: () => void
-  _addChild?: (component: Component) => void
-  _removeChild?: (component: Component) => void
-  _destroy?: () => void
-}
-
 function name (child: ComponentConstructor, parent: ComponentConstructor) {
   let subcomponents = parent.$components
   if (subcomponents) {
@@ -44,7 +35,7 @@ function name (child: ComponentConstructor, parent: ComponentConstructor) {
   }
 }
 
-export class OblikComponent<O = object> implements Component {
+export class Component<O = object> {
   ['constructor']: ComponentConstructor<O>
   
   _isInit = true
@@ -175,4 +166,4 @@ export class OblikComponent<O = object> implements Component {
   $destroy () {}
 }
 
-export default OblikComponent
+export default Component

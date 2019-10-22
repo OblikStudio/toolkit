@@ -1,6 +1,6 @@
 import { query } from '../../../utils'
 import { debounce } from 'lodash-es'
-import { OblikComponent } from '../../component'
+import { Component } from '../../component'
 
 interface Options {
 	on: keyof GlobalEventHandlersEventMap
@@ -10,7 +10,7 @@ interface Options {
 	target: string
 }
 
-export default class Toggle extends OblikComponent<Options> {
+export default class Toggle extends Component<Options> {
 	static $defaults: Partial<Options> = {
 		on: 'click',
 		off: null,
