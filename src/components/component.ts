@@ -20,7 +20,7 @@ export interface ComponentConstructor<O = object> {
 export class Component<O = object> {
   ['constructor']: ComponentConstructor<O>
   
-  _isInit = true
+  _isInit = false
   _isDestroyed = false
   _name: string = null
   _children: Component[] = []
@@ -92,11 +92,11 @@ export class Component<O = object> {
   }
 
   $init () {
-    if (this._isInit) {
+    if (!this._isInit) {
       this._children.forEach(child => child.$init())
 
       this.init()
-      this._isInit = false
+      this._isInit = true
     }
   }
 
