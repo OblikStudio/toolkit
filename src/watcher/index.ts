@@ -126,9 +126,9 @@ export class Watcher {
     }
 
     attributes.forEach(meta => {
-      if (!instances[meta.name]) {
+      if (!instances[meta.id]) {
         try {
-          instances[meta.name] = this.createComponent(element, meta)
+          instances[meta.id] = this.createComponent(element, meta)
         } catch (e) {
           console.warn(e)
         }
