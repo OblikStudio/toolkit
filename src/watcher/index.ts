@@ -16,13 +16,13 @@ interface WatcherSettings {
 }
 
 export class Watcher {
-  element: HTMLElement
+  element: Element
   components: ComponentList
   attrRegex: RegExp
   observer: Observer
   hosts: Map<Element, ComponentInstances>
 
-  constructor (element: HTMLElement, settings: WatcherSettings) {
+  constructor (element: Element, settings: WatcherSettings) {
     this.element = element
     this.components = settings.components || {}
     let prefix = settings.prefix || 'ob'
@@ -99,7 +99,7 @@ export class Watcher {
     return results
   }
 
-  createComponent (element: HTMLElement, meta: ComponentMeta) {
+  createComponent (element: Element, meta: ComponentMeta) {
     let Constructor = this.getConstructor(meta.id)
     let parentElement = null
     let parent = null
@@ -116,7 +116,7 @@ export class Watcher {
     return new Constructor(element, value(meta.value), parent)
   }
 
-  processAttributes (element: HTMLElement) {
+  processAttributes (element: Element) {
     let attributes = this.getComponentAttributes(element)
     let instances = this.hosts.get(element)
 
@@ -136,7 +136,7 @@ export class Watcher {
     })
   }
 
-  destroyComponents (element: HTMLElement) {
+  destroyComponents (element: Element) {
     let instances = this.hosts.get(element)
     if (instances) {
       for (let name in instances) {
@@ -151,7 +151,7 @@ export class Watcher {
     }
   }
 
-  initComponents (element: HTMLElement) {
+  initComponents (element: Element) {
     let instances = this.hosts.get(element)
     if (instances) {
       for (let name in instances) {
