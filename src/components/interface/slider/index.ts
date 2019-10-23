@@ -8,7 +8,7 @@ interface Point {
   y: number
 }
 
-export default class Slider extends Component {
+export default class Slider extends Component<HTMLElement> {
   static components = {
     slide: Slide
   }

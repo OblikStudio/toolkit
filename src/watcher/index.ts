@@ -31,7 +31,7 @@ export class Watcher {
     this.attrRegex = new RegExp(`^${ prefix }\\-(.*)`)
 
     this.observer = new Observer(this.element, node => {
-      if (node instanceof HTMLElement) {
+      if (node instanceof Element) {
         for (let attribute of node.attributes) {
           if (this.attrRegex.exec(attribute.name)) {
             return true

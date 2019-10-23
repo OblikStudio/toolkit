@@ -4,15 +4,13 @@ interface Conditions {
   [key: string]: (options: object) => boolean
 }
 
-interface SourceOptions {
+interface Options {
   default: string
 }
 
 const conditions: Conditions = {}
 
-class Source extends Component {
-  $options: SourceOptions
-
+class Source extends Component<HTMLElement, Options> {
   create () {
     var hasSet = false
     var defaultSource = this.$options && this.$options.default

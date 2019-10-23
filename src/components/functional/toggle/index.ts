@@ -10,7 +10,7 @@ interface Options {
 	target: string
 }
 
-export default class Toggle extends Component<Options> {
+export default class Toggle extends Component<Element, Options> {
 	static defaults: Partial<Options> = {
 		on: 'click',
 		off: null,

@@ -5,7 +5,7 @@ interface Options {
   target: string
 }
 
-export default class Height extends Component<Options> {
+export default class Height extends Component<HTMLElement, Options> {
   varName: string
   varElement: HTMLElement
   updateHandler: () => any

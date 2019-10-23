@@ -5,7 +5,7 @@ type Input<O> = boolean | number | string | Partial<O> & { $preset?: string }
 type Options<O> = Partial<O> & { $preset?: string, value?: any }
 
 export interface ComponentConstructor<O = object> {
-  new (element: HTMLElement, options?: Input<O>, parent?: Component): Component
+  new (element: Element, options?: Input<O>, parent?: Component): Component
   readonly components?: {
     [key: string]: ComponentConstructor
   }
@@ -17,15 +17,15 @@ export interface ComponentConstructor<O = object> {
   $options (input: Input<O>): Options<O>
 }
 
-export class Component<O = object> {
+export class Component<E extends Element = Element, O = object> {
   ['constructor']: ComponentConstructor<O>
-  
+
   _isInit = false
   _isDestroyed = false
   _name: string = null
   _children: Component[] = []
   
-  $element: HTMLElement
+  $element: E
   $options: Options<O>
   $parent: Component
   $emitter: TinyEmitter
@@ -77,7 +77,7 @@ export class Component<O = object> {
     return defaultsDeep(options, preset, defaults)
   }
 
-  constructor (element: HTMLElement, options?: Input<O>, parent?: Component) {
+  constructor (element: E, options?: Input<O>, parent?: Component) {
     this.$element = element
     this.$options = this.constructor.$options(options)
     this.$parent = parent

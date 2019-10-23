@@ -91,7 +91,7 @@ interface Options {
   target: string
 }
 
-export default class ScrollTo extends Component<Options> {
+export default class ScrollTo extends Component<Element, Options> {
   static defaults = {
     event: 'click',
     duration: 650,

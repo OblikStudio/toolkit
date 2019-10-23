@@ -1,7 +1,16 @@
 import Component from '../../component'
 
+class Visual extends Component {
+  $element: HTMLElement
+}
+
 export default class extends Component {
-  $visual: Component
+  $element: HTMLElement
+  $visual: Visual
+
+  static components = {
+    visual: Visual
+  }
 
   create () {
     this.$element.addEventListener('mouseenter', () => {

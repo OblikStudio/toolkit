@@ -12,12 +12,14 @@ function nodesIntersect (a, b) {
   return Math.abs(centerA - centerB) < (halfA + halfB - 1) // -1 for threshold because widths are rounded
 }
 
-export default class extends Component {
+class Item extends Component<HTMLElement> {}
+
+export default class extends Component<HTMLElement> {
   static components = {
-    item: class extends Component {}
+    item: Item
   }
 
-  $item: Component[] = []
+  $item: Item[] = []
   updateHandler: () => any
 
   init () {

@@ -63,7 +63,7 @@ interface Options {
 	action?: string | object
 }
 
-export class Sensor extends Component<Options> {
+export class Sensor extends Component<HTMLElement, Options> {
 	effects: Effect[] = []
 	updateHandler: () => void
 

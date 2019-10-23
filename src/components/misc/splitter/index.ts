@@ -38,7 +38,7 @@ interface Options {
   }
 }
 
-export default class Splitter extends Component<Options> {
+export default class Splitter extends Component<Element, Options> {
   static defaults: Options = {
     chars: false,
     class: {
