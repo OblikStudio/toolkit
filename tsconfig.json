@@ -6,6 +6,7 @@
     "strictBindCallApply": true,
     "downlevelIteration": true,
     "target": "es3",
+    "module": "commonjs",
     "lib": [
       "es2015",
       "dom",
@@ -14,5 +15,10 @@
   },
   "include": [
     "src/**/*"
-  ]
+  ],
+  "typedocOptions": {
+    "mode": "modules",
+    "out": "docs",
+    "excludeNotExported": true
+  }
 }
