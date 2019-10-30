@@ -41,7 +41,7 @@ export default class extends Component<HTMLElement> {
       var node = item.$element
 
       var aboveNodes = previousNodes.filter(previousNode => {
-        if (previousNode.offsetTop + previousNode.offsetHeight < node.offsetTop) {
+        if (previousNode.offsetTop < node.offsetTop) {
           if (nodesIntersect(node, previousNode)) {
             return true
           }
