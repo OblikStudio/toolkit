@@ -1,4 +1,9 @@
+/**
+ * @todo avoid reflow after each element
+ */
+
 import Component from '../../component'
+import { ElementObserver } from '../../../utils/element-observer'
 
 function getNodeBottom (node) {
   return node.offsetTop + node.offsetHeight + parseInt(window.getComputedStyle(node).marginBottom)
@@ -12,20 +17,30 @@ function nodesIntersect (a, b) {
   return Math.abs(centerA - centerB) < (halfA + halfB - 1) // -1 for threshold because widths are rounded
 }
 
-class Item extends Component<HTMLElement> {}
+export class Item extends Component<HTMLElement> {
+  observer: ElementObserver
+  $parent: Masonry
 
-export default class extends Component<HTMLElement> {
+  create () {
+    this.observer = new ElementObserver(this.$element, ['offsetTop', 'offsetHeight'])
+    this.observer.on('change', () => {
+      this.$parent.updateItems()
+    })
+  }
+
+  destroy () {
+    this.observer.destroy()
+  }
+}
+
+export class Masonry extends Component<HTMLElement> {
   static components = {
     item: Item
   }
 
   $item: Item[] = []
-  updateHandler: () => any
 
   init () {
-    this.updateHandler = this.updateItems.bind(this)
-    window.addEventListener('resize', this.updateHandler)
-
     this.updateItems()
   }
 
@@ -72,8 +87,6 @@ export default class extends Component<HTMLElement> {
       previousNodes.push(node)
     })
   }
-
-  destroy () {
-    window.removeEventListener('resize', this.updateHandler)
-  }
 }
+
+export default Masonry
