@@ -1,32 +1,23 @@
 import { TinyEmitter } from 'tiny-emitter'
+import { Point, Vector } from './math'
 
 function isTouchEvent (event: Event): event is TouchEvent {
   return (event.type && event.type.indexOf('touch') === 0)
 }
 
-interface Point {
-  x: number
-  y: number
-}
-
 export class Drag extends TinyEmitter {
   element: HTMLElement
   activeTouch: Touch
-  angles: number[]
-  direction: number
+  position: Point
   startHandler: Drag['start']
   moveHandler: Drag['move']
   endHandler: Drag['end']
-  lastClientPosition: Point
   
   constructor (element) {
     super()
     this.element = element
     this.activeTouch = null
-
-    this.angles = null
-    this.direction = null
-    this.lastClientPosition = null
+    this.position = null
 
     this.startHandler = this.start.bind(this)
     this.moveHandler = this.move.bind(this)
@@ -76,12 +67,7 @@ export class Drag extends TinyEmitter {
      */
     event = event as MouseEvent
 
-    this.angles = []
-    this.direction = null
-    this.lastClientPosition = {
-      x: event.clientX,
-      y: event.clientY
-    }
+    this.position = new Point(event.clientX, event.clientY)
 
     this.element.addEventListener('mousemove', this.moveHandler)
     this.element.addEventListener('touchmove', this.moveHandler)
@@ -101,26 +87,11 @@ export class Drag extends TinyEmitter {
       }
     }
 
-    var clientPosition = {
-      x: event.clientX,
-      y: event.clientY
-    }
+    let clientPosition = new Point(event.clientX, event.clientY)
+    let delta = new Vector(this.position, clientPosition)
+    this.position = clientPosition
 
-    this.angles.push(Math.atan2(
-      clientPosition.y - this.lastClientPosition.y,
-      clientPosition.x - this.lastClientPosition.x
-    ))
-
-    if (this.angles.length > 5) {
-      this.angles.shift()
-    }
-
-    if (this.angles.length) {
-      this.direction = this.angles.reduce((acc, value) => acc + value) / this.angles.length
-    }
-
-    this.lastClientPosition = clientPosition
-    this.emit('move', event, this.direction)
+    this.emit('move', event, delta)
   }
 
   end (event) {

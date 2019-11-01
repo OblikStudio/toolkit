@@ -38,6 +38,12 @@ export class Vector {
   magnitude = 0
   direction = 0
 
+  constructor (p1?: Point, p2?: Point) {
+    if (p1) {
+      this.set(p1, p2)
+    }
+  }
+
   set (p1: Point, p2?: Point) {
     let x = p1.x
     let y = p1.y
