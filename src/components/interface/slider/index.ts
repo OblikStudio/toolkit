@@ -2,18 +2,24 @@ import Component from '../../component'
 import Slide from './slide'
 import { Drag } from '../../../utils/drag'
 import { getTag } from '../../../utils/dom'
+import { ticker } from '../../../utils/ticker'
+import { FuzzyBoolean } from '../../../utils/fuzzy-boolean'
 
 interface Point {
   x: number
   y: number
 }
 
+class Rail extends Component<HTMLElement> {}
+
 export default class Slider extends Component<HTMLElement> {
   static components = {
-    slide: Slide
+    slide: Slide,
+    rail: Rail
   }
 
   $slide: Slide[] = []
+  $rail: Rail
   rect: ClientRect
   activeSlide: Slide
   currentSlide: Slide
@@ -26,6 +32,7 @@ export default class Slider extends Component<HTMLElement> {
   clickThreshold = 40
   isDraggingLink: boolean
   isDrag: boolean
+  isDragging: FuzzyBoolean
   drag: Drag
 
   create () {
@@ -45,6 +52,8 @@ export default class Slider extends Component<HTMLElement> {
         event.preventDefault()
       }
     })
+
+    ticker.on('tick', this.renderItems.bind(this))
   }
 
   init () {
@@ -96,6 +105,7 @@ export default class Slider extends Component<HTMLElement> {
     }
 
     this.isDrag = false
+    this.isDragging = new FuzzyBoolean(true)
     this.isDraggingLink = !!getTag(event.target, 'A')
     this.$element.classList.add('is-dragged')
     this.setCurrentSlide(this.activeSlide)
@@ -110,6 +120,10 @@ export default class Slider extends Component<HTMLElement> {
 
     // Stop propagating so when nesting sliders, parent sliders don't move.
     event.stopPropagation()
+    this.totalDelta = {
+      x: 0,
+      y: 0
+    }
   }
 
   newDelta (event) {
@@ -205,17 +219,27 @@ export default class Slider extends Component<HTMLElement> {
     }
   }
 
-  pointerMove (event, direction) {
-    var sine = Math.sin(direction)
+  pointerMove (event, vector) {
+    let sine = Math.abs(Math.sin(vector.direction))
+    let wasDragging = this.isDragging.value()
 
-    if (Math.abs(sine) < 0.8) {
+    if (sine < 0.8) {
       event.stopPropagation()
 
       if (event.cancelable) {
         event.preventDefault() // prevent scroll on mobile
       }
+
+      this.isDragging.true(1 / 5)
     } else {
-      this.newDelta(event)
+      this.isDragging.false(1 / 5)
+    }
+    
+    if (this.isDragging.value()) {
+      if (!wasDragging) {
+        this.newDelta(event)
+      }
+    } else {
       return
     }
 
@@ -235,7 +259,7 @@ export default class Slider extends Component<HTMLElement> {
     this.updateCenterSlide()
     this.updateCurrentSlide()
 
-    this.renderItems()
+    // this.renderItems()
   }
 
   pointerUp (event) {
@@ -247,7 +271,7 @@ export default class Slider extends Component<HTMLElement> {
     if (this.currentSlide !== this.activeSlide) {
       this.setSlide(this.currentSlide)
     } else {
-      this.renderItems()
+      // this.renderItems()
     }
 
     this.setCurrentSlide(null)
@@ -287,8 +311,9 @@ export default class Slider extends Component<HTMLElement> {
       }
     }
 
-    this.$slide.forEach(slide => {
-      slide.$element.style.transform = `translateX(${ itemsX }px)`
-    })
+    this.$rail.$element.style.transform = `translateX(${ itemsX }px)`
+    // this.$slide.forEach(slide => {
+    //   slide.$element.style.transform = `translateX(${ itemsX }px)`
+    // })
   }
 }

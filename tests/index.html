@@ -2,6 +2,7 @@
 <html>
 <head>
   <title>Testing</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=0">
   <style type="text/css">
     html, body {
       font-family: sans-serif;
@@ -32,55 +33,61 @@
       height: 0 !important;
     }
 
-    [ob-slider], #slider {
+    [ob-slider-rail] {
       display: flex;
       flex-wrap: nowrap;
     }
 
-    [ob-slider-slide], .slide {
+    [ob-slider-slide] {
       width: 100%;
       flex: 1 0 auto;
     }
 
-    [ob-slider]:not(.is-dragged) > [ob-slider-slide],
-    #slider:not(.is-dragged) > .slide {
+    [ob-slider]:not(.is-dragged) > [ob-slider-rail] {
       transition: transform 0.3s ease;
     }
   </style>
 
   <style>
-    [ob-slider], #slider {
+    [ob-slider] {
       overflow: hidden;
+      width: 600px;
+      margin: 0 auto;
     }
-    [ob-slider-slide], .slide {
+    [ob-slider-slide] {
       box-sizing: border-box;
-      padding: 20px;
+      padding: 150px 40px;
+    }
+
+    .carousel-cell {
+      width: 400px;
+      height: 400
     }
   </style>
 </head>
 <body style="overflow-x: hidden; min-height: 200vh;">
   <p id="elem" style="width: 120vw;">wrapper</p>
 
-  <div ob-slider style="margin: 40px; width: 200px;">
-    <div ob-slider-slide style="background: #666">1</div>
-    <div ob-slider-slide style="background: #888">
-      <div ob-slider style="width: 100%;">
-        <div ob-slider-slide style="background: #444">1</div>
-        <div ob-slider-slide style="background: #666">2</div>
-        <div ob-slider-slide style="background: #aaa">3</div>
-        <div ob-slider-slide style="background: #ccc">4</div>
-      </div>
+  <div ob-slider>
+    <div ob-slider-rail>
+      <div ob-slider-slide style="background: #000; color: white;">1</div>
+      <div ob-slider-slide style="background: #222; color: white;">2</div>
+      <div ob-slider-slide style="background: #444; color: white;">3</div>
+      <div ob-slider-slide style="background: #666">4</div>
+      <div ob-slider-slide style="background: #888">5</div>
+      <div ob-slider-slide style="background: #aaa">6</div>
     </div>
-    <div ob-slider-slide style="background: #aaa">3</div>
-    <div ob-slider-slide style="background: #ccc">4</div>
+    <button>hey</button>
   </div>
 
-  <div id="slider" style="width: 100%;">
-    <div class="slide" style="background: #444">1</div>
-    <div class="slide" style="background: #666">2</div>
-    <div class="slide" style="background: #aaa">3</div>
-    <div class="slide" style="background: #ccc">4</div>
-  </div>
+  <!-- <div class="carousel js-flickity">
+    <div class="carousel-cell" style="background: #000; color: white;">1</div>
+    <div class="carousel-cell" style="background: #222; color: white;">2</div>
+    <div class="carousel-cell" style="background: #444; color: white;">3</div>
+    <div class="carousel-cell" style="background: #666">4</div>
+    <div class="carousel-cell" style="background: #888">5</div>
+    <div class="carousel-cell" style="background: #aaa">6</div>
+  </div> -->
 
   <button ob-toggle="target: @sibling">toggle</button>
   <div ob-height>
