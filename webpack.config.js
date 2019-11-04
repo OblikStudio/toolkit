@@ -3,7 +3,7 @@ const { resolve } = require('path')
 module.exports = {
   watch: true,
   mode: 'development',
-  entry: './js/index.js',
+  entry: './tests/index.js',
   devServer: {
     contentBase: './tests',
     port: 5000

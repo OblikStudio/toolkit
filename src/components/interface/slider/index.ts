@@ -33,6 +33,7 @@ export default class Slider extends Component<HTMLElement> {
   isDraggingLink: boolean
   isDrag: boolean
   isDragging: FuzzyBoolean
+  renderHandler: Slider['renderItems']
   drag: Drag
 
   create () {
@@ -53,7 +54,8 @@ export default class Slider extends Component<HTMLElement> {
       }
     })
 
-    ticker.on('tick', this.renderItems.bind(this))
+    this.renderHandler = this.renderItems.bind(this)
+    ticker.on('tick', this.renderHandler)
   }
 
   init () {
@@ -258,8 +260,6 @@ export default class Slider extends Component<HTMLElement> {
     this.$slide.forEach(slide => slide.update())
     this.updateCenterSlide()
     this.updateCurrentSlide()
-
-    // this.renderItems()
   }
 
   pointerUp (event) {
@@ -270,8 +270,6 @@ export default class Slider extends Component<HTMLElement> {
 
     if (this.currentSlide !== this.activeSlide) {
       this.setSlide(this.currentSlide)
-    } else {
-      // this.renderItems()
     }
 
     this.setCurrentSlide(null)
@@ -312,8 +310,9 @@ export default class Slider extends Component<HTMLElement> {
     }
 
     this.$rail.$element.style.transform = `translateX(${ itemsX }px)`
-    // this.$slide.forEach(slide => {
-    //   slide.$element.style.transform = `translateX(${ itemsX }px)`
-    // })
+  }
+
+  destroy () {
+    ticker.off('tick', this.renderHandler)
   }
 }

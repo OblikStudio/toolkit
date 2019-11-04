@@ -1,7 +1,11 @@
 {
   "name": "oblik",
-  "version": "0.2.0",
+  "version": "1.0.2",
   "description": "Toolkit with minimal, composable, and renderless UI components and uitilities.",
+  "main": "js/index.js",
+  "files": [
+    "js"
+  ],
   "scripts": {
     "transpile": "tsc",
     "serve": "webpack-dev-server",
