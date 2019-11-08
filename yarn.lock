@@ -3126,10 +3126,10 @@ qs@6.7.0:
   resolved "https://registry.yarnpkg.com/qs/-/qs-6.7.0.tgz#41dc1a015e3d581f1621776be31afb2876a9b1bc"
   integrity sha512-VCdBRNFTX1fyE7Nb6FYoURo/SPe62QCaAyzJvUjwRaIsc+NePBEniHlvxFmmX56+HZphIGtV0XeCirBtpDrTyQ==
 
-querel@^1.0.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/querel/-/querel-1.1.0.tgz#56c373d7ec5db488acc7061cc486f601c77ea0f8"
-  integrity sha512-/9O72447Bzj5y1d5sC6ORUiOjgJl0YE7evmYFZ67J50C32EWjqXqjZxNsSO/C0OsrWPSa9icSdss+piT1r0oLA==
+querel@^2.1:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/querel/-/querel-2.1.0.tgz#866111b0b0f0c0b630a23fe90f2496e313a21a72"
+  integrity sha512-yr8DCiL82fSN9xQWAUXmJI3XY+StoNQvok9EAHqcqTpSblcjdZhjFYJVWGbIdd3XpihiiJkvLJpSzczAlxTYPA==
 
 querystring-es3@^0.2.0:
   version "0.2.1"
