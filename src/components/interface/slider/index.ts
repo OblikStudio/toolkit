@@ -4,10 +4,53 @@ import { Drag } from '../../../utils/drag'
 import { getTag } from '../../../utils/dom'
 import { ticker } from '../../../utils/ticker'
 import { FuzzyBoolean } from '../../../utils/fuzzy-boolean'
+import { assignIn } from 'lodash'
 
 interface Point {
   x: number
   y: number
+}
+
+type WritableDOMRect = {
+  -readonly [T in keyof DOMRect]?: DOMRect[T]
+}
+
+function getWritableRect(input: ReturnType<Element['getBoundingClientRect']>): WritableDOMRect {
+  if (typeof DOMRect === 'function') {
+    if (input instanceof DOMRect) {
+      return input.toJSON()
+    }
+  } else if (input instanceof ClientRect) {
+    // IE11 does not have a DOMRect class
+
+    let result = assignIn({}, input) as Partial<DOMRect>
+    result.x = input.left
+    result.y = input.top
+
+    return result
+  }
+}
+
+function getOffsetRect (element: HTMLElement) {
+  let rect = getWritableRect(element.getBoundingClientRect())
+  let offsetX = window.scrollX || window.pageXOffset
+  let offsetY = window.scrollY || window.pageYOffset
+
+  rect.left += offsetX
+  rect.right += offsetX
+  rect.x += offsetX
+
+  rect.top += offsetY
+  rect.bottom += offsetY
+  rect.y += offsetY
+
+  return rect
+}
+
+interface Screen {
+  slides: Slide[]
+  left: number
+  right: number
 }
 
 class Rail extends Component<HTMLElement> {}
@@ -20,6 +63,7 @@ export default class Slider extends Component<HTMLElement> {
 
   $slide: Slide[] = []
   $rail: Rail
+  screens: Screen[]
   rect: ClientRect
   activeSlide: Slide
   currentSlide: Slide
@@ -100,11 +144,41 @@ export default class Slider extends Component<HTMLElement> {
     return this.move(-1)
   }
 
+  updateScreens () {
+    let sps = 2
+    let crr = 0
+    let groups = [[]]
+
+    this.$slide.forEach(slide => {
+      if (crr >= sps) {
+        groups.push([])
+        crr = 0
+      }
+
+      groups[groups.length - 1].push(slide)
+      crr++
+    })
+
+    this.screens = groups.map(group => {
+      let first = group[0].$element
+      let last = group[group.length - 1].$element
+
+      return {
+        slides: group,
+        left: first.offsetLeft,
+        right: last.offsetLeft + last.offsetWidth
+      }
+    })
+  }
+
   pointerDown (event) {
     this.dragOrigin = {
       x: event.pageX,
       y: event.pageY
     }
+
+    this.updateScreens()
+    console.log(this.screens)
 
     this.isDrag = false
     this.isDragging = new FuzzyBoolean(true)
@@ -268,9 +342,13 @@ export default class Slider extends Component<HTMLElement> {
 
     this.$element.classList.remove('is-dragged')
 
-    if (this.currentSlide !== this.activeSlide) {
-      this.setSlide(this.currentSlide)
-    }
+    this.updateDelta(null)
+    let x = this.origin.x + this.totalDelta.x
+    console.log(x, this.screens)
+    // if (this.currentSlide !== this.activeSlide) {
+    //   // this.setSlide(this.currentSlide)
+    //   this.origin.x = Math.random() * -1000
+    // }
 
     this.setCurrentSlide(null)
     this.setCenterSlide(null)

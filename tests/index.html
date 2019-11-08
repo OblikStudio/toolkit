@@ -51,28 +51,36 @@
   <style>
     [ob-slider] {
       overflow: hidden;
-      width: 600px;
       margin: 0 auto;
     }
     [ob-slider-slide] {
+      width: 50%;
       box-sizing: border-box;
-      padding: 150px 40px;
-    }
-
-    .carousel-cell {
-      width: 400px;
-      height: 400
+      padding: 40px;
     }
   </style>
 </head>
-<body style="overflow-x: hidden; min-height: 200vh;">
+<body style="min-height: 200vh;">
   <p id="elem" style="width: 120vw;">wrapper</p>
 
-  <div ob-slider>
+  <div ob-slider style="width: 600px;">
     <div ob-slider-rail>
       <div ob-slider-slide style="background: #000; color: white;">1</div>
       <div ob-slider-slide style="background: #222; color: white;">2</div>
-      <div ob-slider-slide style="background: #444; color: white;">3</div>
+      <div ob-slider-slide style="background: #444; color: white;">
+        <div ob-slider>
+          <div ob-slider-rail>
+            <div ob-slider-slide style="background: #000; color: white;">1</div>
+            <div ob-slider-slide style="background: #222; color: white;">2</div>
+            <div ob-slider-slide style="background: #444; color: white;">
+            
+            </div>
+            <div ob-slider-slide style="background: #666">4</div>
+            <div ob-slider-slide style="background: #888">5</div>
+            <div ob-slider-slide style="background: #aaa">6</div>
+          </div>
+        </div>
+      </div>
       <div ob-slider-slide style="background: #666">4</div>
       <div ob-slider-slide style="background: #888">5</div>
       <div ob-slider-slide style="background: #aaa">6</div>
