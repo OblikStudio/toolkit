@@ -51,6 +51,7 @@ interface Screen {
   slides: Slide[]
   left: number
   right: number
+  center: number
 }
 
 class Rail extends Component<HTMLElement> {}
@@ -112,10 +113,9 @@ export default class Slider extends Component<HTMLElement> {
       : slide
 
     if (targetSlide && targetSlide !== this.activeSlide) {
-      this.setSlideState('activeSlide', targetSlide, 'is-active')
       this.origin = {
-        x: -(this.activeSlide.$element.offsetLeft - this.$slide[0].$element.offsetLeft),
-        y: -(this.activeSlide.$element.offsetTop - this.$slide[0].$element.offsetTop)
+        x: 0,
+        y: 0
       }
 
       this.$emitter.emit('slideChange', this.activeSlide)
@@ -162,11 +162,14 @@ export default class Slider extends Component<HTMLElement> {
     this.screens = groups.map(group => {
       let first = group[0].$element
       let last = group[group.length - 1].$element
+      let left = first.offsetLeft
+      let right = last.offsetLeft + last.offsetWidth
 
       return {
         slides: group,
-        left: first.offsetLeft,
-        right: last.offsetLeft + last.offsetWidth
+        left,
+        right,
+        center: (left + right) / 2
       }
     })
   }
@@ -178,14 +181,11 @@ export default class Slider extends Component<HTMLElement> {
     }
 
     this.updateScreens()
-    console.log(this.screens)
 
     this.isDrag = false
     this.isDragging = new FuzzyBoolean(true)
     this.isDraggingLink = !!getTag(event.target, 'A')
     this.$element.classList.add('is-dragged')
-    this.setCurrentSlide(this.activeSlide)
-    this.setCenterSlide(this.activeSlide)
 
     // Don't prevent default for touchstart because if the slide is a link,
     // you can't follow it. The browser should automatically detect a drag and
@@ -238,63 +238,6 @@ export default class Slider extends Component<HTMLElement> {
     })
   }
 
-  setSlideState (key, slide, className) {
-    if (this[key]) {
-      this[key].$element.classList.remove(className)
-    }
-
-    if (slide) {
-      slide.$element.classList.add(className)
-    }
-
-    this[key] = slide
-  }
-
-  setCurrentSlide (slide) {
-    this.setSlideState('currentSlide', slide, 'is-current')
-  }
-
-  setCenterSlide (slide) {
-    this.setSlideState('centerSlide', slide, 'is-center')
-  }
-
-  updateCenterSlide () {
-    var index = this.$slide.indexOf(this.centerSlide)
-    var prevSlide = this.$slide[index - 1]
-    var nextSlide = this.$slide[index + 1]
-
-    if (nextSlide && nextSlide.rect.centerDiff < this.centerSlide.rect.centerDiff) {
-      this.setCenterSlide(nextSlide)
-    } else if (prevSlide && prevSlide.rect.centerDiff < this.centerSlide.rect.centerDiff) {
-      this.setCenterSlide(prevSlide)
-    }
-  }
-
-  updateCurrentSlide () {
-    var direction = Math.sign(-this.totalDelta.x)
-    var index = this.$slide.indexOf(this.currentSlide)
-    var prevSlide = this.$slide[index - 1]
-    var nextSlide = this.$slide[index + 1]
-
-    if (direction === 1) {
-      if (nextSlide && this.center > this.currentSlide.rect.thresholdRight) {
-        this.setCurrentSlide(nextSlide)
-      }
-
-      if (prevSlide && this.center < prevSlide.rect.thresholdRight) {
-        this.setCurrentSlide(prevSlide)
-      }
-    } else if (direction === -1) {
-      if (prevSlide && this.center < this.currentSlide.rect.thresholdLeft) {
-        this.setCurrentSlide(prevSlide)
-      }
-
-      if (nextSlide && this.center > nextSlide.rect.thresholdLeft) {
-        this.setCurrentSlide(nextSlide)
-      }
-    }
-  }
-
   pointerMove (event, vector) {
     let sine = Math.abs(Math.sin(vector.direction))
     let wasDragging = this.isDragging.value()
@@ -332,26 +275,31 @@ export default class Slider extends Component<HTMLElement> {
     this.center = this.rect.left + (this.rect.width / 2)
 
     this.$slide.forEach(slide => slide.update())
-    this.updateCenterSlide()
-    this.updateCurrentSlide()
   }
 
   pointerUp (event) {
     this.dragOrigin = null
+    let x = -this.origin.x - this.totalDelta.x
+    let rect = this.$element.getBoundingClientRect()
+    let center = x + rect.width / 2
+    console.log(x, center)
+
+    let tuple: [Screen, number][] = this.screens.map(screen => [screen, Math.abs(center - screen.center)])
+    let diffs = tuple.reduce((acc, curr) => {
+      return curr[1] <= acc[1] ? curr : acc
+    })
+
+    this.origin.x = -diffs[0].left
+    console.log(diffs)
+
     this.updateDelta(null)
 
     this.$element.classList.remove('is-dragged')
 
-    this.updateDelta(null)
-    let x = this.origin.x + this.totalDelta.x
-    console.log(x, this.screens)
     // if (this.currentSlide !== this.activeSlide) {
     //   // this.setSlide(this.currentSlide)
     //   this.origin.x = Math.random() * -1000
     // }
-
-    this.setCurrentSlide(null)
-    this.setCenterSlide(null)
   }
 
   renderItems () {
