@@ -66,9 +66,7 @@ export default class Slider extends Component<HTMLElement> {
   $rail: Rail
   screens: Screen[]
   rect: ClientRect
-  activeSlide: Slide
-  currentSlide: Slide
-  centerSlide: Slide
+  currentScreen: Screen
   origin: Point
   dragOrigin: Point
   deltas: Point[]
@@ -85,9 +83,14 @@ export default class Slider extends Component<HTMLElement> {
     this.clickThreshold = 40
     this.isDraggingLink = null
     this.isDrag = null
-
+    this.currentScreen = null
+    this.origin = {
+      x: 0, y: 0
+    }
+    
     this.drag = new Drag(this.$element)
     this.drag.on('start', this.pointerDown.bind(this))
+    this.drag.on('change', this.pointerUpdate.bind(this))
     this.drag.on('move', this.pointerMove.bind(this))
     this.drag.on('end', this.pointerUp.bind(this))
     this.drag.on('retouch', this.newDelta.bind(this))
@@ -104,44 +107,25 @@ export default class Slider extends Component<HTMLElement> {
   }
 
   init () {
+    this.screens = this.updateScreens()
     this.setSlide(0)
   }
 
-  setSlide (slide) {
-    var targetSlide = (typeof slide === 'number')
-      ? this.$slide[slide]
-      : slide
+  setSlide (screen: number | Screen) {
+    var target = (typeof screen === 'number')
+      ? this.screens[screen]
+      : screen
 
-    if (targetSlide && targetSlide !== this.activeSlide) {
+    if (target && this.currentScreen !== target) {
+      this.currentScreen = target
       this.origin = {
-        x: 0,
+        x: -target.left,
         y: 0
       }
-
-      this.$emitter.emit('slideChange', this.activeSlide)
-
-      this.renderItems()
       return true
     }
 
     return false
-  }
-
-  move (direction) {
-    var index = this.$slide.indexOf(this.activeSlide)
-    if (index >= 0) {
-      return this.setSlide(index + direction)
-    }
-
-    return false
-  }
-
-  next () {
-    return this.move(1)
-  }
-
-  previous () {
-    return this.move(-1)
   }
 
   updateScreens () {
@@ -159,7 +143,7 @@ export default class Slider extends Component<HTMLElement> {
       crr++
     })
 
-    this.screens = groups.map(group => {
+    return groups.map(group => {
       let first = group[0].$element
       let last = group[group.length - 1].$element
       let left = first.offsetLeft
@@ -179,8 +163,6 @@ export default class Slider extends Component<HTMLElement> {
       x: event.pageX,
       y: event.pageY
     }
-
-    this.updateScreens()
 
     this.isDrag = false
     this.isDragging = new FuzzyBoolean(true)
@@ -261,10 +243,12 @@ export default class Slider extends Component<HTMLElement> {
     } else {
       return
     }
+  }
 
+  pointerUpdate (vector) {
     this.updateDelta({
-      x: event.pageX - this.dragOrigin.x,
-      y: event.pageY - this.dragOrigin.y
+      x: this.drag.position.x - this.dragOrigin.x,
+      y: this.drag.position.y - this.dragOrigin.y
     })
 
     if (!this.isDrag && Math.abs(this.totalDelta.x) >= this.clickThreshold) {
@@ -282,24 +266,30 @@ export default class Slider extends Component<HTMLElement> {
     let x = -this.origin.x - this.totalDelta.x
     let rect = this.$element.getBoundingClientRect()
     let center = x + rect.width / 2
-    console.log(x, center)
 
     let tuple: [Screen, number][] = this.screens.map(screen => [screen, Math.abs(center - screen.center)])
-    let diffs = tuple.reduce((acc, curr) => {
+    let closest = tuple.reduce((acc, curr) => {
       return curr[1] <= acc[1] ? curr : acc
     })
+    let closestScreen = closest[0]
 
-    this.origin.x = -diffs[0].left
-    console.log(diffs)
+    if (!this.setSlide(closestScreen)) {
+      let ind = this.screens.indexOf(this.currentScreen)
+      let pps = this.drag.movement.magnitude
+      let dir = Math.sign(Math.cos(this.drag.movement.direction))
 
+      if (pps > 500) {
+        if (dir > 0) {
+          this.setSlide(ind - 1)
+        } else {
+          this.setSlide(ind + 1)
+        }
+      }
+      console.log(this.drag.movement, dir)
+    }
+    
     this.updateDelta(null)
-
     this.$element.classList.remove('is-dragged')
-
-    // if (this.currentSlide !== this.activeSlide) {
-    //   // this.setSlide(this.currentSlide)
-    //   this.origin.x = Math.random() * -1000
-    // }
   }
 
   renderItems () {
