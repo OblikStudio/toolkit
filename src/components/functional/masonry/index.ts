@@ -3,7 +3,7 @@
  */
 
 import Component from '../../component'
-import { ElementObserver } from '../../../utils/element-observer'
+import { Poller } from '../../../utils/poller'
 
 function getNodeBottom (node) {
   return node.offsetTop + node.offsetHeight + parseInt(window.getComputedStyle(node).marginBottom)
@@ -18,11 +18,11 @@ function nodesIntersect (a, b) {
 }
 
 export class Item extends Component<HTMLElement> {
-  observer: ElementObserver
+  observer: Poller
   $parent: Masonry
 
   create () {
-    this.observer = new ElementObserver(this.$element, ['offsetTop', 'offsetHeight'])
+    this.observer = new Poller(this.$element, ['offsetTop', 'offsetHeight'])
     this.observer.on('change', () => {
       this.$parent.updateItems()
     })
