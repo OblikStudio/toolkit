@@ -89,15 +89,6 @@
     <button>hey</button>
   </div>
 
-  <!-- <div class="carousel js-flickity">
-    <div class="carousel-cell" style="background: #000; color: white;">1</div>
-    <div class="carousel-cell" style="background: #222; color: white;">2</div>
-    <div class="carousel-cell" style="background: #444; color: white;">3</div>
-    <div class="carousel-cell" style="background: #666">4</div>
-    <div class="carousel-cell" style="background: #888">5</div>
-    <div class="carousel-cell" style="background: #aaa">6</div>
-  </div> -->
-
   <button ob-toggle="target: @sibling">toggle</button>
   <div ob-height>
     <p style="margin: 0; max-width: 200px;">It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as opposed to using 'Content here, content here', making it look like readable English.</p>
@@ -123,6 +114,15 @@
     </div>
   </div>
 
-  <script src="/main.js"></script>
+<script src="/oblik.js"></script>
+<script>
+let w = new oblik.Watcher(document.body, {
+  components: oblik.components
+})
+console.log('here')
+
+w.init()
+</script>
+
 </body>
 </html>

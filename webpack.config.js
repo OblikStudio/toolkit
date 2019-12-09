@@ -1,16 +1,14 @@
-const { resolve } = require('path')
-
 module.exports = {
   watch: true,
   mode: 'development',
-  entry: './tests/index.js',
-  devServer: {
-    contentBase: './tests',
-    port: 5000
+  entry: {
+    oblik: './js/index.js'
   },
-  // output: {
-  //   path: resolve(__dirname, 'build'),
-  //   filename: 'oblik.js',
-  //   library: 'Oblik'
-  // }
+  output: {
+    library: 'oblik'
+  },
+  devServer: {
+    contentBase: './test/pages',
+    port: 5000
+  }
 }
