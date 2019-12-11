@@ -1,5 +1,4 @@
-import { expect } from 'chai'
-import { easeInCubic } from 'oblik/utils/easings'
+import { easeInCubic } from '../../src/utils/easings'
 
 describe('foo', () => {
   it('bar', () => {
