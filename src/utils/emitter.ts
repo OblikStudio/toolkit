@@ -4,7 +4,7 @@ class Listener {
   limit: number = Infinity
   calls: number = 0
 
-  constructor (callback: () => any, context: any) {
+  constructor (callback: () => any, context?: any) {
     this.callback = callback
     this.context = context
   }
@@ -19,14 +19,14 @@ interface ListenersIndex {
   [key: string]: Listener[]
 }
 
-class Emitter {
+export class Emitter {
   listeners: ListenersIndex = {}
 
   list (name: string) {
     return this.listeners[name] || (this.listeners[name] = [])
   }
 
-  on (name: string, callback: () => any, context: any) {
+  on (name: string, callback: () => any, context?: any) {
     let list = this.list(name)
     let listener = new Listener(callback, context)
 
@@ -34,14 +34,14 @@ class Emitter {
     return listener
   }
 
-  few (name: string, callback: () => any, context: any, limit: number) {
+  few (limit: number, name: string, callback: () => any, context?: any) {
     let listener = this.on(name, callback, context)
     listener.limit = limit
     return listener
   }
 
-  once (name: string, callback: () => any, context: any) {
-    return this.few(name, callback, context, 1)
+  once (name: string, callback: () => any, context?: any) {
+    return this.few(1, name, callback, context)
   }
 
   emit (name: string, ...args: any[]) {
@@ -79,10 +79,23 @@ class Emitter {
     }
   }
 
-  off (name: string, callback: () => any, context: any) {
+  off (name: string, callback?: () => any, context?: any) {
     if (arguments.length > 1) {
       let list = this.list(name)
-      let obsolete = list.filter(l => l.callback === callback || l.context === context)
+      let obsolete = list.filter(l => {
+        let result = false
+
+        if (typeof callback === 'function') {
+          result = l.callback === callback
+        }
+
+        if (typeof context !== 'undefined') {
+          result = l.context === context
+        }
+
+        return result
+      })
+
       this.remove(name, obsolete)
     } else if (arguments.length === 1) {
       this.remove(name)
