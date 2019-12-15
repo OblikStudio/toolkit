@@ -1,15 +1,15 @@
 import { TinyEmitter } from 'tiny-emitter'
 import { ticker } from './ticker'
 
-export class ElementObserver extends TinyEmitter {
-  element: Element
+export class Poller extends TinyEmitter {
+  target: object
   props: string[]
   memo = {}
   updateHandler: () => any
 
-  constructor (element: Element, props: string[]) {
+  constructor (target: object, props: string[]) {
     super()
-    this.element = element
+    this.target = target
     this.props = props
 
     this.updateHandler = this.update.bind(this)
@@ -24,7 +24,7 @@ export class ElementObserver extends TinyEmitter {
 
     for (let prop of this.props) {
       let memo = this.memo[prop]
-      let val = this.element[prop]
+      let val = this.target[prop]
 
       if (val !== memo) {
         if (memo !== undefined) {
