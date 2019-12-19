@@ -1,8 +1,11 @@
 import { Observer } from '..'
+import { getViewportScroller } from '../../../../utils/overflow'
 
 interface DirectionOptions {
 	direction: string
 }
+
+let scroller = getViewportScroller()
 
 export default class Direction implements Observer {
 	options: DirectionOptions
@@ -18,7 +21,7 @@ export default class Direction implements Observer {
 
 	$check () {
 		var previous = this.lastPosition
-		this.lastPosition = document.documentElement.scrollTop
+		this.lastPosition = scroller.scrollTop
 
 		return this.options.direction === 'up'
 			? (this.lastPosition < previous)
