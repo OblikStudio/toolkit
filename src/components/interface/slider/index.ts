@@ -4,7 +4,7 @@ import { Drag } from '../../../utils/drag'
 import { getTag } from '../../../utils/dom'
 import { ticker } from '../../../utils/ticker'
 import { FuzzyBoolean } from '../../../utils/fuzzy-boolean'
-import { assignIn } from 'lodash'
+import { assignIn } from 'lodash-es'
 
 interface Point {
   x: number
