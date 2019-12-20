@@ -13,6 +13,9 @@ export interface ComponentConstructor<O = object> {
   presets?: {
     [key: string]: Partial<O>
   }
+  resources?: {
+    [key: string]: any
+  }
   $name (ctor: ComponentConstructor): string
   $options (input: Input<O>): Options<O>
 }
