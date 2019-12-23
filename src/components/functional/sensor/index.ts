@@ -1,15 +1,15 @@
 import Component from "../../component"
+import { resource } from '../../../utils/config'
+import * as observers from './observers'
+import * as actions from './actions'
 
-export const observers = {}
-export const actions = {}
-
-export interface Observer {
+export abstract class Observer {
 	$check: (data: any) => boolean
 	$destroy?: () => void
 	$stickyOffset?: object
 }
 
-export interface Action {
+export abstract class Action {
 	$update: (result: boolean, observer: Observer) => void
 	$refresh?: (data: any) => void
 	$destroy?: () => any
@@ -64,6 +64,11 @@ interface Options {
 }
 
 export class Sensor extends Component<HTMLElement, Options> {
+	static resources = {
+		observers: {},
+		actions: {}
+	}
+
 	effects: Effect[] = []
 	updateHandler: () => void
 
@@ -95,53 +100,14 @@ export class Sensor extends Component<HTMLElement, Options> {
 	}
 
 	createEffect (data) {
-		if (!data.observer) {
-			throw new Error('Observer not specified.')
-		}
+		let resources = this.constructor.resources
 
-		if (!data.action) {
-			throw new Error('Action not specified.')
-		}
+		let effect = new Effect(this)
+		let observer = resource<Observer>(data.observer, resources.observers, (Resource, options) => new Resource(effect, options))
+		let action = resource<Action>(data.action, resources.actions, (Resource, options) => new Resource(effect, options))
 
-		var observerType
-		var observerOptions
-
-		if (typeof data.observer === 'object') {
-			observerType = data.observer.type
-			observerOptions = data.observer
-		} else {
-			observerType = data.observer
-			observerOptions = null
-		}
-
-		var actionType
-		var actionOptions
-
-		if (typeof data.action === 'object') {
-			actionType = data.action.type
-			actionOptions = data.action
-		} else {
-			actionType = data.action
-			actionOptions = null
-		}
-
-		var observer = observers[observerType]
-		var action = actions[actionType]
-
-		if (!observer) {
-			throw new Error('Observer not found: ' + observerType)
-		}
-
-		if (!action) {
-			throw new Error('Action not found: ' + actionType)
-		}
-
-		var effect = new Effect(this)
-		var observerInstance = new observer(effect, observerOptions)
-		var actionInstance = new action(effect, actionOptions)
-
-		effect.setObserver(observerInstance)
-		effect.setAction(actionInstance)
+		effect.setObserver(observer)
+		effect.setAction(action)
 
 		return effect
 	}
@@ -161,6 +127,11 @@ export class Sensor extends Component<HTMLElement, Options> {
 		window.removeEventListener('scroll', this.updateHandler)
 		window.removeEventListener('resize', this.updateHandler)
 	}
+}
+
+export const resources = {
+	observers,
+	actions
 }
 
 export default Sensor
