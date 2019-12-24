@@ -102,4 +102,32 @@ describe('watcher', () => {
       done()
     })
   })
+
+  it('moves components', function (done) {
+    fixture.set(`
+      <main>
+        <div><div ob-test></div></div>
+        <div id="dest"></div>
+      </main>
+    `)
+
+    let main = fixture.el.querySelector('main')
+    let target = main.querySelector('[ob-test]')
+    let dest = main.querySelector('#dest')
+    let watcher = new Watcher(main, {
+      components: {
+        test: Tester
+      }
+    })
+
+    watcher.init()
+
+    let component = watcher.getInstance(target, 'test') as Tester
+    dest.appendChild(target)
+    
+    window.requestAnimationFrame(() => {
+      expect(component.spyDestroy.called).false
+      done()
+    })
+  })
 })

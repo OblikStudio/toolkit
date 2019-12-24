@@ -16,6 +16,8 @@ export interface ComponentConstructor<O = object> {
   resources?: {
     [key: string]: any
   }
+  isMovable?: boolean
+  isPersistent?: boolean
   $name (ctor: ComponentConstructor): string
   $options (input: Input<O>): Options<O>
 }
@@ -32,6 +34,9 @@ export class Component<E extends Element = Element, O = object> {
   $options: Options<O>
   $parent: Component
   $emitter: TinyEmitter
+
+  static isMovable = true
+  static isPersistent = false
 
   static $name (this: ComponentConstructor, ctor: ComponentConstructor) {
     let subcomponents = this.components

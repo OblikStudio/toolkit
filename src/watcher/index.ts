@@ -1,3 +1,4 @@
+import { defaultsDeep } from 'lodash-es'
 import { value, attribute, ComponentMeta } from './parse'
 import { Observer, findAncestor } from '../utils'
 import { Component, ComponentConstructor } from '../components/component'
@@ -17,6 +18,7 @@ interface WatcherSettings {
 
 export class Watcher {
   element: Element
+  options: WatcherSettings
   components: ComponentList
   attrRegex: RegExp
   observer: Observer
@@ -24,11 +26,14 @@ export class Watcher {
 
   constructor (element: Element, settings: WatcherSettings) {
     this.element = element
-    this.components = settings.components || {}
-    let prefix = settings.prefix || 'ob'
+    this.options = defaultsDeep(settings, {
+      prefix: 'ob',
+      components: {}
+    })
 
     this.hosts = new Map()
-    this.attrRegex = new RegExp(`^${ prefix }\\-(.*)`)
+    this.attrRegex = new RegExp(`^${ this.options.prefix }\\-(.*)`)
+    this.components = this.options.components
 
     this.observer = new Observer(this.element, node => {
       if (node instanceof Element) {
@@ -41,6 +46,7 @@ export class Watcher {
     })
 
     this.observer.on('added', this.processAttributes.bind(this))
+    this.observer.on('moved', this.moveElement.bind(this))
     this.observer.on('removed', this.destroyComponents.bind(this))
     this.observer.on('searched', this.initComponents.bind(this))
   }
@@ -114,6 +120,34 @@ export class Watcher {
     }
 
     return new Constructor(element, value(meta.value), parent)
+  }
+
+  moveElement (element: Element) {
+    let attributes = this.getComponentAttributes(element)
+    let instances = this.hosts.get(element)
+
+    if (!instances) {
+      instances = {}
+      this.hosts.set(element, instances)
+    }
+
+    attributes.forEach(meta => {
+      let component = instances[meta.id]
+      let movable = component?.constructor?.isMovable
+
+      if (component && !movable) {
+        if (typeof component.$destroy === 'function') {
+          component.$destroy()
+        }
+
+        try {
+          instances[meta.id] = this.createComponent(element, meta)
+          // $init() should be called by the `searched` handler
+        } catch (e) {
+          console.warn(e)
+        }
+      }
+    })
   }
 
   processAttributes (element: Element) {

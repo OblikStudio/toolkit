@@ -1,6 +1,6 @@
 import { TinyEmitter } from 'tiny-emitter'
 
-type EventName = 'added' | 'removed' | 'searched'
+type EventName = 'added' | 'removed' | 'moved' | 'searched'
 
 export interface Observer {
   emit(event: EventName, node: Node): this
@@ -56,16 +56,29 @@ export class Observer extends TinyEmitter {
     })
   }
 
-  handleMutations (list: MutationRecord[]) {
-    list.forEach(mutation => {
-      mutation.removedNodes.forEach(node => {
-        this.remove(node)
-      })
-
-      mutation.addedNodes.forEach(node => {
-        this.add(node)
-      })
+  move (node: Node) {
+    this.search(node, node => {
+      this.emit('moved', node)
     })
+  }
+
+  handleMutations (list: MutationRecord[]) {
+    let added = []
+    let removed = []
+    let moved = []
+
+    list.forEach(mutation => {
+      added = added.concat(Array.from(mutation.addedNodes))
+      removed = removed.concat(Array.from(mutation.removedNodes))
+    })
+
+    moved = added.filter(entry => removed.includes(entry))
+    added = added.filter(entry => !moved.includes(entry))
+    removed = removed.filter(entry => !moved.includes(entry))
+
+    removed.forEach(node => this.remove(node))
+    moved.forEach(node => this.move(node))
+    added.forEach(node => this.add(node))
   }
 
   destroy () {
