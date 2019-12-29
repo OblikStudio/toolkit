@@ -1,6 +1,6 @@
 import { defaultsDeep } from 'lodash-es'
 import { value, attribute, ComponentMeta } from './parse'
-import { Observer, findAncestor } from '../utils'
+import { MutationEmitter, findAncestor } from '../utils'
 import { Component, ComponentConstructor } from '../components/component'
 
 interface ComponentList {
@@ -21,7 +21,7 @@ export class Watcher {
   options: WatcherSettings
   components: ComponentList
   attrRegex: RegExp
-  observer: Observer
+  observer: MutationEmitter
   hosts: Map<Element, ComponentInstances>
 
   constructor (element: Element, settings: WatcherSettings) {
@@ -35,7 +35,7 @@ export class Watcher {
     this.attrRegex = new RegExp(`^${ this.options.prefix }\\-(.*)`)
     this.components = this.options.components
 
-    this.observer = new Observer(this.element, node => {
+    this.observer = new MutationEmitter(node => {
       if (node instanceof Element) {
         for (let attribute of node.attributes) {
           if (this.attrRegex.exec(attribute.name)) {
@@ -45,10 +45,15 @@ export class Watcher {
       }
     })
 
-    this.observer.on('added', this.processAttributes.bind(this))
-    this.observer.on('moved', this.moveElement.bind(this))
-    this.observer.on('removed', this.destroyComponents.bind(this))
-    this.observer.on('searched', this.initComponents.bind(this))
+    this.observer.on('before:add', this.processAttributes.bind(this))
+    this.observer.on('before:move', this.moveElement.bind(this))
+    this.observer.on('before:remove', this.destroyComponents.bind(this))
+    this.observer.on('after:add', this.initComponents.bind(this))
+
+    this.observer.observe(this.element, {
+      childList: true,
+      subtree: true
+    })
   }
 
   getInstance (element: Element): ComponentInstances
@@ -136,9 +141,7 @@ export class Watcher {
       let movable = component?.constructor?.isMovable
 
       if (component && !movable) {
-        if (typeof component.$destroy === 'function') {
-          component.$destroy()
-        }
+        component.$destroy()
 
         try {
           instances[meta.id] = this.createComponent(element, meta)
@@ -174,10 +177,7 @@ export class Watcher {
     let instances = this.hosts.get(element)
     if (instances) {
       for (let name in instances) {
-        if (typeof instances[name].$destroy === 'function') {
-          instances[name].$destroy()
-        }
-
+        instances[name].$destroy()
         delete instances[name]
       }
 
@@ -189,15 +189,13 @@ export class Watcher {
     let instances = this.hosts.get(element)
     if (instances) {
       for (let name in instances) {
-        if (typeof instances[name].$init === 'function') {
-          instances[name].$init()
-        }
+        instances[name].$init()
       }
     }
   }
 
   init () {
-    this.observer.add(this.element)
+    this.observer.search(this.element, 'add')
   }
 }
 
