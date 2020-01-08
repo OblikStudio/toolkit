@@ -45,10 +45,10 @@ export class Watcher {
       }
     })
 
-    this.observer.on('before:add', this.processAttributes.bind(this))
-    this.observer.on('before:move', this.moveElement.bind(this))
-    this.observer.on('before:remove', this.destroyComponents.bind(this))
-    this.observer.on('after:add', this.initComponents.bind(this))
+    this.observer.on('before:add', this._createComponents, this)
+    this.observer.on('after:add', this._initComponents, this)
+    this.observer.on('before:move', this._moveComponents, this)
+    this.observer.on('before:remove', this._destroyComponents, this)
 
     this.observer.observe(this.element, {
       childList: true,
@@ -72,7 +72,7 @@ export class Watcher {
     return null
   }
 
-  getConstructor (componentId: string) {
+  _ctor (componentId: string) {
     let path = componentId.split('-')
     let name = path.shift()
     let ctor = this.components[name]
@@ -96,7 +96,7 @@ export class Watcher {
     return ctor
   }
 
-  getComponentAttributes (element: Element) {
+  _elementMeta (element: Element) {
     let results: ComponentMeta[] = []
 
     for (let entry of element.attributes) {
@@ -110,8 +110,8 @@ export class Watcher {
     return results
   }
 
-  createComponent (element: Element, meta: ComponentMeta) {
-    let Constructor = this.getConstructor(meta.id)
+  _create (element: Element, meta: ComponentMeta) {
+    let Constructor = this._ctor(meta.id)
     let parentElement = null
     let parent = null
 
@@ -127,8 +127,8 @@ export class Watcher {
     return new Constructor(element, value(meta.value), parent)
   }
 
-  moveElement (element: Element) {
-    let attributes = this.getComponentAttributes(element)
+  _moveComponents (element: Element) {
+    let attributes = this._elementMeta(element)
     let instances = this.hosts.get(element)
 
     if (!instances) {
@@ -144,7 +144,7 @@ export class Watcher {
         component.$destroy()
 
         try {
-          instances[meta.id] = this.createComponent(element, meta)
+          instances[meta.id] = this._create(element, meta)
           // $init() should be called by the `searched` handler
         } catch (e) {
           console.warn(e)
@@ -153,8 +153,8 @@ export class Watcher {
     })
   }
 
-  processAttributes (element: Element) {
-    let attributes = this.getComponentAttributes(element)
+  _createComponents (element: Element) {
+    let attributes = this._elementMeta(element)
     let instances = this.hosts.get(element)
 
     if (!instances) {
@@ -165,7 +165,7 @@ export class Watcher {
     attributes.forEach(meta => {
       if (!instances[meta.id]) {
         try {
-          instances[meta.id] = this.createComponent(element, meta)
+          instances[meta.id] = this._create(element, meta)
         } catch (e) {
           console.warn(e)
         }
@@ -173,7 +173,16 @@ export class Watcher {
     })
   }
 
-  destroyComponents (element: Element) {
+  _initComponents (element: Element) {
+    let instances = this.hosts.get(element)
+    if (instances) {
+      for (let name in instances) {
+        instances[name].$init()
+      }
+    }
+  }
+
+  _destroyComponents (element: Element) {
     let instances = this.hosts.get(element)
     if (instances) {
       for (let name in instances) {
@@ -185,17 +194,16 @@ export class Watcher {
     }
   }
 
-  initComponents (element: Element) {
-    let instances = this.hosts.get(element)
-    if (instances) {
-      for (let name in instances) {
-        instances[name].$init()
-      }
-    }
-  }
-
   init () {
     this.observer.search(this.element, 'add')
+  }
+
+  destroy () {
+    this.observer.destroy()
+    this.hosts.clear()
+    this.hosts = null
+    this.element = null
+    this.components = null
   }
 }
 

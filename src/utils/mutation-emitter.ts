@@ -2,7 +2,7 @@ import { Emitter } from '../utils/emitter'
 
 export interface MutationEmitter {
   emit(event: string, node: Node): any
-  on(event: string, callback: (node: Node) => void): any
+  on(event: string, callback: (node: Node) => void, context?: any): any
 }
 
 export class MutationEmitter extends Emitter {
