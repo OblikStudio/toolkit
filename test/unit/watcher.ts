@@ -28,6 +28,10 @@ class Parent extends Tester<{ foo: string }> {
   }
 }
 
+class NonMovable extends Tester {
+  static isMovable = false
+}
+
 describe('watcher', () => {
   it('initializes components', () => {
     fixture.set(`
@@ -107,26 +111,37 @@ describe('watcher', () => {
     fixture.set(`
       <main>
         <div><div ob-test></div></div>
+        <div><div ob-test2></div></div>
         <div id="dest"></div>
       </main>
     `)
 
     let main = fixture.el.querySelector('main')
-    let target = main.querySelector('[ob-test]')
+    let target1 = main.querySelector('[ob-test]')
+    let target2 = main.querySelector('[ob-test2]')
     let dest = main.querySelector('#dest')
     let watcher = new Watcher(main, {
       components: {
-        test: Tester
+        test: Tester,
+        test2: NonMovable
       }
     })
 
     watcher.init()
 
-    let component = watcher.getInstance(target, 'test') as Tester
-    dest.appendChild(target)
+    let comp1 = watcher.getInstance(target1, 'test') as Tester
+    let comp2 = watcher.getInstance(target2, 'test2') as NonMovable
+
+    dest.appendChild(target1)
+    dest.appendChild(target2)
     
     window.requestAnimationFrame(() => {
-      expect(component.spyDestroy.called).false
+      expect(comp1.spyDestroy.called).false
+      expect(comp2.spyDestroy.called).true
+
+      let newComp2 = watcher.getInstance(target2, 'test2') as NonMovable
+      expect(newComp2).not.equal(comp2)
+      expect(newComp2.spyInit.called).true
       done()
     })
   })
