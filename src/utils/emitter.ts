@@ -1,10 +1,12 @@
+type EmitterCallback = (...args: any) => any
+
 class Listener {
-  callback: () => any
+  callback: EmitterCallback
   context: any
   limit: number = Infinity
   calls: number = 0
 
-  constructor (callback: () => any, context?: any) {
+  constructor (callback: EmitterCallback, context?: any) {
     this.callback = callback
     this.context = context
   }
@@ -26,7 +28,7 @@ export class Emitter {
     return this.listeners[name] || (this.listeners[name] = [])
   }
 
-  on (name: string, callback: () => any, context?: any) {
+  on (name: string, callback: EmitterCallback, context?: any) {
     let list = this.list(name)
     let listener = new Listener(callback, context)
 
@@ -34,13 +36,13 @@ export class Emitter {
     return listener
   }
 
-  few (limit: number, name: string, callback: () => any, context?: any) {
+  few (limit: number, name: string, callback: EmitterCallback, context?: any) {
     let listener = this.on(name, callback, context)
     listener.limit = limit
     return listener
   }
 
-  once (name: string, callback: () => any, context?: any) {
+  once (name: string, callback: EmitterCallback, context?: any) {
     return this.few(1, name, callback, context)
   }
 
@@ -79,7 +81,7 @@ export class Emitter {
     }
   }
 
-  off (name: string, callback?: () => any, context?: any) {
+  off (name: string, callback?: EmitterCallback, context?: any) {
     if (arguments.length > 1) {
       let list = this.list(name)
       let obsolete = list.filter(l => {

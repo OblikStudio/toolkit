@@ -1,14 +1,46 @@
-import { TinyEmitter } from 'tiny-emitter'
+import { Emitter } from './emitter'
 
-export let ticker = new TinyEmitter()
-let stamp = Date.now()
+export class Ticker extends Emitter {
+  _isTicking: boolean
+  _stamp: number
+  _tickHandler: Ticker['_tick']
 
-;(function handler () {
-  let now = Date.now()
-  let diff = now - stamp
+  constructor () {
+    super()
 
-  ticker.emit('tick', diff)
-  stamp = now
+    this._isTicking = false
+    this._stamp = null
+    this._tickHandler = this._tick.bind(this)
+  }
 
-  window.requestAnimationFrame(handler)
-})()
+  _run () {
+    window.requestAnimationFrame(this._tickHandler)
+  }
+
+  _tick () {
+    if (!this._isTicking) {
+      return
+    }
+
+    let now = Date.now()
+    let diff = now - this._stamp
+  
+    this.emit('tick', diff)
+
+    this._stamp = now
+    this._run()
+  }
+
+  start () {
+    this._isTicking = true
+    this._stamp = Date.now()
+    this._run()
+  }
+
+  stop () {
+    this._isTicking = false
+  }
+}
+
+export let ticker = new Ticker()
+ticker.start()
