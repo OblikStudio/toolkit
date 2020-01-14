@@ -1,5 +1,5 @@
-import { TinyEmitter } from 'tiny-emitter'
 import { isObject, defaultsDeep } from 'lodash-es'
+import { Emitter } from '../utils/emitter'
 
 type Input<O> = boolean | number | string | Partial<O> & { $preset?: string }
 type Options<O> = Partial<O> & { $preset?: string, value?: any }
@@ -33,7 +33,7 @@ export class Component<E extends Element = Element, O = object> {
   $element: E
   $options: Options<O>
   $parent: Component
-  $emitter: TinyEmitter
+  $emitter: Emitter
 
   static isMovable = true
   static isPersistent = false
@@ -89,7 +89,7 @@ export class Component<E extends Element = Element, O = object> {
     this.$element = element
     this.$options = this.constructor.$options(options)
     this.$parent = parent
-    this.$emitter = new TinyEmitter()
+    this.$emitter = new Emitter()
 
     this.create()
 

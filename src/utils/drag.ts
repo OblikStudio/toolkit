@@ -1,12 +1,12 @@
-import { TinyEmitter } from 'tiny-emitter'
 import { Point, Vector } from './math'
 import { ticker } from './ticker'
+import { Emitter } from './emitter'
 
 function isTouchEvent (event: Event): event is TouchEvent {
   return (event.type && event.type.indexOf('touch') === 0)
 }
 
-export class Drag extends TinyEmitter {
+export class Drag extends Emitter {
   element: HTMLElement
   activeTouch: Touch
   position: Point
@@ -15,7 +15,6 @@ export class Drag extends TinyEmitter {
   startHandler: Drag['start']
   moveHandler: Drag['move']
   endHandler: Drag['end']
-  tickHandler: Drag['tick']
   
   constructor (element) {
     super()
@@ -27,7 +26,6 @@ export class Drag extends TinyEmitter {
     this.startHandler = this.start.bind(this)
     this.moveHandler = this.move.bind(this)
     this.endHandler = this.end.bind(this)
-    this.tickHandler = this.tick.bind(this)
 
     this.element.addEventListener('mousedown', this.startHandler)
     this.element.addEventListener('touchstart', this.startHandler)
@@ -82,7 +80,7 @@ export class Drag extends TinyEmitter {
     this.element.addEventListener('mouseleave', this.endHandler)
     this.element.addEventListener('touchend', this.endHandler)
     this.element.addEventListener('touchcancel', this.endHandler)
-    ticker.on('tick', this.tickHandler)
+    ticker.on('tick', this.tick, this)
 
     this.emit('start', event)
   }
@@ -130,7 +128,7 @@ export class Drag extends TinyEmitter {
     
     this.element.removeEventListener('mousemove', this.moveHandler)
     this.element.removeEventListener('touchmove', this.moveHandler)
-    ticker.off('tick', this.tickHandler)
+    ticker.off('tick', this.tick, this)
     
     this.emit('end', event)
   }

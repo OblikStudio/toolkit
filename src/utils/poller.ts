@@ -1,7 +1,7 @@
-import { TinyEmitter } from 'tiny-emitter'
+import { Emitter } from './emitter'
 import { ticker } from './ticker'
 
-export class Poller extends TinyEmitter {
+export class Poller extends Emitter {
   target: object
   props: string[]
   memo = {}

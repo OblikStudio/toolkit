@@ -1,8 +1,8 @@
 import Component from '../../component'
 import { Point, Vector } from '../../../utils/math'
-import { TinyEmitter } from 'tiny-emitter'
+import { Emitter } from '../../../utils/emitter'
 
-class Scroll extends TinyEmitter {
+class Scroll extends Emitter {
   speed = 0
   posLast = 0
   posCurrent = 0
