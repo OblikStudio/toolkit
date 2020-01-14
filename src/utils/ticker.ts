@@ -25,6 +25,8 @@ export class Ticker extends Emitter {
     let now = Date.now()
     let diff = now - this._stamp
   
+    this.emit('measure')
+    this.emit('mutate')
     this.emit('tick', diff)
 
     this._stamp = now
@@ -43,4 +45,13 @@ export class Ticker extends Emitter {
 }
 
 export let ticker = new Ticker()
+
+export function measure (callback: () => any, context?: any) {
+  ticker.once('measure', callback, context)
+}
+
+export function mutate (callback: () => any, context?: any) {
+  ticker.once('mutate', callback, context)
+}
+
 ticker.start()
