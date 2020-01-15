@@ -25,9 +25,9 @@ export class Ticker extends Emitter {
     let now = Date.now()
     let diff = now - this._stamp
   
+    this.emit('tick', diff)
     this.emit('measure')
     this.emit('mutate')
-    this.emit('tick', diff)
 
     this._stamp = now
     this._run()
@@ -44,14 +44,35 @@ export class Ticker extends Emitter {
   }
 }
 
-export let ticker = new Ticker()
-
-export function measure (callback: () => any, context?: any) {
-  ticker.once('measure', callback, context)
-}
-
-export function mutate (callback: () => any, context?: any) {
-  ticker.once('mutate', callback, context)
-}
-
+let ticker = new Ticker()
 ticker.start()
+
+function measure (callback: () => any, context?: any): void
+function measure (): Promise<void>
+function measure (callback?: () => any, context?: any) {
+  if (typeof callback === 'function') {
+    ticker.once('measure', callback, context)
+  } else {
+    return new Promise(resolve => {
+      ticker.once('measure', resolve)
+    })
+  }
+}
+
+function mutate (callback: () => any, context?: any): void
+function mutate (): Promise<void>
+function mutate (callback?: () => any, context?: any) {
+  if (typeof callback === 'function') {
+    ticker.once('mutate', callback, context)
+  } else {
+    return new Promise(resolve => {
+      ticker.once('mutate', resolve)
+    })
+  }
+}
+
+export {
+  ticker,
+  measure,
+  mutate
+}
