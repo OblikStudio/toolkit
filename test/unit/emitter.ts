@@ -65,4 +65,24 @@ describe('emitter', () => {
     expect(fn).calledOn('b')
     expect(fn).callCount(4)
   })
+
+  it('does not call nested listeners immediately', () => {
+    let e = new Emitter()
+    let fn = sinon.spy()
+    let fn2 = sinon.spy()
+
+    e.on('test', () => {
+      fn()
+
+      e.on('test', fn2)
+    })
+
+    e.emit('test')
+    expect(fn).callCount(1)
+    expect(fn2).callCount(0)
+
+    e.emit('test')
+    expect(fn).callCount(2)
+    expect(fn2).callCount(1)
+  })
 })
