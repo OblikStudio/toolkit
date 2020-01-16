@@ -29,7 +29,7 @@ module.exports = (env, opts) => {
     }
   } else {
     config.entry = {
-      main: './test/pages/main/script.ts'
+      ticker: './test/pages/ticker/script.ts'
     }
 
     config.devServer = {
