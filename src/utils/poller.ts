@@ -3,36 +3,34 @@ import { ticker } from './ticker'
 
 export class Poller extends Emitter {
   target: object
-  props: string[]
-  memo = {}
-  updateHandler: () => any
+  _props: string[]
+  _initial: boolean
+  _memo = {}
 
-  constructor (target: object, props: string[]) {
+  constructor (target: object, props: string[], initial = false) {
     super()
     this.target = target
-    this.props = props
+    this._props = props
+    this._initial = initial
 
-    this.updateHandler = this.update.bind(this)
-    this.updateHandler()
-
-    ticker.on('tick', this.updateHandler)
+    ticker.on('measure', this._update, this)
   }
 
-  update () {
+  _update () {
     let changes = {}
     let isChanged = false
 
-    for (let prop of this.props) {
-      let memo = this.memo[prop]
+    for (let prop of this._props) {
+      let memo = this._memo[prop]
       let val = this.target[prop]
 
       if (val !== memo) {
-        if (memo !== undefined) {
+        if (memo !== undefined || this._initial) {
           changes[prop] = val
           isChanged = true
         }
 
-        this.memo[prop] = val
+        this._memo[prop] = val
       }
     }
 
@@ -42,6 +40,6 @@ export class Poller extends Emitter {
   }
 
   destroy () {
-    ticker.off('tick', this.updateHandler)
+    ticker.purge(this)
   }
 }
