@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<style>
+body {
+  margin: 0;
+  min-height: 300vh;
+}
+
+[ob-sensor] {
+  padding: 20px;
+  background: gray;
+}
+</style>
+</head>
+
+<body>
+
+<div style="margin-top: 120vh;">
+  <div style="position: relative; display: inline-block; bottom: 50px; left: 100px; background: red;">
+    <span id="test" style="position: relative; bottom: -50px; right: 20px;">foobar</span>
+  </div>
+</div>
+
+<div ob-sensor="observer: { type: relative }, action: tag">
+  Test 
+</div>
+
+<script src="/sensor.js"></script>
+</body>
+
+</html>

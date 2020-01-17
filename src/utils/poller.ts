@@ -1,17 +1,22 @@
 import { Emitter } from './emitter'
 import { ticker } from './ticker'
 
-export class Poller extends Emitter {
-  target: object
+type Change = {
+  initial?: boolean,
+  oldValue?: any,
+  newValue: any
+}
+
+export class Poller<T = object> extends Emitter {
   _props: string[]
-  _initial: boolean
   _memo = {}
 
-  constructor (target: object, props: string[], initial = false) {
+  target: T
+
+  constructor (target: T, props: string[]) {
     super()
     this.target = target
     this._props = props
-    this._initial = initial
 
     ticker.on('measure', this._update, this)
   }
@@ -21,22 +26,40 @@ export class Poller extends Emitter {
     let isChanged = false
 
     for (let prop of this._props) {
-      let memo = this._memo[prop]
-      let val = this.target[prop]
+      if (prop in this.target) {
+        let memo = this._memo[prop]
+        let value = this.target[prop]
+        let change: Change
 
-      if (val !== memo) {
-        if (memo !== undefined || this._initial) {
-          changes[prop] = val
-          isChanged = true
+        if (prop in this._memo) {
+          if (value !== memo) {
+            change = {
+              oldValue: memo,
+              newValue: value
+            }
+          }
+        } else {
+          change = {
+            initial: true,
+            newValue: value
+          }
         }
 
-        this._memo[prop] = val
+        if (change) {
+          this._memo[prop] = change.newValue
+          changes[prop] = change
+          isChanged = true
+        }
       }
     }
 
     if (isChanged) {
       this.emit('change', changes)
     }
+  }
+
+  get (prop: string) {
+    return this._memo[prop]
   }
 
   destroy () {
