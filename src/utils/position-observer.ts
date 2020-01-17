@@ -1,74 +1,100 @@
 import { Emitter } from './emitter'
 import { Poller } from './poller'
-
-function getOffsetParents (element) {
-	let result = []
-
-	while (element = element.offsetParent) {
-		result.push(element)
-	}
-
-	return result
-}
+import { Point } from './math'
 
 export class PositionObserver extends Emitter {
-  target: HTMLElement
-  observers: Poller<HTMLElement>[]
-  position: {
-    x: number,
-    y: number
+  _parent: PositionObserver
+  _dependents: PositionObserver[] = []
+
+  element: HTMLElement
+  poller: Poller
+  position: Point
+
+  static instances = new Map<Element, PositionObserver>()
+
+  static _attach (instance: PositionObserver, element: Element) {
+    if (instance._parent) {
+      this._detach(instance)
+    }
+    
+    if (element) {
+      let parent = this.instances.get(element)
+      
+      if (!parent) {
+        parent = new PositionObserver(element)
+        this.instances.set(element, parent)
+      }
+
+      instance._parent = parent
+      parent.on('change', instance.updatePosition, instance)
+      parent._dependents.push(instance)
+    }
+  }
+
+  static _detach (instance: PositionObserver) {
+    let parent = instance._parent
+    let deps = parent._dependents
+    let index = deps.indexOf(instance)
+
+    if (index >= 0) {
+      deps.splice(index, 1)
+    }
+
+    parent.purge(instance)
+    instance._parent = null
+
+    if (deps.length === 0) {
+      this.instances.delete(parent.element)
+      parent.destroy()
+    }
   }
 
 	constructor (element) {
-		super()
-		this.target = element
-		this.observers = []
+    super()
 
-		this.updateObservers()
-		this.updatePosition()
+    this.element = element
+    this.poller = new Poller(this.element, ['offsetTop', 'offsetLeft', 'offsetParent'])
+    this.poller.on('change', this.change, this)
+    this.position = null
+  }
+
+  change (changes) {
+		if (changes.offsetParent) {
+      PositionObserver._attach(this, changes.offsetParent.newValue)
+    }
+
+    if (changes.offsetTop || changes.offsetLeft) {
+      this.updatePosition()
+    }
 	}
 
-	updateObservers () {
-		let parents = getOffsetParents(this.target)
-		parents.unshift(this.target)
+  updatePosition () {
+    let x = this.poller.get('offsetLeft')
+    let y = this.poller.get('offsetTop')
 
-		/** @todo reuse observers */
-		this.observers.forEach(obs => obs.destroy())
-    this.observers = []
+    if (this._parent) {
+      let parentX = this._parent.poller.get('offsetLeft')
+      let parentY = this._parent.poller.get('offsetTop')
 
-		parents.forEach(par => {
-			let obs = new Poller(par, ['offsetTop', 'offsetLeft', 'offsetParent'])
-			obs.on('change', this.change, this)
-			this.observers.push(obs)
-		})
-	}
+      if (typeof parentX === 'number') {
+        x += parentX
+      }
 
-	change (changes) {
-		if (changes.offsetParent && !changes.offsetParent.initial) {
-			this.updateObservers()
-		}
+      if (typeof parentY === 'number') {
+        y += parentY
+      }
+    }
 
-		this.updatePosition()
-	}
-  
-	updatePosition () {
-		let x = 0
-		let y = 0
-
-		this.observers.forEach(obs => {
-      x += obs.target.offsetLeft
-			y += obs.target.offsetTop
-		})
-    
-		this.position = { x, y }
+    this.position = new Point(x, y)
     this.emit('change', this.position)
-	}
-
+  }
+  
 	destroy () {
-		this.observers.forEach(obs => {
-			obs.destroy()
-		})
+    if (this._parent) {
+      PositionObserver._detach(this)
+    }
 
-		this.destroy()
+    this.poller.destroy()
+		super.destroy()
 	}
 }
