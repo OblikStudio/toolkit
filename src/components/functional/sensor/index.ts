@@ -1,7 +1,10 @@
-import Component from "../../component"
+import Component from '../../component'
 import { resource } from '../../../utils/config'
 import * as observers from './observers'
 import * as actions from './actions'
+import { PositionObserver } from '../../../utils/position-observer'
+import { measure } from '../../../utils'
+import { Emitter } from '../../../utils/emitter'
 
 export abstract class Observer {
 	$check: (data: any) => boolean
@@ -33,8 +36,8 @@ export class Effect {
 		this.action = action
 	}
 
-	update (data) {
-		var result = this.observer.$check(data)
+	update (targetRect, windowRect) {
+		var result = this.observer.$check(targetRect, windowRect)
 
 		if (result !== this.observerResult) {
 			this.action.$update(result, this.observer)
@@ -42,7 +45,7 @@ export class Effect {
 		}
 
 		if (typeof this.action.$refresh === 'function') {
-			this.action.$refresh(data)
+			this.action.$refresh(targetRect, windowRect)
 		}
 	}
 
@@ -61,7 +64,70 @@ interface Options {
 	effects?: object[]
 	observer?: string | object
 	action?: string | object
+	reference: 'page' | 'element'
 }
+
+function rect (x: number, y: number, width: number, height: number): ClientRect {
+	return {
+		width,
+		height,
+		top: y,
+		right: x + width,
+		bottom: y + height,
+		left: x
+	}
+}
+
+class ViewportObserver extends Emitter {
+	top: number
+	left: number
+	width: number
+	height: number
+	pageRect: ClientRect
+	clientRect: ClientRect
+
+	constructor () {
+		super()
+
+		window.addEventListener('scroll', () => {
+			measure(() => {
+				this.top = document.scrollingElement.scrollTop
+				this.left = document.scrollingElement.scrollLeft
+				this.updatePageRect()
+			})
+		})
+
+		window.addEventListener('resize', () => {
+			measure(() => {
+				this.width = window.innerWidth
+				this.height = window.innerHeight
+				this.updateClientRect()
+				this.updatePageRect()
+			})
+		})
+
+		measure(() => {
+			this.top = document.scrollingElement.scrollTop
+			this.left = document.scrollingElement.scrollLeft
+			this.width = window.innerWidth
+			this.height = window.innerHeight
+			this.pageRect = rect(this.left, this.top, this.width, this.height)
+			this.clientRect = rect(0, 0, this.width, this.height)
+		})
+	}
+
+	updatePageRect () {
+		this.pageRect = rect(this.left, this.top, this.width, this.height)
+		this.emit('pageRectChange', this.pageRect)
+	}
+
+	updateClientRect () {
+		this.clientRect = rect(0, 0, this.width, this.height)
+		this.emit('clientRectChange', this.clientRect)
+	}
+}
+
+let viewport = new ViewportObserver()
 
 export class Sensor extends Component<HTMLElement, Options> {
 	static resources = {
@@ -69,7 +135,10 @@ export class Sensor extends Component<HTMLElement, Options> {
 		actions: {}
 	}
 
+	observer: PositionObserver
 	effects: Effect[] = []
+	windowRect: object
+	targetRect: object
 	updateHandler: () => void
 
 	init () {
@@ -88,15 +157,34 @@ export class Sensor extends Component<HTMLElement, Options> {
 			throw new Error('No effects specified.')
 		}
 
-		this.updateHandler = this.update.bind(this)
-		window.addEventListener('scroll', this.updateHandler)
-		window.addEventListener('resize', this.updateHandler)
+		if (this.$options.reference === 'page') {
+			this.observer = new PositionObserver(this.$element)
+			this.observer.on('change', rect => {
+				this.targetRect = rect
+				this.update()
+			})
 
-		// When some fonts/images are loaded, they may displace the content, so this
-		// change must be reflected.
-		window.addEventListener('load', this.updateHandler)
+			viewport.on('pageRectChange', rect => {
+				this.windowRect = rect
+				this.update()
+			})
+		} else {
+			viewport.on('clientRectChange', rect => {
+				this.windowRect = rect
+				this.update()
+			})
 
-		this.updateHandler()
+			window.addEventListener('scroll', () => {
+				this.targetRect = this.$element.getBoundingClientRect()
+				this.update()
+			})
+
+			measure(() => {
+				this.windowRect = viewport.clientRect
+				this.targetRect = this.$element.getBoundingClientRect()
+				this.update()
+			})
+		}
 	}
 
 	createEffect (data) {
@@ -113,10 +201,13 @@ export class Sensor extends Component<HTMLElement, Options> {
 	}
 
 	update () {
-		var rect = this.$element.getBoundingClientRect()
+		if (!this.targetRect || !this.windowRect) {
+			console.log('not initted', this.$options.reference)
+			return
+		}
 
 		this.effects.forEach(effect => {
-			effect.update(rect)
+			effect.update(this.targetRect, this.windowRect)
 		})
 	}
 

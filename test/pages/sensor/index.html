@@ -9,22 +9,27 @@ body {
 }
 
 [ob-sensor] {
-  padding: 20px;
+  margin: 20px;
+  padding: 100px 20px;
   background: gray;
+}
+
+.is-active {
+  background: red;
 }
 </style>
 </head>
 
 <body>
 
-<div style="margin-top: 120vh;">
-  <div style="position: relative; display: inline-block; bottom: 50px; left: 100px; background: red;">
-    <span id="test" style="position: relative; bottom: -50px; right: 20px;">foobar</span>
-  </div>
+<div style="margin-top: 120vh;"></div>
+
+<div ob-sensor="reference: page, observer: { type: relative, edge: bottom }, action: tag">
+  Test Page
 </div>
 
-<div ob-sensor="observer: { type: relative }, action: tag">
-  Test 
+<div ob-sensor="reference: element, observer: { type: relative, edge: bottom }, action: tag">
+  Test Element
 </div>
 
 <script src="/sensor.js"></script>

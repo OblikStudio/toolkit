@@ -4,13 +4,7 @@ import { Sensor } from '../../../src/components/functional/sensor'
 import Tag from '../../../src/components/functional/sensor/actions/tag'
 import Relative from '../../../src/components/functional/sensor/observers/relative'
 import { PositionObserver } from '../../../src/utils/position-observer'
-
-let el = document.querySelector('#test')
-let obs = new PositionObserver(el)
-
-obs.on('change', (data) => {
-  console.log(data)
-})
+import { Component } from '../../../src'
 
 Sensor.resources = {
   actions: {
@@ -23,7 +17,19 @@ Sensor.resources = {
 
 let w = new Watcher(document.body, {
   components: {
-    sensor: Sensor
+    sensor: Sensor,
+    test: class extends Component {
+      obs: PositionObserver
+
+      create () {
+        this.obs = new PositionObserver(this.$element)
+        this.obs.on('change', console.log)
+      }
+
+      destroy () {
+        this.obs.destroy()
+      }
+    }
   }
 })
 

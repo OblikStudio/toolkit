@@ -1,6 +1,5 @@
 import { Emitter } from './emitter'
 import { Poller } from './poller'
-import { Point } from './math'
 
 export class PositionObserver extends Emitter {
   _parent: PositionObserver
@@ -8,7 +7,7 @@ export class PositionObserver extends Emitter {
 
   element: HTMLElement
   poller: Poller
-  position: Point
+  rect: ClientRect
 
   static instances = new Map<Element, PositionObserver>()
 
@@ -53,9 +52,15 @@ export class PositionObserver extends Emitter {
     super()
 
     this.element = element
-    this.poller = new Poller(this.element, ['offsetTop', 'offsetLeft', 'offsetParent'])
+    this.poller = new Poller(this.element, [
+      'offsetParent',
+      'offsetTop',
+      'offsetLeft',
+      'offsetWidth',
+      'offsetHeight'
+    ])
     this.poller.on('change', this.change, this)
-    this.position = null
+    this.rect = null
   }
 
   change (changes) {
@@ -63,14 +68,14 @@ export class PositionObserver extends Emitter {
       PositionObserver._attach(this, changes.offsetParent.newValue)
     }
 
-    if (changes.offsetTop || changes.offsetLeft) {
-      this.updatePosition()
-    }
+    this.updatePosition()
 	}
 
   updatePosition () {
     let x = this.poller.get('offsetLeft')
     let y = this.poller.get('offsetTop')
+    let width = this.poller.get('offsetWidth')
+    let height = this.poller.get('offsetHeight')
 
     if (this._parent) {
       let parentX = this._parent.poller.get('offsetLeft')
@@ -85,8 +90,16 @@ export class PositionObserver extends Emitter {
       }
     }
 
-    this.position = new Point(x, y)
-    this.emit('change', this.position)
+    this.rect = {
+      width,
+      height,
+      top: y,
+      right: x + width,
+      bottom: y + height,
+      left: x
+    }
+
+    this.emit('change', this.rect)
   }
   
 	destroy () {
