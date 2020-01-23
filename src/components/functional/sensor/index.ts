@@ -113,6 +113,7 @@ class ViewportObserver extends Emitter {
 			this.height = window.innerHeight
 			this.pageRect = rect(this.left, this.top, this.width, this.height)
 			this.clientRect = rect(0, 0, this.width, this.height)
+			this.emit('init')
 		})
 	}
 
@@ -159,30 +160,42 @@ export class Sensor extends Component<HTMLElement, Options> {
 
 		if (this.$options.reference === 'page') {
 			this.observer = new PositionObserver(this.$element)
-			this.observer.on('change', rect => {
-				this.targetRect = rect
-				this.update()
-			})
 
-			viewport.on('pageRectChange', rect => {
-				this.windowRect = rect
+			Promise.all([
+				this.observer.promise('init').then(rect => {
+					this.targetRect = rect
+				}),
+				viewport.promise('init').then(() => {
+					this.windowRect = viewport.pageRect
+				})
+			]).then(() => {
 				this.update()
+
+				this.observer.on('change', rect => {
+					this.targetRect = rect
+					this.update()
+				})
+
+				viewport.on('pageRectChange', rect => {
+					this.windowRect = rect
+					this.update()
+				})
 			})
 		} else {
-			viewport.on('clientRectChange', rect => {
-				this.windowRect = rect
-				this.update()
-			})
-
-			window.addEventListener('scroll', () => {
-				this.targetRect = this.$element.getBoundingClientRect()
-				this.update()
-			})
-
-			measure(() => {
+			viewport.on('init', () => {
 				this.windowRect = viewport.clientRect
 				this.targetRect = this.$element.getBoundingClientRect()
 				this.update()
+
+				viewport.on('clientRectChange', rect => {
+					this.windowRect = rect
+					this.update()
+				})
+	
+				window.addEventListener('scroll', () => {
+					this.targetRect = this.$element.getBoundingClientRect()
+					this.update()
+				})
 			})
 		}
 	}
@@ -201,11 +214,6 @@ export class Sensor extends Component<HTMLElement, Options> {
 	}
 
 	update () {
-		if (!this.targetRect || !this.windowRect) {
-			console.log('not initted', this.$options.reference)
-			return
-		}
-
 		this.effects.forEach(effect => {
 			effect.update(this.targetRect, this.windowRect)
 		})

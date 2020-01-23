@@ -63,12 +63,13 @@ export class PositionObserver extends Emitter {
     this.rect = null
   }
 
-  change (changes) {
+  change (changes, initial) {
 		if (changes.offsetParent) {
       PositionObserver._attach(this, changes.offsetParent.newValue)
     }
 
     this.updatePosition()
+    this.emit(initial ? 'init' : 'change', this.rect)
 	}
 
   updatePosition () {
@@ -98,8 +99,6 @@ export class PositionObserver extends Emitter {
       bottom: y + height,
       left: x
     }
-
-    this.emit('change', this.rect)
   }
   
 	destroy () {

@@ -8,6 +8,7 @@ type Change = {
 }
 
 export class Poller<T = object> extends Emitter {
+  _polls: number
   _props: string[]
   _memo = {}
 
@@ -17,6 +18,7 @@ export class Poller<T = object> extends Emitter {
     super()
     this.target = target
     this._props = props
+    this._polls = 0
 
     ticker.on('measure', this._update, this)
   }
@@ -24,6 +26,7 @@ export class Poller<T = object> extends Emitter {
   _update () {
     let changes = {}
     let isChanged = false
+    let isInitial = this._polls === 0
 
     for (let prop of this._props) {
       if (prop in this.target) {
@@ -53,9 +56,15 @@ export class Poller<T = object> extends Emitter {
       }
     }
 
-    if (isChanged) {
-      this.emit('change', changes)
+    if (isInitial) {
+      this.emit('init', this._memo)
     }
+
+    if (isChanged) {
+      this.emit('change', changes, isInitial)
+    }
+
+    this._polls++
   }
 
   get (prop: string) {
