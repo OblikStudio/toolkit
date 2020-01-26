@@ -2,8 +2,8 @@ import Component from '../../component'
 import Slide from './slide'
 import { Drag } from '../../../utils/drag'
 import { getTag } from '../../../utils/dom'
-import { ticker } from '../../../utils/ticker'
 import { FuzzyBoolean } from '../../../utils/fuzzy-boolean'
+import { ticker } from '../../../core'
 import { assignIn } from 'lodash-es'
 
 interface Point {

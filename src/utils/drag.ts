@@ -1,6 +1,6 @@
 import { Point, Vector } from './math'
-import { ticker } from './ticker'
 import { Emitter } from './emitter'
+import { ticker } from '../core'
 
 function isTouchEvent (event: Event): event is TouchEvent {
   return (event.type && event.type.indexOf('touch') === 0)

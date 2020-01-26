@@ -3,7 +3,7 @@ import { resource } from '../../../utils/config'
 import * as observers from './observers'
 import * as actions from './actions'
 import { PositionObserver } from '../../../utils/position-observer'
-import { measure } from '../../../utils'
+import { measure } from '../../../core'
 import { Emitter } from '../../../utils/emitter'
 
 export abstract class Observer {
@@ -182,7 +182,7 @@ export class Sensor extends Component<HTMLElement, Options> {
 				})
 			})
 		} else {
-			viewport.on('init', () => {
+			viewport.once('init', () => {
 				this.windowRect = viewport.clientRect
 				this.targetRect = this.$element.getBoundingClientRect()
 				this.update()
