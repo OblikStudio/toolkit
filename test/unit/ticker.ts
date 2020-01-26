@@ -1,4 +1,4 @@
-import { Ticker, measure, mutate } from '../../src/utils/ticker'
+import { Ticker } from '../../src/utils/ticker'
 
 describe('ticker', () => {
   it('starts', function (done) {
@@ -20,36 +20,41 @@ describe('ticker', () => {
   })
 
   it('calls measure and mutate in the correct order', function (done) {
+    let inst = new Ticker()
     let read1 = sinon.spy()
     let write = sinon.spy()
     let read2 = sinon.spy()
 
-    measure(read1)
-    mutate(write)
-    measure(read2)
+    inst.once('measure', read1)
+    inst.once('mutate', write)
+    inst.once('measure', read2)
 
-    window.requestAnimationFrame(() => {
-      expect(write).calledAfter(read2)
-      expect(read2).calledAfter(read1)
-      done()
+    inst.once('tick', () => {
+      inst.once('tick', () => {
+        expect(write).calledAfter(read2)
+        expect(read2).calledAfter(read1)
+        done()
+      })
     })
+
+    inst.start()
   })
 
-  it('calls promise mutation after callback mutation', function (done) {
-    let promise = sinon.spy()
-    let callback = sinon.spy()
-
-    measure().then(() => {
-      promise()
-    })
+  it('calls mutation after promised measure', function (done) {
+    let inst = new Ticker()
+    let mutateSpy = sinon.spy()
+    let measureSpy = sinon.spy()
     
-    measure(() => {
-      callback()
+    inst.once('mutate', mutateSpy)
+    inst.promise('measure').then(measureSpy)
+
+    inst.once('tick', () => {
+      inst.once('tick', () => {
+        expect(mutateSpy).calledAfter(measureSpy)
+        done()
+      })
     })
 
-    window.requestAnimationFrame(() => {
-      expect(promise).calledAfter(callback)
-      done()
-    })
+    inst.start()
   })
 })
