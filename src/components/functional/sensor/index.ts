@@ -1,10 +1,9 @@
-import Component from '../../component'
 import { resource } from '../../../utils/config'
+import { PositionObserver } from '../../../utils/position-observer'
+import Component from '../../component'
 import * as observers from './observers'
 import * as actions from './actions'
-import { PositionObserver } from '../../../utils/position-observer'
-import { measure } from '../../../core'
-import { Emitter } from '../../../utils/emitter'
+import { RectObserver } from '../../../utils/rect-observer'
 
 export abstract class Observer {
 	$check: (data: any) => boolean
@@ -67,69 +66,6 @@ interface Options {
 	reference: 'page' | 'element'
 }
 
-function rect (x: number, y: number, width: number, height: number): ClientRect {
-	return {
-		width,
-		height,
-		top: y,
-		right: x + width,
-		bottom: y + height,
-		left: x
-	}
-}
-
-class ViewportObserver extends Emitter {
-	top: number
-	left: number
-	width: number
-	height: number
-	pageRect: ClientRect
-	clientRect: ClientRect
-
-	constructor () {
-		super()
-
-		window.addEventListener('scroll', () => {
-			measure(() => {
-				this.top = document.scrollingElement.scrollTop
-				this.left = document.scrollingElement.scrollLeft
-				this.updatePageRect()
-			})
-		})
-
-		window.addEventListener('resize', () => {
-			measure(() => {
-				this.width = window.innerWidth
-				this.height = window.innerHeight
-				this.updateClientRect()
-				this.updatePageRect()
-			})
-		})
-
-		measure(() => {
-			this.top = document.scrollingElement.scrollTop
-			this.left = document.scrollingElement.scrollLeft
-			this.width = window.innerWidth
-			this.height = window.innerHeight
-			this.pageRect = rect(this.left, this.top, this.width, this.height)
-			this.clientRect = rect(0, 0, this.width, this.height)
-			this.emit('init')
-		})
-	}
-
-	updatePageRect () {
-		this.pageRect = rect(this.left, this.top, this.width, this.height)
-		this.emit('pageRectChange', this.pageRect)
-	}
-
-	updateClientRect () {
-		this.clientRect = rect(0, 0, this.width, this.height)
-		this.emit('clientRectChange', this.clientRect)
-	}
-}
-
-let viewport = new ViewportObserver()
-
 export class Sensor extends Component<HTMLElement, Options> {
 	static resources = {
 		observers: {},
@@ -158,46 +94,28 @@ export class Sensor extends Component<HTMLElement, Options> {
 			throw new Error('No effects specified.')
 		}
 
-		if (this.$options.reference === 'page') {
-			this.observer = new PositionObserver(this.$element)
+		let mode: 'document' | 'viewport' = (this.$options.reference === 'page') ? 'document' : 'viewport'
+		let obs = new RectObserver(this.$element, { reference: mode })
+		let obs2 = new RectObserver(window, { reference: mode })
 
-			Promise.all([
-				this.observer.promise('init').then(rect => {
-					this.targetRect = rect
-				}),
-				viewport.promise('init').then(() => {
-					this.windowRect = viewport.pageRect
-				})
-			]).then(() => {
+		Promise.all([
+			obs.promise('init'),
+			obs2.promise('init')
+		]).then(() => {
+			obs.on('change', rect => {
+				this.targetRect = rect
 				this.update()
-
-				this.observer.on('change', rect => {
-					this.targetRect = rect
-					this.update()
-				})
-
-				viewport.on('pageRectChange', rect => {
-					this.windowRect = rect
-					this.update()
-				})
 			})
-		} else {
-			viewport.once('init', () => {
-				this.windowRect = viewport.clientRect
-				this.targetRect = this.$element.getBoundingClientRect()
+
+			obs2.on('change', rect => {
+				this.windowRect = rect
 				this.update()
-
-				viewport.on('clientRectChange', rect => {
-					this.windowRect = rect
-					this.update()
-				})
-	
-				window.addEventListener('scroll', () => {
-					this.targetRect = this.$element.getBoundingClientRect()
-					this.update()
-				})
 			})
-		}
+
+			this.targetRect = obs.rect
+			this.windowRect = obs2.rect
+			this.update()
+		})
 	}
 
 	createEffect (data) {

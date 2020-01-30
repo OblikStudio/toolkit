@@ -9,9 +9,9 @@ export class PositionObserver extends Emitter {
   poller: Poller
   rect: ClientRect
 
-  static instances = new Map<Element, PositionObserver>()
+  static instances = new Map<HTMLElement, PositionObserver>()
 
-  static _attach (instance: PositionObserver, element: Element) {
+  static _attach (instance: PositionObserver, element: HTMLElement) {
     if (instance._parent) {
       this._detach(instance)
     }
@@ -48,7 +48,7 @@ export class PositionObserver extends Emitter {
     }
   }
 
-	constructor (element) {
+	constructor (element: HTMLElement) {
     super()
 
     this.element = element
