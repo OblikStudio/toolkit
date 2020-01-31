@@ -4,65 +4,20 @@ import { resource } from '../../../utils/config'
 import { RectObserver } from '../../../utils/rect-observer'
 
 export abstract class Observer {
-	$check: (data: any) => boolean
-	$destroy?: () => void
-	$stickyOffset?: object
+	abstract update (elementRect: ClientRect, targetRect: ClientRect): any
+	destroy () {}
 }
 
 export abstract class Action {
-	$update: (result: boolean, observer: Observer) => void
-	$refresh?: (data: any) => void
-	$destroy?: () => any
-}
-
-export class Effect {
-	sensor: Sensor
-	observer: Observer
-	action: Action
-	observerResult: any
-
-	constructor (sensor: Sensor) {
-		this.sensor = sensor
-	}
-
-	setObserver (observer) {
-		this.observer = observer
-	}
-
-	setAction (action) {
-		this.action = action
-	}
-
-	update (targetRect, windowRect) {
-		var result = this.observer.$check(targetRect, windowRect)
-
-		if (result !== this.observerResult) {
-			this.action.$update(result, this.observer)
-			this.observerResult = result
-		}
-
-		if (typeof this.action.$refresh === 'function') {
-			this.action.$refresh(targetRect, windowRect)
-		}
-	}
-
-	destroy () {
-		if (typeof this.observer.$destroy === 'function') {
-			this.observer.$destroy()
-		}
-
-		if (typeof this.action.$destroy === 'function') {
-			this.action.$destroy()
-		}
-	}
+	abstract update (value: any): void
+	destroy () {}
 }
 
 interface Options {
-	reference?: 'document' | 'viewport'
-	target?: QueryTarget
-	effects?: object[]
 	observer?: string | object
 	action?: string | object
+	target?: QueryTarget
+	reference?: 'document' | 'viewport'
 }
 
 export class Sensor extends Component<HTMLElement, Options> {
@@ -71,29 +26,28 @@ export class Sensor extends Component<HTMLElement, Options> {
 		actions: {}
 	}
 
-	effects: Effect[]
+	observer: Observer
+	action: Action
 	target: Window | HTMLElement
+	value: any
 
 	private _elementObserver: RectObserver
 	private _targetObserver: RectObserver
 
 	init () {
-		this.effects = []
+		let resources = this.constructor.resources
 
-		if (Array.isArray(this.$options.effects)) {
-			this.effects = this.$options.effects.map(data => this.createEffect(data))
-		}
+		this.observer = resource<Observer>(
+			this.$options.observer,
+			resources.observers,
+			(Resource, options) => new Resource(this, options)
+		)
 
-		if (this.$options.observer && this.$options.action) {
-			this.effects.push(this.createEffect({
-				observer: this.$options.observer,
-				action: this.$options.action
-			}))
-		}
-
-		if (!this.effects.length) {
-			throw new Error('No effects specified.')
-		}
+		this.action = resource<Action>(
+			this.$options.action,
+			resources.actions,
+			(Resource, options) => new Resource(this, options)
+		)
 
 		if (this.$options.target) {
 			if (this.$options.target === 'window') {
@@ -123,29 +77,18 @@ export class Sensor extends Component<HTMLElement, Options> {
 		})
 	}
 
-	createEffect (data) {
-		let resources = this.constructor.resources
-
-		let effect = new Effect(this)
-		let observer = resource<Observer>(data.observer, resources.observers, (Resource, options) => new Resource(effect, options))
-		let action = resource<Action>(data.action, resources.actions, (Resource, options) => new Resource(effect, options))
-
-		effect.setObserver(observer)
-		effect.setAction(action)
-
-		return effect
-	}
-
 	update () {
-		this.effects.forEach(effect => {
-			effect.update(this._elementObserver.rect, this._targetObserver.rect)
-		})
+		let value = this.observer.update(this._elementObserver.rect, this._targetObserver.rect)
+
+		if (value !== this.value) {
+			this.action.update(value)
+			this.value = value
+		}
 	}
 
 	destroy () {
-		this.effects.forEach(effect => effect.destroy())
-		this.effects = null
-
+		this.observer.destroy()
+		this.action.destroy()
 		this._elementObserver.destroy()
 		this._targetObserver.destroy()
 	}
