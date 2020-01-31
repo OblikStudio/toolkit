@@ -1,3 +1,4 @@
+import { Component } from './components/component'
 import { Ticker } from './utils/ticker'
 
 let ticker = new Ticker()
@@ -24,6 +25,7 @@ function mutate (callback?: () => any, context?: any) {
 }
 
 export {
+  Component,
   ticker,
   measure,
   mutate

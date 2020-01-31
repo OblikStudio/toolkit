@@ -1,8 +1,6 @@
+import { default as query, QueryTarget } from 'querel'
+import { Component } from '../../../core'
 import { resource } from '../../../utils/config'
-import { PositionObserver } from '../../../utils/position-observer'
-import Component from '../../component'
-import * as observers from './observers'
-import * as actions from './actions'
 import { RectObserver } from '../../../utils/rect-observer'
 
 export abstract class Observer {
@@ -60,10 +58,11 @@ export class Effect {
 }
 
 interface Options {
+	reference?: 'document' | 'viewport'
+	target?: QueryTarget
 	effects?: object[]
 	observer?: string | object
 	action?: string | object
-	reference: 'page' | 'element'
 }
 
 export class Sensor extends Component<HTMLElement, Options> {
@@ -72,13 +71,15 @@ export class Sensor extends Component<HTMLElement, Options> {
 		actions: {}
 	}
 
-	observer: PositionObserver
-	effects: Effect[] = []
-	windowRect: object
-	targetRect: object
-	updateHandler: () => void
+	effects: Effect[]
+	target: Window | HTMLElement
+
+	private _elementObserver: RectObserver
+	private _targetObserver: RectObserver
 
 	init () {
+		this.effects = []
+
 		if (Array.isArray(this.$options.effects)) {
 			this.effects = this.$options.effects.map(data => this.createEffect(data))
 		}
@@ -94,26 +95,30 @@ export class Sensor extends Component<HTMLElement, Options> {
 			throw new Error('No effects specified.')
 		}
 
-		let mode: 'document' | 'viewport' = (this.$options.reference === 'page') ? 'document' : 'viewport'
-		let obs = new RectObserver(this.$element, { reference: mode })
-		let obs2 = new RectObserver(window, { reference: mode })
+		if (this.$options.target) {
+			if (this.$options.target === 'window') {
+				this.target = window
+			} else {
+				if (typeof this.$options.target === 'string') {
+					this.target = query(this.$element, this.$options.target, HTMLElement)[0]
+				} else if (this.$options.target instanceof HTMLElement) {
+					this.target = this.$options.target
+				}
+			}
+		} else {
+			this.target = window
+		}
+
+		let docRelative = (this.$options.reference === 'document')
+		this._elementObserver = new RectObserver(this.$element, docRelative)
+		this._targetObserver = new RectObserver(this.target, docRelative)
 
 		Promise.all([
-			obs.promise('init'),
-			obs2.promise('init')
+			this._elementObserver.promise('init'),
+			this._targetObserver.promise('init')
 		]).then(() => {
-			obs.on('change', rect => {
-				this.targetRect = rect
-				this.update()
-			})
-
-			obs2.on('change', rect => {
-				this.windowRect = rect
-				this.update()
-			})
-
-			this.targetRect = obs.rect
-			this.windowRect = obs2.rect
+			this._elementObserver.on('change', this.update, this)
+			this._targetObserver.on('change', this.update, this)
 			this.update()
 		})
 	}
@@ -133,7 +138,7 @@ export class Sensor extends Component<HTMLElement, Options> {
 
 	update () {
 		this.effects.forEach(effect => {
-			effect.update(this.targetRect, this.windowRect)
+			effect.update(this._elementObserver.rect, this._targetObserver.rect)
 		})
 	}
 
@@ -141,14 +146,9 @@ export class Sensor extends Component<HTMLElement, Options> {
 		this.effects.forEach(effect => effect.destroy())
 		this.effects = null
 
-		window.removeEventListener('scroll', this.updateHandler)
-		window.removeEventListener('resize', this.updateHandler)
+		this._elementObserver.destroy()
+		this._targetObserver.destroy()
 	}
-}
-
-export const resources = {
-	observers,
-	actions
 }
 
 export default Sensor

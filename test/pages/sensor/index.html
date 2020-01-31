@@ -24,12 +24,12 @@ body {
 
 <div style="margin-top: 120vh;"></div>
 
-<div ob-sensor="reference: page, observer: { type: relative, edge: bottom }, action: tag">
-  Test Page
+<div ob-sensor="reference: document, observer: { type: relative, edge: bottom }, action: tag">
+  Test Document
 </div>
 
-<div ob-sensor="reference: element, observer: { type: relative, edge: bottom }, action: tag">
-  Test Element
+<div ob-sensor="reference: viewport, observer: { type: relative, edge: bottom }, action: tag">
+  Test Viewport
 </div>
 
 <script src="/sensor.js"></script>

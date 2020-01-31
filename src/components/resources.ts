@@ -1,1 +1,5 @@
-export { resources as sensor } from './functional/sensor'
+import * as sensor from './functional/sensor/resources'
+
+export {
+  sensor
+}
