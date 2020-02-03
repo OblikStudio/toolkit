@@ -14,6 +14,13 @@ body {
   background: gray;
 }
 
+div[ob-sticky] {
+  padding: 100px 20px;
+  border: 20px solid green;
+  background: gray;
+  box-sizing: border-box;
+}
+
 .is-active {
   background: red;
 }
@@ -24,11 +31,17 @@ body {
 
 <div style="margin-top: 120vh;"></div>
 
-<div ob-sensor="reference: document, observer: { type: relative, edge: bottom }, action: tag">
+<div ob-sensor="reference: document, observer: { type: relative, options: { edge: bottom } }, action: tag">
   Test Document
 </div>
 
-<div ob-sensor="reference: viewport, observer: { type: relative, edge: bottom }, action: tag">
+<div style="height: 50vh;">
+  <div ob-sticky="reference: viewport, bounds: @parent, observer: { type: relative, options: { edge: top, targetEdge: top } }">
+    <span ob-sticky="bounds: @parent, observer: { type: relative, options: { edge: top, targetEdge: top } }">Test Document</span>
+  </div>
+</div>
+
+<div ob-sensor="reference: viewport, observer: { type: relative, options: { edge: bottom } }, action: tag">
   Test Viewport
 </div>
 
