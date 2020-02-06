@@ -8,14 +8,15 @@ function isTouchEvent (event: Event): event is TouchEvent {
 
 export class Drag extends Emitter {
   element: HTMLElement
-  activeTouch: Touch
+	activeTouch: Touch
+	origin: Point
   position: Point
   positionTick: Point
   movement: Vector
   startHandler: Drag['start']
   moveHandler: Drag['move']
   endHandler: Drag['end']
-  
+
   constructor (element) {
     super()
     this.element = element
@@ -71,7 +72,8 @@ export class Drag extends Emitter {
      */
     event = event as MouseEvent
 
-    this.position = new Point(event.clientX, event.clientY)
+		this.origin = new Point(event.clientX, event.clientY)
+    this.position = this.origin
 
     this.element.addEventListener('mousemove', this.moveHandler)
     this.element.addEventListener('touchmove', this.moveHandler)
@@ -79,8 +81,9 @@ export class Drag extends Emitter {
     this.element.addEventListener('mouseup', this.endHandler)
     this.element.addEventListener('mouseleave', this.endHandler)
     this.element.addEventListener('touchend', this.endHandler)
-    this.element.addEventListener('touchcancel', this.endHandler)
-    ticker.on('tick', this.tick, this)
+		this.element.addEventListener('touchcancel', this.endHandler)
+
+		ticker.on('tick', this.tick, this)
 
     this.emit('start', event)
   }
@@ -120,16 +123,19 @@ export class Drag extends Emitter {
         return
       }
     }
-    
+
     this.element.removeEventListener('mouseup', this.endHandler)
     this.element.removeEventListener('mouseleave', this.endHandler)
     this.element.removeEventListener('touchend', this.endHandler)
     this.element.removeEventListener('touchcancel', this.endHandler)
-    
+
     this.element.removeEventListener('mousemove', this.moveHandler)
     this.element.removeEventListener('touchmove', this.moveHandler)
-    ticker.off('tick', this.tick, this)
-    
-    this.emit('end', event)
+
+		ticker.off('tick', this.tick, this)
+
+		this.emit('end', event)
+
+		this.origin = null
   }
 }
