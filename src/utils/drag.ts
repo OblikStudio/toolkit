@@ -8,7 +8,8 @@ function isTouchEvent (event: Event): event is TouchEvent {
 
 export class Drag extends TinyEmitter {
   element: HTMLElement
-  activeTouch: Touch
+	activeTouch: Touch
+	origin: Point
   position: Point
   positionTick: Point
   movement: Vector
@@ -16,7 +17,7 @@ export class Drag extends TinyEmitter {
   moveHandler: Drag['move']
   endHandler: Drag['end']
   tickHandler: Drag['tick']
-  
+
   constructor (element) {
     super()
     this.element = element
@@ -73,7 +74,8 @@ export class Drag extends TinyEmitter {
      */
     event = event as MouseEvent
 
-    this.position = new Point(event.clientX, event.clientY)
+		this.origin = new Point(event.clientX, event.clientY)
+    this.position = this.origin
 
     this.element.addEventListener('mousemove', this.moveHandler)
     this.element.addEventListener('touchmove', this.moveHandler)
@@ -122,16 +124,18 @@ export class Drag extends TinyEmitter {
         return
       }
     }
-    
+
     this.element.removeEventListener('mouseup', this.endHandler)
     this.element.removeEventListener('mouseleave', this.endHandler)
     this.element.removeEventListener('touchend', this.endHandler)
     this.element.removeEventListener('touchcancel', this.endHandler)
-    
+
     this.element.removeEventListener('mousemove', this.moveHandler)
     this.element.removeEventListener('touchmove', this.moveHandler)
     ticker.off('tick', this.tickHandler)
-    
-    this.emit('end', event)
+
+		this.emit('end', event)
+
+		this.origin = null
   }
 }
