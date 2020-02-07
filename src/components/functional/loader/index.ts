@@ -6,8 +6,14 @@ interface State {
 	url: string
 }
 
-class Container extends Component {
+export class Container extends Component {
+	animateOut () {
+		return Promise.resolve()
+	}
 
+	animateIn () {
+		return Promise.resolve()
+	}
 }
 
 export class Loader extends Component {
@@ -91,20 +97,28 @@ export class Loader extends Component {
 		}
 	}
 
-	load (item: Entry) {
+	async load (item: Entry) {
 		let doc = this.parser.parseFromString(item.markup, 'text/html')
 		let title = doc.querySelector('head title')?.textContent
 		let container = doc.querySelector('[ob-loader-container]')
 
 		document.title = title
 
-		this.$container.forEach(container => {
-			container.$element.parentElement.removeChild(container.$element)
+		let promises = this.$container.map(container => {
+			return container.animateOut().then(() => {
+				container.$element.parentElement.removeChild(container.$element)
+			})
 		})
 
-		let clone = container.cloneNode(true)
+		return Promise.all(promises).then(() => {
+			this.$element.appendChild(container)
 
-		this.$element.appendChild(clone)
+			return new Promise((resolve, reject) => {
+				this.$emitter.once('add:container', (container: Container) => {
+					container.animateIn().then(resolve).catch(reject)
+				})
+			})
+		})
 	}
 
 	init () {
