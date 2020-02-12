@@ -1,66 +1,47 @@
 import { default as query, QueryTarget } from 'querel'
 import { Component } from '../../../core'
-import { resource } from '../../../utils/config'
 import { RectObserver } from '../../../utils/rect-observer'
 
-export abstract class Observer {
-	abstract update (elementRect: ClientRect, targetRect: ClientRect): any
-	destroy () {}
-}
-
-export abstract class Action {
-	abstract update (value: any): void
-	destroy () {}
-}
-
-interface Options {
-	observer?: string | object
-	action?: string | object
-	target?: QueryTarget
+export interface Options {
+	target?: Window | QueryTarget
 	reference?: 'document' | 'viewport'
+	measure: {
+		offset: number
+		after: boolean
+		edge: string
+		targetEdge: string
+	}
+	mutate: {
+		class: string
+	}
 }
 
 export class Sensor extends Component<HTMLElement, Options> {
-	static resources = {
-		observers: {},
-		actions: {}
+	static defaults = {
+		target: window,
+		reference: 'viewport',
+		measure: {
+			offset: 0,
+			after: true,
+			edge: 'bottom',
+			targetEdge: 'bottom'
+		},
+		mutate: {
+			class: 'is-active'
+		}
 	}
 
-	observer: Observer
-	action: Action
 	target: Window | HTMLElement
 	value: any
 
-	private _elementObserver: RectObserver
-	private _targetObserver: RectObserver
+	protected _elementObserver: RectObserver
+	protected _targetObserver: RectObserver
 
 	init () {
-		let resources = this.constructor.resources
-
-		this.observer = resource<Observer>(
-			this.$options.observer,
-			resources.observers,
-			(Resource, options) => new Resource(this, options)
-		)
-
-		this.action = resource<Action>(
-			this.$options.action,
-			resources.actions,
-			(Resource, options) => new Resource(this, options)
-		)
-
-		if (this.$options.target) {
-			if (this.$options.target === 'window') {
-				this.target = window
-			} else {
-				if (typeof this.$options.target === 'string') {
-					this.target = query(this.$element, this.$options.target, HTMLElement)[0]
-				} else if (this.$options.target instanceof HTMLElement) {
-					this.target = this.$options.target
-				}
-			}
+		if (typeof this.$options.target === 'string') {
+			this.target = query(this.$element, this.$options.target, HTMLElement)[0]
 		} else {
-			this.target = window
+			this.target = this.$options.target as Window | HTMLElement
 		}
 
 		let docRelative = (this.$options.reference === 'document')
@@ -77,18 +58,36 @@ export class Sensor extends Component<HTMLElement, Options> {
 		})
 	}
 
+	measure (elementRect: ClientRect, targetRect: ClientRect) {
+		let val = targetRect[this.$options.measure.edge]
+		let targetVal = elementRect[this.$options.measure.targetEdge] + this.$options.measure.offset
+		let diff = val - targetVal
+
+		if (this.$options.measure.after) {
+			return diff > 0
+		} else {
+			return diff < 0
+		}
+	}
+
+	mutate (input: any) {
+		if (input) {
+			this.$element.classList.add(this.$options.mutate.class)
+		} else {
+			this.$element.classList.remove(this.$options.mutate.class)
+		}
+	}
+
 	update () {
-		let value = this.observer.update(this._elementObserver.rect, this._targetObserver.rect)
+		let value = this.measure(this._elementObserver.rect, this._targetObserver.rect)
 
 		if (value !== this.value) {
-			this.action.update(value)
+			this.mutate(value)
 			this.value = value
 		}
 	}
 
 	destroy () {
-		this.observer.destroy()
-		this.action.destroy()
 		this._elementObserver.destroy()
 		this._targetObserver.destroy()
 	}

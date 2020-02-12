@@ -36,8 +36,8 @@ div[ob-sticky] {
 </div>
 
 <div style="height: 50vh;">
-  <div ob-sticky="reference: viewport, bounds: @parent, observer: { type: relative, options: { edge: top, targetEdge: top } }">
-    <span ob-sticky="bounds: @parent, observer: { type: relative, options: { edge: top, targetEdge: top } }">Test Document</span>
+  <div ob-sticky="measure: { bounds: @parent }">
+    <span ob-sticky>Test Document</span>
   </div>
 </div>
 

@@ -4,11 +4,10 @@
  * @todo update elements on resize when fixed
  */
 
-import { default as query, QueryTarget } from 'querel'
-import { Component, mutate } from '../../../core'
-import { resource } from '../../../utils/config'
+import query from 'querel'
+import { mutate } from '../../../core'
 import { RectObserver } from '../../../utils/rect-observer'
-import { Observer } from '.'
+import { Sensor, Options } from '.'
 
 /**
  * Can't use shorthand properties for margin, padding, and border
@@ -24,10 +23,6 @@ const PLACEHOLDER_COPIED_PROPERTIES = [
 	'marginRight',
 	'marginBottom',
 	'marginLeft',
-	// 'paddingTop',
-	// 'paddingRight',
-	// 'paddingBottom',
-	// 'paddingLeft',
 	'borderTopWidth',
 	'borderRightWidth',
 	'borderBottomWidth',
@@ -35,68 +30,52 @@ const PLACEHOLDER_COPIED_PROPERTIES = [
 	'box-sizing'
 ]
 
-interface StickyOptions {
-	setWidth: boolean
-	classFixed: string
-	classUnfixed: string
-  bounds: string
-
-  observer: string
-  target: QueryTarget
-  reference: string
+interface StickyOptions extends Options {
+	measure: Options['measure'] & {
+		bounds: string
+	}
+	mutate: Options['mutate'] & {
+		setWidth: boolean
+	}
 }
 
-export class Sticky extends Component<HTMLElement, StickyOptions> {
-  static resources = {
-    observers: {}
-  }
+export class Sticky extends Sensor {
+	static defaults = {
+		target: window,
+		reference: 'viewport',
+		measure: {
+			offset: 0,
+			after: true,
+			edge: 'top',
+			targetEdge: 'top',
+			bounds: null
+		},
+		mutate: {
+			class: 'is-fixed',
+			setWidth: true
+		}
+	}
 
-  static defaults = {
-    setWidth: true,
-    classFixed: 'is-fixed',
-    classUnfixed: null,
-    bounds: null
-  }
+	$options: StickyOptions
 
-  static: HTMLElement
-  target: Window | HTMLElement
-	boundsElement: HTMLElement = null
+	static: HTMLElement
   placeholder: HTMLElement
-  observer: Observer
-  value: boolean
-
+	boundsElement: HTMLElement
 	isFixed = false
 	isAbsolute = false
   elementLatestStyles: CSSStyleDeclaration
-  
-  private _elementObserver: RectObserver
-  private _targetObserver: RectObserver
+	
+	private _boundsObserver: RectObserver
   private _placeholderObserver: RectObserver
 
-	create () {
-    let resources = this.constructor.resources
-
-		this.observer = resource<Observer>(
-			this.$options.observer,
-			resources.observers,
-			(Resource, options) => new Resource(this, options)
-		)
-
-		if (this.$options.target) {
-			if (this.$options.target === 'window') {
-				this.target = window
-			} else {
-				if (typeof this.$options.target === 'string') {
-					this.target = query(this.$element, this.$options.target, HTMLElement)[0]
-				} else if (this.$options.target instanceof HTMLElement) {
-					this.target = this.$options.target
-				}
-			}
+	init () {
+		if (typeof this.$options.target === 'string') {
+			this.target = query(this.$element, this.$options.target, HTMLElement)[0]
 		} else {
-			this.target = window
-    }
+			this.target = this.$options.target as Window | HTMLElement
+		}
 
-    this.static = this.$element
+		this.static = this.$element
     
     mutate().then(() => {
       this.placeholder = document.createElement('div')
@@ -106,14 +85,15 @@ export class Sticky extends Component<HTMLElement, StickyOptions> {
       this.$element.parentNode.insertBefore(this.placeholder, this.$element.nextSibling)
       this.updatePlaceholder()
 
-      if (this.$options.bounds) {
-        this.boundsElement = query(this.$element, this.$options.bounds, HTMLElement)[0]
-      }
-
       let docRelative = (this.$options.reference === 'document')
       this._elementObserver = new RectObserver(this.$element, docRelative)
       this._targetObserver = new RectObserver(this.target, docRelative)
-      this._placeholderObserver = new RectObserver(this.placeholder, docRelative)
+			this._placeholderObserver = new RectObserver(this.placeholder, docRelative)
+			
+			if (this.$options.measure.bounds) {
+				this.boundsElement = query(this.$element, this.$options.measure.bounds, HTMLElement)[0]
+				this._boundsObserver = new RectObserver(this.boundsElement, docRelative)
+      }
 
       return Promise.all([
         this._elementObserver.promise('init'),
@@ -150,24 +130,23 @@ export class Sticky extends Component<HTMLElement, StickyOptions> {
 		}
 
 		if (this.isFixed) {
-			this.$element.classList.add(this.$options.classFixed)
-			this.$element.classList.remove(this.$options.classUnfixed)
+			this.$element.classList.add(this.$options.mutate.class)
 			this.$element.style.position = 'fixed'
+			this.$element.style.top = '0px'
 			this.placeholder.style.display = this.elementLatestStyles.getPropertyValue('display')
 			this.static = this.placeholder
 
-			if (this.$options.setWidth) {
+			if (this.$options.mutate.setWidth) {
 				this.$element.style.width = this.placeholder.offsetWidth + 'px'
 			}
 		} else {
-			this.$element.classList.remove(this.$options.classFixed)
-			this.$element.classList.add(this.$options.classUnfixed)
+			this.$element.classList.remove(this.$options.mutate.class)
 			this.$element.style.position = ''
 			this.$element.style.top = ''
 			this.placeholder.style.display = 'none'
 			this.static = this.$element
 
-			if (this.$options.setWidth) {
+			if (this.$options.mutate.setWidth) {
 				this.$element.style.width = ''
 			}
 		}
@@ -185,22 +164,27 @@ export class Sticky extends Component<HTMLElement, StickyOptions> {
 		}
 	}
 
-	refresh (staticRect) {
-		if (!this.boundsElement) {
-			return
+	mutate (value: boolean) {
+		if (value) {
+			// Get the latest element styles before fixing it.
+			this.updatePlaceholder()
 		}
+		
+		this.applyFixed(value)
+	}
 
+	checkBounds (rect: ClientRect) {
 		// If the component is not in a fixed state, the user has not yet scrolled to
 		// it, so he couldn't have scolled past it.
 		if (!this.isFixed) {
 			return
 		}
 
-		var elementRect = this.$element.getBoundingClientRect()
-		var boundsRect = this.boundsElement.getBoundingClientRect()
+		let elementRect = this._elementObserver.rect
+		let boundsRect = this._boundsObserver.rect
 
 		if (boundsRect.bottom - elementRect.bottom < 0) {
-			this.applyAbsolute(true, boundsRect.bottom - staticRect.bottom + this.static.offsetTop)
+			this.applyAbsolute(true, boundsRect.bottom - rect.bottom + this.static.offsetTop)
 		}
 
 		if (elementRect.height < boundsRect.bottom) {
@@ -217,19 +201,15 @@ export class Sticky extends Component<HTMLElement, StickyOptions> {
       rect = this._placeholderObserver.rect
     }
 
-    let value = this.observer.update(rect, this._targetObserver.rect)
+    let value = this.measure(rect, this._targetObserver.rect)
 		if (value !== this.value) {
+			this.mutate(value)
       this.value = value
+		}
 
-      if (value) {
-        // Get the latest element styles before fixing it.
-        this.updatePlaceholder()
-      }
-      
-      this.applyFixed(value)
-    }
-
-    this.refresh(rect)
+    if (this.boundsElement) {
+			this.checkBounds(rect)
+		}
 	}
 
 	destroy () {
