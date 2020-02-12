@@ -23,7 +23,7 @@ export class Sensor extends Component<HTMLElement, Options> {
 		measure: {
 			offset: 0,
 			after: true,
-			edge: 'bottom',
+			edge: 'top',
 			targetEdge: 'bottom'
 		},
 		mutate: {
@@ -59,9 +59,9 @@ export class Sensor extends Component<HTMLElement, Options> {
 	}
 
 	measure (elementRect: ClientRect, targetRect: ClientRect) {
-		let val = targetRect[this.$options.measure.edge]
-		let targetVal = elementRect[this.$options.measure.targetEdge] + this.$options.measure.offset
-		let diff = val - targetVal
+		let val = elementRect[this.$options.measure.edge]
+		let targetVal = targetRect[this.$options.measure.targetEdge] + this.$options.measure.offset
+		let diff = targetVal - val
 
 		if (this.$options.measure.after) {
 			return diff > 0
