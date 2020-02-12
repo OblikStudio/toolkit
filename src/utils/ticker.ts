@@ -27,7 +27,11 @@ export class Ticker extends Emitter {
   
     this.emit('tick', diff)
     this.emit('measure')
-    this.emit('mutate')
+    
+    // Timeout ensures callback mutations happen after promised measures.
+    setTimeout(() => {
+      this.emit('mutate')
+    }, 0)
 
     this._stamp = now
     this._run()
@@ -42,37 +46,4 @@ export class Ticker extends Emitter {
   stop () {
     this._isTicking = false
   }
-}
-
-let ticker = new Ticker()
-ticker.start()
-
-function measure (callback: () => any, context?: any): void
-function measure (): Promise<void>
-function measure (callback?: () => any, context?: any) {
-  if (typeof callback === 'function') {
-    ticker.once('measure', callback, context)
-  } else {
-    return new Promise(resolve => {
-      ticker.once('measure', resolve)
-    })
-  }
-}
-
-function mutate (callback: () => any, context?: any): void
-function mutate (): Promise<void>
-function mutate (callback?: () => any, context?: any) {
-  if (typeof callback === 'function') {
-    ticker.once('mutate', callback, context)
-  } else {
-    return new Promise(resolve => {
-      ticker.once('mutate', resolve)
-    })
-  }
-}
-
-export {
-  ticker,
-  measure,
-  mutate
 }

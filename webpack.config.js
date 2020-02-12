@@ -29,6 +29,7 @@ module.exports = (env, opts) => {
     }
   } else {
     config.entry = {
+      sensor: './test/pages/sensor/script.ts',
       ticker: './test/pages/ticker/script.ts'
     }
 

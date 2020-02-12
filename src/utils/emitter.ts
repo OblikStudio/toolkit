@@ -46,6 +46,12 @@ export class Emitter {
     return this.few(1, name, callback, context)
   }
 
+  promise (name: string) {
+    return new Promise<any>(resolve => {
+      this.once(name, resolve)
+    })
+  }
+
   emit (name: string, ...args: any[]) {
     let list = this.list(name)
     let obsolete = []

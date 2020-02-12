@@ -1,137 +1,96 @@
-import Component from "../../component"
-import { resource } from '../../../utils/config'
-import * as observers from './observers'
-import * as actions from './actions'
+import { default as query, QueryTarget } from 'querel'
+import { Component } from '../../../core'
+import { RectObserver } from '../../../utils/rect-observer'
 
-export abstract class Observer {
-	$check: (data: any) => boolean
-	$destroy?: () => void
-	$stickyOffset?: object
-}
-
-export abstract class Action {
-	$update: (result: boolean, observer: Observer) => void
-	$refresh?: (data: any) => void
-	$destroy?: () => any
-}
-
-export class Effect {
-	sensor: Sensor
-	observer: Observer
-	action: Action
-	observerResult: any
-
-	constructor (sensor: Sensor) {
-		this.sensor = sensor
+export interface Options {
+	target?: Window | QueryTarget
+	reference?: 'document' | 'viewport'
+	measure: {
+		offset: number
+		after: boolean
+		edge: string
+		targetEdge: string
 	}
-
-	setObserver (observer) {
-		this.observer = observer
+	mutate: {
+		class: string
 	}
-
-	setAction (action) {
-		this.action = action
-	}
-
-	update (data) {
-		var result = this.observer.$check(data)
-
-		if (result !== this.observerResult) {
-			this.action.$update(result, this.observer)
-			this.observerResult = result
-		}
-
-		if (typeof this.action.$refresh === 'function') {
-			this.action.$refresh(data)
-		}
-	}
-
-	destroy () {
-		if (typeof this.observer.$destroy === 'function') {
-			this.observer.$destroy()
-		}
-
-		if (typeof this.action.$destroy === 'function') {
-			this.action.$destroy()
-		}
-	}
-}
-
-interface Options {
-	effects?: object[]
-	observer?: string | object
-	action?: string | object
 }
 
 export class Sensor extends Component<HTMLElement, Options> {
-	static resources = {
-		observers: {},
-		actions: {}
+	static defaults = {
+		target: window,
+		reference: 'viewport',
+		measure: {
+			offset: 0,
+			after: true,
+			edge: 'bottom',
+			targetEdge: 'bottom'
+		},
+		mutate: {
+			class: 'is-active'
+		}
 	}
 
-	effects: Effect[] = []
-	updateHandler: () => void
+	target: Window | HTMLElement
+	value: any
+
+	protected _elementObserver: RectObserver
+	protected _targetObserver: RectObserver
 
 	init () {
-		if (Array.isArray(this.$options.effects)) {
-			this.effects = this.$options.effects.map(data => this.createEffect(data))
+		if (typeof this.$options.target === 'string') {
+			this.target = query(this.$element, this.$options.target, HTMLElement)[0]
+		} else {
+			this.target = this.$options.target as Window | HTMLElement
 		}
 
-		if (this.$options.observer && this.$options.action) {
-			this.effects.push(this.createEffect({
-				observer: this.$options.observer,
-				action: this.$options.action
-			}))
-		}
+		let docRelative = (this.$options.reference === 'document')
+		this._elementObserver = new RectObserver(this.$element, docRelative)
+		this._targetObserver = new RectObserver(this.target, docRelative)
 
-		if (!this.effects.length) {
-			throw new Error('No effects specified.')
-		}
-
-		this.updateHandler = this.update.bind(this)
-		window.addEventListener('scroll', this.updateHandler)
-		window.addEventListener('resize', this.updateHandler)
-
-		// When some fonts/images are loaded, they may displace the content, so this
-		// change must be reflected.
-		window.addEventListener('load', this.updateHandler)
-
-		this.updateHandler()
-	}
-
-	createEffect (data) {
-		let resources = this.constructor.resources
-
-		let effect = new Effect(this)
-		let observer = resource<Observer>(data.observer, resources.observers, (Resource, options) => new Resource(effect, options))
-		let action = resource<Action>(data.action, resources.actions, (Resource, options) => new Resource(effect, options))
-
-		effect.setObserver(observer)
-		effect.setAction(action)
-
-		return effect
-	}
-
-	update () {
-		var rect = this.$element.getBoundingClientRect()
-
-		this.effects.forEach(effect => {
-			effect.update(rect)
+		Promise.all([
+			this._elementObserver.promise('init'),
+			this._targetObserver.promise('init')
+		]).then(() => {
+			this._elementObserver.on('change', this.update, this)
+			this._targetObserver.on('change', this.update, this)
+			this.update()
 		})
 	}
 
-	destroy () {
-		this.effects.forEach(effect => effect.destroy())
-		this.effects = null
+	measure (elementRect: ClientRect, targetRect: ClientRect) {
+		let val = targetRect[this.$options.measure.edge]
+		let targetVal = elementRect[this.$options.measure.targetEdge] + this.$options.measure.offset
+		let diff = val - targetVal
 
-		window.removeEventListener('scroll', this.updateHandler)
-		window.removeEventListener('resize', this.updateHandler)
+		if (this.$options.measure.after) {
+			return diff > 0
+		} else {
+			return diff < 0
+		}
 	}
-}
 
-export const resources = {
-	observers,
-	actions
+	mutate (input: any) {
+		if (input) {
+			this.$element.classList.add(this.$options.mutate.class)
+		} else {
+			this.$element.classList.remove(this.$options.mutate.class)
+		}
+	}
+
+	update () {
+		let value = this.measure(this._elementObserver.rect, this._targetObserver.rect)
+
+		if (value !== this.value) {
+			this.mutate(value)
+			this.value = value
+		}
+	}
+
+	destroy () {
+		this._elementObserver.destroy()
+		this._targetObserver.destroy()
+	}
 }
 
 export default Sensor

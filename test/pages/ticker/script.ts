@@ -1,11 +1,11 @@
 import Watcher from '../../../src/watcher'
 import { Poller } from '../../../src/utils/poller'
-import { mutate } from '../../../src/utils/ticker'
 import { Component } from '../../../src/components/component'
+import { mutate } from '../../../src/core'
 
 class Test extends Component<HTMLElement> {
   create () {
-    let p = new Poller(this.$element, ['offsetWidth'], true)
+    let p = new Poller(this.$element, ['offsetWidth'])
 
     p.on('change', data => {
       mutate(() => {
