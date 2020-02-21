@@ -1,4 +1,5 @@
-import Component from '../../component'
+import query from 'querel'
+import { Component } from '../../../core'
 
 interface Options {
   var: string
@@ -18,7 +19,6 @@ export default class Height extends Component<HTMLElement, Options> {
 
 		this.observer = new MutationObserver(this.updateHandler)
 		this.observer.observe(this.$element, {
-			attributes: true,
 			childList: true,
 			subtree: true
 		})
@@ -29,9 +29,9 @@ export default class Height extends Component<HTMLElement, Options> {
       }
 
       if (this.$options.target) {
-        this.varElement = document.querySelector(this.$options.target)
+        this.varElement = query(this.$element, this.$options.target, HTMLElement)[0]
       } else {
-        this.varElement = this.$element.parentElement
+        this.varElement = this.$element
       }
     }
 
