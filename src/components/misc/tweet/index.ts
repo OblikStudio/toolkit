@@ -1,4 +1,4 @@
-var _injected = false
+import { Component } from '../../../core'
 
 function appendScript ({ src, async = true }) {
 	return new Promise((resolve, reject) => {
@@ -12,21 +12,29 @@ function appendScript ({ src, async = true }) {
 	})
 }
 
-export default function (element, options) {
-	options = Object.assign({
+interface Options {
+	url: string,
+	lang?: string
+}
+
+export class Tweet extends Component<HTMLElement, Options> {
+	static injected = ('twttr' in window)
+	static defaults = {
 		lang: 'en'
-	}, options)
+	}
 
-	element.innerHTML = `
-	<blockquote class="twitter-tweet" data-lang="${ options.lang }">
-		<a href="${ options.url }"></a>
-	</blockquote>`
+	create () {
+		this.$element.innerHTML = `
+			<blockquote class="twitter-tweet" data-lang="${ this.$options.lang }">
+				<a href="${ this.$options.url }"></a>
+			</blockquote>`
 
-	if (!_injected) {
-		appendScript({
-			src: 'https://platform.twitter.com/widgets.js'
-		}).then(() => {
-			_injected = true
-		})
+		if (!Tweet.injected) {
+			Tweet.injected = true
+
+			appendScript({
+				src: 'https://platform.twitter.com/widgets.js'
+			})
+		}
 	}
 }
