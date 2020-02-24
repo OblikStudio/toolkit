@@ -24,10 +24,12 @@ export class Tweet extends Component<HTMLElement, Options> {
 	}
 
 	create () {
-		this.$element.innerHTML = `
-			<blockquote class="twitter-tweet" data-lang="${ this.$options.lang }">
-				<a href="${ this.$options.url }"></a>
-			</blockquote>`
+		// Twitter uses this class to look for tweets.
+		this.$element.classList.add('twitter-tweet')
+		this.$element.setAttribute('data-lang', this.$options.lang)
+
+		// The tweet URL is inferred from this anchor element.
+		this.$element.innerHTML = `<a href="${ this.$options.url }"></a>`
 
 		if (!Tweet.injected) {
 			Tweet.injected = true
