@@ -61,8 +61,17 @@ export class Loader extends Component {
 			}
 
 			if (link) {
-				event.preventDefault()
-				this.handleLink(link)
+				let href = link.getAttribute('href')
+
+				if (href) {
+					let target = link.getAttribute('target')
+					let sameOrigin = (href.indexOf(window.location.host) > 0)
+
+					if (sameOrigin && target !== '_blank') {
+						event.preventDefault()
+						this.handleLink(link)
+					}
+				}
 			}
 		}
 	}
