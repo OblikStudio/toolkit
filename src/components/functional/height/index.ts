@@ -1,4 +1,5 @@
 import query from 'querel'
+import { Poller } from '../../../utils/poller'
 import { Component } from '../../../core'
 
 interface Options {
@@ -9,19 +10,11 @@ interface Options {
 export default class Height extends Component<HTMLElement, Options> {
   varName: string
   varElement: HTMLElement
-  updateHandler: () => any
-  observer: MutationObserver
+	poller: Poller
 
 	create () {
     this.varName = 'height'
     this.varElement = null
-    this.updateHandler = this.update.bind(this)
-
-		this.observer = new MutationObserver(this.updateHandler)
-		this.observer.observe(this.$element, {
-			childList: true,
-			subtree: true
-		})
 
     if (this.$options && this.$options.var) {
       if (typeof this.$options.var === 'string') {
@@ -33,31 +26,19 @@ export default class Height extends Component<HTMLElement, Options> {
       } else {
         this.varElement = this.$element
       }
-    }
+		}
 
-		window.addEventListener('resize', this.updateHandler)
-		window.addEventListener('load', this.updateHandler)
-		this.updateHandler()
+		this.poller = new Poller(this.$element.firstElementChild, ['offsetHeight'])
+		this.poller.on('change', changes => {
+			this.update(changes.offsetHeight.newValue)
+		})
 	}
 
-	update () {
-    var value
-    var element = this.$element.firstElementChild
-
-    if (element instanceof HTMLElement) {
-      value = element.offsetHeight + 'px'
-    }
-
+	update (value: number) {
     if (this.varElement) {
-      this.varElement.style.setProperty('--' + this.varName, value)
+      this.varElement.style.setProperty('--' + this.varName, value.toString())
     } else if (value) {
-      this.$element.style.height = value
+      this.$element.style.height = value.toString()
     }
-	}
-
-	destroy () {
-		window.removeEventListener('resize', this.updateHandler)
-		window.removeEventListener('load', this.updateHandler)
-		this.observer.disconnect()
 	}
 }
