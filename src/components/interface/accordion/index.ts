@@ -15,16 +15,31 @@ class Slide extends Component {
   }
 }
 
-export default class Accordion extends Component {
+interface Options {
+	active: number
+}
+
+export default class Accordion extends Component<Element, Options> {
   static components = {
     slide: Slide
-  }
+	}
+
+	static defaults = {
+		active: 0
+	}
 
   $slide: Slide[]
 
   create () {
     this.$slide = []
-  }
+	}
+
+	init () {
+		let initial = this.$slide[this.$options.active]
+		if (initial) {
+			this.toggle(initial)
+		}
+	}
 
   toggle (toggledSlide: Slide) {
     this.$slide.forEach(slide => {
