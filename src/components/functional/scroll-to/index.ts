@@ -15,7 +15,8 @@ export function scroll (options) {
     throw new Error('No scroll target')
   }
 
-  var scroller = getViewportScroller()
+	var scroller = getViewportScroller()
+	let offset = options.offset || 0
 
   options = Object.assign({
     interruptible: true,
@@ -23,7 +24,7 @@ export function scroll (options) {
     values: {
       scroll: {
         start: scroller.scrollTop,
-        end: offsetGlobal(options.target).top
+        end: offsetGlobal(options.target).top + offset
       }
     },
     update: function () {
@@ -78,7 +79,8 @@ interface Options {
   event: keyof GlobalEventHandlersEventMap
   duration: number
   easing: string
-  target: string
+	target: string
+	offset: string
 }
 
 interface Easings {
@@ -93,7 +95,8 @@ export class ScrollTo extends Component<Element, Options> {
   static defaults = {
     event: 'click',
     duration: 650,
-    easing: 'linear'
+		easing: 'linear',
+		offset: 0
   }
 
   target: HTMLElement
@@ -102,14 +105,23 @@ export class ScrollTo extends Component<Element, Options> {
   create () {
     if (!this.$options.target) {
       throw new Error('No scroll target specified')
-    }
+		}
 
-    this.target = query(this.$element, this.$options.target, HTMLElement)[0]
+		this.target = query(this.$element, this.$options.target, HTMLElement)[0]
+
+		let offset: number
+		if (typeof this.$options.offset === 'number') {
+			offset = this.$options.offset
+		} else if (typeof this.$options.offset === 'string') {
+			offset = parseInt(this.$options.offset)
+		}
+
     this.handler = (event) => {
       scroll({
         duration: this.$options.duration,
         easing: ScrollTo.easings[this.$options.easing],
-        target: this.target
+				target: this.target,
+				offset
       })
     }
 
