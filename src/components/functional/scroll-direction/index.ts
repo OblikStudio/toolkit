@@ -2,29 +2,64 @@ import { Component } from '../../../core'
 import { getViewportScroller } from '../../../utils'
 
 interface Options {
-	direction: 'up' | 'down'
+	direction: 'up' | 'down',
+	slack: number
 }
 
 export class ScrollDirection extends Component<HTMLElement, Options> {
-	static defaults = {
-		direction: 'up'
+	static defaults: Options = {
+		direction: 'up',
+		slack: 200
 	}
 
-	lastPosition: number
-	scrolled: boolean
 	scroller: Element
+	anchor: number
+	position: number
+	scrolled: boolean
+	down: boolean
+
+	checkHandler: () => void
 
 	init () {
-		this.lastPosition = 0
+		this.anchor = null
+		this.position = null
 		this.scroller = getViewportScroller()
 
-		window.addEventListener('scroll', this.update.bind(this))
+		this.checkHandler = this.check.bind(this)
+		window.addEventListener('scroll', this.checkHandler)
 	}
 
-	update () {
-		let value = this.check()
+	check () {
+		let lastPosition = this.position
+		this.position = this.scroller.scrollTop
 
-		if (value) {
+		let scrolled = (this.position > 10)
+		if (scrolled !== this.scrolled) {
+			this.updateScrolled(scrolled)
+		}
+
+		let down = lastPosition < this.position
+		if (down !== this.down) {
+			this.anchor = this.position
+			this.down = down
+		} else if (typeof this.anchor === 'number') {
+			let diff = this.position - this.anchor
+			let slack = this.$options.slack
+
+			if (diff > slack) {
+				this.anchor = null
+				this.updateActive(true)
+			} else if (diff < -slack) {
+				this.anchor = null
+				this.updateActive(false)
+			}
+		}
+	}
+
+	updateActive (down: boolean) {
+		let expected = this.$options.direction === 'down'
+
+		if (expected === down) {
 			this.$element.classList.add('is-active')
 		} else {
 			this.$element.classList.remove('is-active')
@@ -41,17 +76,9 @@ export class ScrollDirection extends Component<HTMLElement, Options> {
 		}
 	}
 
-	check () {
-		let previous = this.lastPosition
-		this.lastPosition = this.scroller.scrollTop
-
-		let scrolled = (this.scroller.scrollTop > 10)
-		if (scrolled !== this.scrolled) {
-			this.updateScrolled(scrolled)
-		}
-
-		return this.$options.direction === 'up'
-			? (this.lastPosition < previous)
-			: (this.lastPosition > previous)
+	destroy () {
+		window.removeEventListener('scroll', this.checkHandler)
 	}
 }
+
+export default ScrollDirection
