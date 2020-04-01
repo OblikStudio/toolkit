@@ -29,7 +29,7 @@ export class Component<E extends Element = Element, O = object> {
   _isDestroyed = false
   _name: string = null
   _children: Component[] = []
-  
+
   $element: E
   $options: Options<O>
   $parent: Component
@@ -103,7 +103,8 @@ export class Component<E extends Element = Element, O = object> {
     if (!this._isInit) {
       this._children.forEach(child => child.$init())
 
-      this.init()
+			this.init()
+			this.$emitter.emit('init')
       this._isInit = true
     }
   }
@@ -111,11 +112,11 @@ export class Component<E extends Element = Element, O = object> {
   _ref (component: Component, remove = false) {
     let prop = '$' + component._name
     let value = this[prop]
-  
+
     if (Array.isArray(value)) {
       let index = value.indexOf(component)
       let added = index >= 0
-  
+
       if (remove) {
         if (added) {
           value.splice(index, 1)
@@ -163,6 +164,7 @@ export class Component<E extends Element = Element, O = object> {
         this.$parent._removeChild(this)
       }
 
+			this.$emitter.emit('destroy')
       this._isDestroyed = true
     }
   }
