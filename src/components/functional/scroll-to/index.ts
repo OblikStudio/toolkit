@@ -6,20 +6,17 @@
 
 import { Animation } from '../../../utils/animation'
 import { offsetGlobal, getTag } from '../../../utils/dom'
-import { browser } from '../../../utils/detect'
+import { query, getViewportScroller } from '../../../utils'
+import { linear } from '../../../utils/easings'
 import Component from '../../component'
-import { query } from '../../../utils'
-
-const useBody = browser().match(/safari|edge/)
 
 export function scroll (options) {
   if (!options.target) {
     throw new Error('No scroll target')
   }
 
-  var scroller = useBody
-    ? document.body
-    : document.documentElement
+	var scroller = getViewportScroller()
+	let offset = options.offset || 0
 
   options = Object.assign({
     interruptible: true,
@@ -27,7 +24,7 @@ export function scroll (options) {
     values: {
       scroll: {
         start: scroller.scrollTop,
-        end: offsetGlobal(options.target).top
+        end: offsetGlobal(options.target).top + offset
       }
     },
     update: function () {
@@ -46,7 +43,7 @@ export function scroll (options) {
 
     window.addEventListener('wheel', interruptHandler)
     window.addEventListener('touchstart', interruptHandler)
-  } 
+  }
 
   scrollAnimation.run()
 }
@@ -78,24 +75,28 @@ export function monitorLinks (options) {
   })
 }
 
-const _easings = {}
-
-export function easings (values) {
-  Object.assign(_easings, values)
-}
-
 interface Options {
   event: keyof GlobalEventHandlersEventMap
   duration: number
   easing: string
-  target: string
+	target: string
+	offset: string
 }
 
-export default class ScrollTo extends Component<Element, Options> {
+interface Easings {
+	[key: string]: (pos: number) => number
+}
+
+export class ScrollTo extends Component<Element, Options> {
+	static easings: Easings = {
+		linear
+	}
+
   static defaults = {
     event: 'click',
     duration: 650,
-    easing: 'linear'
+		easing: 'linear',
+		offset: 0
   }
 
   target: HTMLElement
@@ -104,14 +105,23 @@ export default class ScrollTo extends Component<Element, Options> {
   create () {
     if (!this.$options.target) {
       throw new Error('No scroll target specified')
-    }
+		}
 
-    this.target = query(this.$options.target, this.$options.target, HTMLElement)[0]
+		this.target = query(this.$element, this.$options.target, HTMLElement)[0]
+
+		let offset: number
+		if (typeof this.$options.offset === 'number') {
+			offset = this.$options.offset
+		} else if (typeof this.$options.offset === 'string') {
+			offset = parseInt(this.$options.offset)
+		}
+
     this.handler = (event) => {
       scroll({
         duration: this.$options.duration,
-        easing: _easings[this.$options.easing],
-        target: this.target
+        easing: ScrollTo.easings[this.$options.easing],
+				target: this.target,
+				offset
       })
     }
 
