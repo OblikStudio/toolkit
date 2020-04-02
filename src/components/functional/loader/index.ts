@@ -173,8 +173,9 @@ export class Loader extends Component {
 				let href = link.getAttribute('href')
 
 				if (href) {
+					let url = new URL(href)
+					let sameOrigin = (url.host === window.location.host)
 					let target = link.getAttribute('target')
-					let sameOrigin = (href.indexOf(window.location.host) > 0)
 
 					if (sameOrigin && target !== '_blank') {
 						this.handleLink(link)
