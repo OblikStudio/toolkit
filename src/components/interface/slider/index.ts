@@ -54,12 +54,56 @@ interface Screen {
   center: number
 }
 
+class Prev extends Component<HTMLButtonElement> {
+	$parent: Slider
+	target: Screen
+
+	create () {
+		this.$element.addEventListener('click', () => {
+			this.update()
+			this.$parent.setSlide(this.target)
+		})
+
+		this.$parent.$emitter.on('slideChange', () => {
+			this.update()
+		})
+	}
+
+	updateTarget () {
+		let slider = this.$parent
+		let index = slider.screens.indexOf(slider.currentScreen)
+		return slider.screens[index - 1]
+	}
+
+	update () {
+		this.target = this.updateTarget()
+
+		if (this.target) {
+			this.$element.classList.remove('is-disabled')
+		} else {
+			this.$element.classList.add('is-disabled')
+		}
+	}
+}
+
+class Next extends Prev {
+	$parent: Slider
+
+	updateTarget () {
+		let slider = this.$parent
+		let index = slider.screens.indexOf(slider.currentScreen)
+		return slider.screens[index + 1]
+	}
+}
+
 class Rail extends Component<HTMLElement> {}
 
 export default class Slider extends Component<HTMLElement> {
   static components = {
     slide: Slide,
-    rail: Rail
+		rail: Rail,
+		prev: Prev,
+		next: Next
   }
 
   $slide: Slide[] = []
@@ -79,23 +123,23 @@ export default class Slider extends Component<HTMLElement> {
   renderHandler: Slider['renderItems']
   drag: Drag
 
-  create () {
-    this.clickThreshold = 40
+  init () {
+		this.clickThreshold = 40
     this.isDraggingLink = null
     this.isDrag = null
     this.currentScreen = null
     this.origin = {
       x: 0, y: 0
     }
-    
-    this.drag = new Drag(this.$element)
+
+    this.drag = new Drag(this.$rail.$element)
     this.drag.on('start', this.pointerDown.bind(this))
     this.drag.on('change', this.pointerUpdate.bind(this))
     this.drag.on('move', this.pointerMove.bind(this))
     this.drag.on('end', this.pointerUp.bind(this))
     this.drag.on('retouch', this.newDelta.bind(this))
 
-    this.$element.addEventListener('click', (event) => {
+    this.$rail.$element.addEventListener('click', (event) => {
       if (this.isDraggingLink && this.isDrag) {
         // The user tried to drag, prevent redirection.
         event.preventDefault()
@@ -103,10 +147,8 @@ export default class Slider extends Component<HTMLElement> {
     })
 
     this.renderHandler = this.renderItems.bind(this)
-    ticker.on('tick', this.renderHandler)
-  }
+		ticker.on('tick', this.renderHandler)
 
-  init () {
     this.screens = this.updateScreens()
     this.setSlide(0)
   }
@@ -121,7 +163,9 @@ export default class Slider extends Component<HTMLElement> {
       this.origin = {
         x: -target.left,
         y: 0
-      }
+			}
+
+			this.$emitter.emit('slideChange', this.currentScreen)
       return true
     }
 
@@ -235,7 +279,7 @@ export default class Slider extends Component<HTMLElement> {
     } else {
       this.isDragging.false(1 / 5)
     }
-    
+
     if (this.isDragging.value()) {
       if (!wasDragging) {
         this.newDelta(event)
@@ -287,7 +331,7 @@ export default class Slider extends Component<HTMLElement> {
       }
       console.log(this.drag.movement, dir)
     }
-    
+
     this.updateDelta(null)
     this.$element.classList.remove('is-dragged')
   }
