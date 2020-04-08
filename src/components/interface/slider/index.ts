@@ -120,10 +120,13 @@ export default class Slider extends Component<HTMLElement> {
   isDraggingLink: boolean
   isDrag: boolean
   isDragging: FuzzyBoolean
-  renderHandler: Slider['renderItems']
-  drag: Drag
+	renderHandler: Slider['renderItems']
+	resizeHandler: () => void
+	drag: Drag
+	enabled: boolean
 
   init () {
+		this.enabled = true
 		this.clickThreshold = 40
     this.isDraggingLink = null
     this.isDrag = null
@@ -150,7 +153,13 @@ export default class Slider extends Component<HTMLElement> {
 		ticker.on('tick', this.renderHandler)
 
     this.screens = this.updateScreens()
-    this.setSlide(0)
+		this.setSlide(0)
+
+		this.resizeHandler = () => {
+			this.screens = this.updateScreens()
+		}
+
+		window.addEventListener('resize', this.resizeHandler)
   }
 
   setSlide (screen: number | Screen) {
@@ -159,11 +168,21 @@ export default class Slider extends Component<HTMLElement> {
       : screen
 
     if (target && this.currentScreen !== target) {
+			if (this.currentScreen) {
+				this.currentScreen.slides.forEach(slide => {
+					slide.$element.classList.remove('is-active')
+				})
+			}
+
       this.currentScreen = target
       this.origin = {
         x: -target.left,
         y: 0
 			}
+
+			this.currentScreen.slides.forEach(slide => {
+				slide.$element.classList.add('is-active')
+			})
 
 			this.$emitter.emit('slideChange', this.currentScreen)
       return true
@@ -173,7 +192,7 @@ export default class Slider extends Component<HTMLElement> {
   }
 
   updateScreens () {
-    let sps = 2
+    let sps = 1
     let crr = 0
     let groups = [[]]
 
@@ -203,6 +222,8 @@ export default class Slider extends Component<HTMLElement> {
   }
 
   pointerDown (event) {
+		if (!this.enabled) return
+
     this.dragOrigin = {
       x: event.pageX,
       y: event.pageY
@@ -229,6 +250,8 @@ export default class Slider extends Component<HTMLElement> {
   }
 
   newDelta (event) {
+		if (!this.enabled) return
+
     this.dragOrigin = {
       x: event.pageX,
       y: event.pageY
@@ -265,6 +288,8 @@ export default class Slider extends Component<HTMLElement> {
   }
 
   pointerMove (event, vector) {
+		if (!this.enabled) return
+
     let sine = Math.abs(Math.sin(vector.direction))
     let wasDragging = this.isDragging.value()
 
@@ -290,6 +315,8 @@ export default class Slider extends Component<HTMLElement> {
   }
 
   pointerUpdate (vector) {
+		if (!this.enabled) return
+
     this.updateDelta({
       x: this.drag.position.x - this.dragOrigin.x,
       y: this.drag.position.y - this.dragOrigin.y
@@ -306,6 +333,8 @@ export default class Slider extends Component<HTMLElement> {
   }
 
   pointerUp (event) {
+		if (!this.enabled) return
+
     this.dragOrigin = null
     let x = -this.origin.x - this.totalDelta.x
     let rect = this.$element.getBoundingClientRect()
@@ -329,7 +358,6 @@ export default class Slider extends Component<HTMLElement> {
           this.setSlide(ind + 1)
         }
       }
-      console.log(this.drag.movement, dir)
     }
 
     this.updateDelta(null)
@@ -373,6 +401,7 @@ export default class Slider extends Component<HTMLElement> {
   }
 
   destroy () {
-    ticker.off('tick', this.renderHandler)
+		ticker.off('tick', this.renderHandler)
+		window.removeEventListener('resize', this.resizeHandler)
   }
 }
