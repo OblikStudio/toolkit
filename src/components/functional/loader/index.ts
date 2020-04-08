@@ -68,11 +68,8 @@ export class Loader extends Component {
 
 			xhr.addEventListener('readystatechange', () => {
 				if (xhr.readyState === XMLHttpRequest.DONE) {
-					if (xhr.status === 200) {
-						resolve(xhr)
-					} else {
-						reject(xhr)
-					}
+					// Don't check xhr.status because 404 pages should also be rendered.
+					resolve(xhr)
 				}
 			})
 
@@ -173,8 +170,20 @@ export class Loader extends Component {
 				let href = link.getAttribute('href')
 
 				if (href) {
+					let sameOrigin = true
+					let url = null
+
+					try {
+						url = new URL(href)
+					} catch (e) {
+						// A relative/absolute URL starting with `/`
+					}
+
+					if (url) {
+						sameOrigin = (url.host === window.location.host)
+					}
+
 					let target = link.getAttribute('target')
-					let sameOrigin = (href.indexOf(window.location.host) > 0)
 
 					if (sameOrigin && target !== '_blank') {
 						this.handleLink(link)
