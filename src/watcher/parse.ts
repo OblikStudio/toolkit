@@ -1,4 +1,4 @@
-import { Parser } from 'slic'
+import { Parser } from '../utils/config'
 
 export interface ComponentMeta {
   attr: string
@@ -11,7 +11,7 @@ export interface ComponentMeta {
   parentAttr: string
 }
 
-const slic = new Parser()
+const config = new Parser()
 
 export function value (input) {
   if (!input || typeof input !== 'string') {
@@ -21,7 +21,7 @@ export function value (input) {
 	if (input.length && input[0] === '{') {
 		return JSON.parse(input)
 	} else {
-		return slic.parse(input)
+		return config.parse(input)
 	}
 }
 

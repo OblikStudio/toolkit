@@ -36,8 +36,7 @@
   "dependencies": {
     "core-js": "^3.2.1",
     "lodash-es": "^4.17.15",
-    "querel": "^2.1",
-    "slic": "^1.0.0"
+    "querel": "^2.1"
   },
   "devDependencies": {
     "@types/chai": "^4.2.6",
