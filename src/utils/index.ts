@@ -1,4 +1,4 @@
-export { default as query } from 'querel'
+export { default as query } from './query'
 
 export * from './animation'
 export * from './detect'

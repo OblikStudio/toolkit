@@ -3,7 +3,7 @@
  * @see https://caniuse.com/#feat=mdn-api_mediaquerylistevent
  */
 
-import query from 'querel'
+import query from '../../../utils/query'
 import { Component } from '../../../core'
 
 interface Options {

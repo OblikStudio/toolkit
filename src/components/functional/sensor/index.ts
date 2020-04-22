@@ -1,4 +1,4 @@
-import { default as query, QueryTarget } from 'querel'
+import { default as query, QueryTarget } from '../../../utils/query'
 import { Component } from '../../../core'
 import { RectObserver } from '../../../utils/rect-observer'
 

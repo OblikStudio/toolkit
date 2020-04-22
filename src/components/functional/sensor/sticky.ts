@@ -4,7 +4,7 @@
  * @todo update elements on resize when fixed
  */
 
-import query from 'querel'
+import query from '../../../utils/query'
 import { mutate } from '../../../core'
 import { RectObserver } from '../../../utils/rect-observer'
 import { Sensor, Options } from '.'

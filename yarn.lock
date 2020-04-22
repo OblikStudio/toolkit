@@ -3728,11 +3728,6 @@ qs@6.7.0:
   resolved "https://registry.yarnpkg.com/qs/-/qs-6.7.0.tgz#41dc1a015e3d581f1621776be31afb2876a9b1bc"
   integrity sha512-VCdBRNFTX1fyE7Nb6FYoURo/SPe62QCaAyzJvUjwRaIsc+NePBEniHlvxFmmX56+HZphIGtV0XeCirBtpDrTyQ==
 
-querel@^2.1:
-  version "2.1.0"
-  resolved "https://registry.yarnpkg.com/querel/-/querel-2.1.0.tgz#866111b0b0f0c0b630a23fe90f2496e313a21a72"
-  integrity sha512-yr8DCiL82fSN9xQWAUXmJI3XY+StoNQvok9EAHqcqTpSblcjdZhjFYJVWGbIdd3XpihiiJkvLJpSzczAlxTYPA==
-
 querystring-es3@^0.2.0:
   version "0.2.1"
   resolved "https://registry.yarnpkg.com/querystring-es3/-/querystring-es3-0.2.1.tgz#9ec61f79049875707d69414596fd907a4d711e73"

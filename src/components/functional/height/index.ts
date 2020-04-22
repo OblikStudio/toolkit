@@ -1,4 +1,4 @@
-import query from 'querel'
+import query from '../../../utils/query'
 import { Poller } from '../../../utils/poller'
 import { Component } from '../../../core'
 

@@ -4,7 +4,7 @@ module.exports = function(config) {
   config.set({
 
     // base path that will be used to resolve all patterns (eg. files, exclude)
-    basePath: 'test',
+    basePath: '.',
 
 
     // frameworks to use
@@ -14,8 +14,8 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
-      { pattern: 'unit/**/*.ts' },
-      { pattern: 'spec/**/*.html' }
+      { pattern: 'test/unit/**/*.ts' },
+      { pattern: 'src/utils/**/test/*' }
     ],
 
 
