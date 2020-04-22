@@ -1,7 +1,7 @@
-import Watcher from '../../../src/watcher'
-import { Poller } from '../../../src/utils/poller'
-import { Component } from '../../../src/components/component'
-import { mutate } from '../../../src/core'
+import Watcher from '../../src/watcher'
+import { Poller } from '../../src/utils/poller'
+import { Component } from '../../src/components/component'
+import { mutate } from '../../src/core'
 
 class Test extends Component<HTMLElement> {
   create () {
@@ -9,7 +9,7 @@ class Test extends Component<HTMLElement> {
 
     p.on('change', data => {
       mutate(() => {
-        this.$element.style.height = data.offsetWidth + 'px'
+        this.$element.style.height = data.offsetWidth.newValue + 'px'
       })
     })
   }

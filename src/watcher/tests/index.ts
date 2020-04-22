@@ -1,7 +1,7 @@
 import { SinonSpy } from 'sinon'
 
-import Watcher from '../../src/watcher'
-import Component from '../../src/components/component'
+import Watcher from '..'
+import Component from '../../components/component'
 
 class Tester<O = object> extends Component<HTMLElement, O> {
   spyCreate: SinonSpy

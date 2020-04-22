@@ -1,4 +1,4 @@
-import { Parser } from '../../src/utils/config'
+import { Parser } from '..'
 
 function test (input: string, expected: any) {
   let parser = new Parser()

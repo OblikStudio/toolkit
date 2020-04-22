@@ -29,12 +29,12 @@ module.exports = (env, opts) => {
     }
   } else {
     config.entry = {
-      sensor: './test/pages/sensor/script.ts',
-      ticker: './test/pages/ticker/script.ts'
+      sensor: './tests/sensor/script.ts',
+      ticker: './tests/ticker/script.ts'
     }
 
     config.devServer = {
-      contentBase: './test/pages',
+      contentBase: './tests',
       port: 5000
     }
   }

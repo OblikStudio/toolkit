@@ -1,4 +1,4 @@
-import { Emitter } from '../../src/utils/emitter'
+import { Emitter } from '..'
 
 describe('emitter', () => {
   it('emits', () => {

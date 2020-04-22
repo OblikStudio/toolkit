@@ -1,11 +1,11 @@
-import '../../../src/polyfill'
+import '../../src/polyfill'
 
-import Watcher from '../../../src/watcher'
+import Watcher from '../../src/watcher'
 
-import { Sensor } from '../../../src/components/functional/sensor'
-import { Sticky } from '../../../src/components/functional/sensor/sticky'
-import { PositionObserver } from '../../../src/utils/position-observer'
-import { Component } from '../../../src'
+import { Sensor } from '../../src/components/functional/sensor'
+import { Sticky } from '../../src/components/functional/sensor/sticky'
+import { PositionObserver } from '../../src/utils/position-observer'
+import { Component } from '../../src'
 
 let w = new Watcher(document.body, {
   components: {

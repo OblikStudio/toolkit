@@ -1,4 +1,4 @@
-import { Emitter } from './emitter'
+import { Emitter } from '../emitter'
 
 export class Ticker extends Emitter {
   _isTicking: boolean

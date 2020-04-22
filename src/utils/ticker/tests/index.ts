@@ -1,4 +1,4 @@
-import { Ticker } from '../../src/utils/ticker'
+import { Ticker } from '..'
 
 describe('ticker', () => {
   it('starts', function (done) {

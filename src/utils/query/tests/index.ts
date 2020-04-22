@@ -1,4 +1,4 @@
-import { parse } from '../index'
+import { parse } from '..'
 
 describe('parse()', () => {
   it('resolves selector', () => {
