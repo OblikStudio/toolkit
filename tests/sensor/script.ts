@@ -1,9 +1,9 @@
 import '../../src/polyfill'
 
-import Watcher from '../../src/watcher'
+import Watcher from '../../src/utils/watcher'
 
-import { Sensor } from '../../src/components/functional/sensor'
-import { Sticky } from '../../src/components/functional/sensor/sticky'
+import { Sensor } from '../../src/components/sensor'
+import { Sticky } from '../../src/components/sensor/sticky'
 import { PositionObserver } from '../../src/utils/position-observer'
 import { Component } from '../../src'
 

@@ -1,7 +1,6 @@
-import Watcher from '../../src/watcher'
+import Watcher from '../../src/utils/watcher'
 import { Poller } from '../../src/utils/poller'
-import { Component } from '../../src/components/component'
-import { mutate } from '../../src/core'
+import { Component, mutate } from '../../src'
 
 class Test extends Component<HTMLElement> {
   create () {

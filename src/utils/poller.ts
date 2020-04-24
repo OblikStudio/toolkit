@@ -1,5 +1,5 @@
 import { Emitter } from './emitter'
-import { ticker } from '../core'
+import { ticker } from '..'
 
 type Change = {
   initial?: boolean,

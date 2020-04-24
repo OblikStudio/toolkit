@@ -1,17 +1,11 @@
-/**
- * @todo scrollto turn `scroll()` to static method
- * @todo allow components using querel to accept HTMLElement input
- */
+export * from './components/component'
+export * from './utils/ticker/timer'
+export * from './utils/watcher'
 
 import * as components from './components'
 import * as utils from './utils'
 
-import Watcher from './watcher'
-import Component from './components/component'
-
 export {
   components,
-  utils,
-  Watcher,
-  Component
+  utils
 }

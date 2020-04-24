@@ -1,4 +1,4 @@
-import { measure } from '../core'
+import { measure } from '..'
 import { Emitter } from './emitter'
 import { PositionObserver } from './position-observer'
 
