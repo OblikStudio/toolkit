@@ -59,14 +59,14 @@ export class Sticky extends Sensor {
 	$options: StickyOptions
 
 	static: HTMLElement
-  placeholder: HTMLElement
+	placeholder: HTMLElement
 	boundsElement: HTMLElement
 	isFixed = false
 	isAbsolute = false
-  elementLatestStyles: CSSStyleDeclaration
-	
+	elementLatestStyles: CSSStyleDeclaration
+
 	private _boundsObserver: RectObserver
-  private _placeholderObserver: RectObserver
+	private _placeholderObserver: RectObserver
 
 	init () {
 		if (typeof this.$options.target === 'string') {
@@ -76,31 +76,31 @@ export class Sticky extends Sensor {
 		}
 
 		this.static = this.$element
-    
-    mutate().then(() => {
-      this.placeholder = document.createElement('div')
-      this.placeholder.style.display = 'none'
-      this.placeholder.style.opacity = '0'
-      this.placeholder.style.pointerEvents = 'none'
-      this.$element.parentNode.insertBefore(this.placeholder, this.$element.nextSibling)
-      this.updatePlaceholder()
 
-      let docRelative = (this.$options.reference === 'document')
-      this._elementObserver = new RectObserver(this.$element, docRelative)
-      this._targetObserver = new RectObserver(this.target, docRelative)
+		mutate().then(() => {
+			this.placeholder = document.createElement('div')
+			this.placeholder.style.display = 'none'
+			this.placeholder.style.opacity = '0'
+			this.placeholder.style.pointerEvents = 'none'
+			this.$element.parentNode.insertBefore(this.placeholder, this.$element.nextSibling)
+			this.updatePlaceholder()
+
+			let docRelative = (this.$options.reference === 'document')
+			this._elementObserver = new RectObserver(this.$element, docRelative)
+			this._targetObserver = new RectObserver(this.target, docRelative)
 			this._placeholderObserver = new RectObserver(this.placeholder, docRelative)
-			
+
 			if (this.$options.measure.bounds) {
 				this.boundsElement = query(this.$element, this.$options.measure.bounds, HTMLElement)[0]
 				this._boundsObserver = new RectObserver(this.boundsElement, docRelative)
-      }
+			}
 
-      return Promise.all([
-        this._elementObserver.promise('init'),
-        this._targetObserver.promise('init'),
-        this._placeholderObserver.promise('init')
-      ])
-    }).then(() => {
+			return Promise.all([
+				this._elementObserver.promise('init'),
+				this._targetObserver.promise('init'),
+				this._placeholderObserver.promise('init')
+			])
+		}).then(() => {
 			this._elementObserver.on('change', this.update, this)
 			this._targetObserver.on('change', this.update, this)
 			this._placeholderObserver.on('change', this.update, this)
@@ -169,7 +169,7 @@ export class Sticky extends Sensor {
 			// Get the latest element styles before fixing it.
 			this.updatePlaceholder()
 		}
-		
+
 		this.applyFixed(value)
 	}
 
@@ -193,27 +193,27 @@ export class Sticky extends Sensor {
 	}
 
 	update () {
-    let rect = null
+		let rect = null
 
-    if (this.static === this.$element) {
-      rect = this._elementObserver.rect
-    } else {
-      rect = this._placeholderObserver.rect
-    }
-
-    let value = this.measure(rect, this._targetObserver.rect)
-		if (value !== this.value) {
-			this.mutate(value)
-      this.value = value
+		if (this.static === this.$element) {
+			rect = this._elementObserver.rect
+		} else {
+			rect = this._placeholderObserver.rect
 		}
 
-    if (this.boundsElement) {
+		let value = this.measure(rect, this._targetObserver.rect)
+		if (value !== this.value) {
+			this.mutate(value)
+			this.value = value
+		}
+
+		if (this.boundsElement) {
 			this.checkBounds(rect)
 		}
 	}
 
 	destroy () {
-    super.destroy()
+		super.destroy()
 		this.placeholder.parentNode.removeChild(this.placeholder)
 	}
 }

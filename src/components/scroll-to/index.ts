@@ -11,74 +11,74 @@ import { linear } from '../../utils/easings'
 import { Component } from '../..'
 
 export function scroll (options) {
-  if (!options.target) {
-    throw new Error('No scroll target')
-  }
+	if (!options.target) {
+		throw new Error('No scroll target')
+	}
 
 	var scroller = getViewportScroller()
 	let offset = options.offset || 0
 
-  options = Object.assign({
-    interruptible: true,
-    duration: 650,
-    values: {
-      scroll: {
-        start: scroller.scrollTop,
-        end: offsetGlobal(options.target).top + offset
-      }
-    },
-    update: function () {
-      scroller.scrollTop = this.scroll
-    }
-  }, options)
+	options = Object.assign({
+		interruptible: true,
+		duration: 650,
+		values: {
+			scroll: {
+				start: scroller.scrollTop,
+				end: offsetGlobal(options.target).top + offset
+			}
+		},
+		update: function () {
+			scroller.scrollTop = this.scroll
+		}
+	}, options)
 
-  var scrollAnimation = new Animation(options)
+	var scrollAnimation = new Animation(options)
 
-  if (options.interruptible) {
-    var interruptHandler = function (event) {
-      scrollAnimation.stop()
-      window.removeEventListener('wheel', interruptHandler)
-      window.removeEventListener('touchstart', interruptHandler)
-    }
+	if (options.interruptible) {
+		var interruptHandler = function (event) {
+			scrollAnimation.stop()
+			window.removeEventListener('wheel', interruptHandler)
+			window.removeEventListener('touchstart', interruptHandler)
+		}
 
-    window.addEventListener('wheel', interruptHandler)
-    window.addEventListener('touchstart', interruptHandler)
-  }
+		window.addEventListener('wheel', interruptHandler)
+		window.addEventListener('touchstart', interruptHandler)
+	}
 
-  scrollAnimation.run()
+	scrollAnimation.run()
 }
 
 export function monitorLinks (options) {
-  options = Object.assign({
-    duration: 650
-  }, options)
+	options = Object.assign({
+		duration: 650
+	}, options)
 
-  window.addEventListener('click', (event) => {
-    var link = getTag(event.target, 'A')
+	window.addEventListener('click', (event) => {
+		var link = getTag(event.target, 'A')
 
-    if (link) {
-      var href = link.getAttribute('href')
+		if (link) {
+			var href = link.getAttribute('href')
 
-      if (typeof href === 'string' && href[0] === '#') {
-        var target = document.querySelector(href)
+			if (typeof href === 'string' && href[0] === '#') {
+				var target = document.querySelector(href)
 
-        if (target) {
-          scroll({
-            ...options,
-            target
-          })
+				if (target) {
+					scroll({
+						...options,
+						target
+					})
 
-          event.preventDefault()
-        }
-      }
-    }
-  })
+					event.preventDefault()
+				}
+			}
+		}
+	})
 }
 
 interface Options {
-  event: keyof GlobalEventHandlersEventMap
-  duration: number
-  easing: string
+	event: keyof GlobalEventHandlersEventMap
+	duration: number
+	easing: string
 	target: string
 	offset: string
 }
@@ -92,19 +92,19 @@ export class ScrollTo extends Component<Element, Options> {
 		linear
 	}
 
-  static defaults = {
-    event: 'click',
-    duration: 650,
+	static defaults = {
+		event: 'click',
+		duration: 650,
 		easing: 'linear',
 		offset: 0
-  }
+	}
 
-  target: HTMLElement
-  handler: any
+	target: HTMLElement
+	handler: any
 
-  create () {
-    if (!this.$options.target) {
-      throw new Error('No scroll target specified')
+	create () {
+		if (!this.$options.target) {
+			throw new Error('No scroll target specified')
 		}
 
 		this.target = query(this.$element, this.$options.target, HTMLElement)[0]
@@ -116,21 +116,21 @@ export class ScrollTo extends Component<Element, Options> {
 			offset = parseInt(this.$options.offset)
 		}
 
-    this.handler = (event) => {
-      scroll({
-        duration: this.$options.duration,
-        easing: ScrollTo.easings[this.$options.easing],
+		this.handler = (event) => {
+			scroll({
+				duration: this.$options.duration,
+				easing: ScrollTo.easings[this.$options.easing],
 				target: this.target,
 				offset
-      })
-    }
+			})
+		}
 
-    this.$element.addEventListener(this.$options.event, this.handler)
-  }
+		this.$element.addEventListener(this.$options.event, this.handler)
+	}
 
-  destroy () {
-    this.$element.removeEventListener(this.$options.event, this.handler)
-  }
+	destroy () {
+		this.$element.removeEventListener(this.$options.event, this.handler)
+	}
 }
 
 export default ScrollTo

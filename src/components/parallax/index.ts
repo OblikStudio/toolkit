@@ -4,133 +4,133 @@ import { clamp } from '../../utils/math'
 import { linear } from '../../utils/easings'
 
 const transformers = {
-  ratio: function (value) {
-    return value
-  },
-  signed: function (value) {
-    var signed = (value - 0.5) * 2
-    var eased = (1 - this.easing(1 - Math.abs(signed)))
-    return Math.sign(signed) * eased
-  },
-  trigonometric: function (value) {
-    var rad = Math.PI * (transformers.signed(value))
+	ratio: function (value) {
+		return value
+	},
+	signed: function (value) {
+		var signed = (value - 0.5) * 2
+		var eased = (1 - this.easing(1 - Math.abs(signed)))
+		return Math.sign(signed) * eased
+	},
+	trigonometric: function (value) {
+		var rad = Math.PI * (transformers.signed(value))
 
-    return {
-      sin: Math.sin(rad),
-      cos: Math.cos(rad)
-    }
-  }
+		return {
+			sin: Math.sin(rad),
+			cos: Math.cos(rad)
+		}
+	}
 }
 
 const easings = {
-  linear
+	linear
 }
 
 export function registerTransformers (input) {
-  Object.assign(transformers, input)
+	Object.assign(transformers, input)
 }
 
 export function registerEasigns (input) {
-  Object.assign(easings, input)
+	Object.assign(easings, input)
 }
 
 export default class {
-  element: HTMLElement
-  options: {
-    type: string
-    reference: string
-    easing: string
-    axis: string
-    name: string,
-    clamp: boolean
-  }
-  reference: Window | Element
-  transform: (value: number) => any
-  easing: () => any
-  handler: () => any
+	element: HTMLElement
+	options: {
+		type: string
+		reference: string
+		easing: string
+		axis: string
+		name: string,
+		clamp: boolean
+	}
+	reference: Window | Element
+	transform: (value: number) => any
+	easing: () => any
+	handler: () => any
 
-  constructor (element, options) {
-    this.element = element
-    this.options = Object.assign({
-      type: 'signed',
-      easing: 'linear',
-      name: 'parallax',
-      axis: 'y',
-      reference: null,
-      clamp: true
-    }, options)
-    
-    if (!this.options.reference) {
-      this.reference = window
-    } else {
-      this.reference = query(this.element, this.options.reference)[0]
-    }
+	constructor (element, options) {
+		this.element = element
+		this.options = Object.assign({
+			type: 'signed',
+			easing: 'linear',
+			name: 'parallax',
+			axis: 'y',
+			reference: null,
+			clamp: true
+		}, options)
 
-    this.transform = transformers[this.options.type]
-    if (typeof this.transform !== 'function') {
-      throw new Error(`Invalid transformer ${ this.options.type }`)
-    }
+		if (!this.options.reference) {
+			this.reference = window
+		} else {
+			this.reference = query(this.element, this.options.reference)[0]
+		}
 
-    this.easing = easings[this.options.easing]
-    if (typeof this.easing !== 'function') {
-      throw new Error(`Invalid easing ${ this.options.easing }`)
-    }
-    
-    this.handler = this.update.bind(this)
-    this.reference.addEventListener('scroll', this.handler)
-    this.update()
-  }
+		this.transform = transformers[this.options.type]
+		if (typeof this.transform !== 'function') {
+			throw new Error(`Invalid transformer ${ this.options.type }`)
+		}
 
-  calculate (elementRect, referenceRect, axis) {
-    var offset, edge, edgeEnd
+		this.easing = easings[this.options.easing]
+		if (typeof this.easing !== 'function') {
+			throw new Error(`Invalid easing ${ this.options.easing }`)
+		}
 
-    if (axis === 'x') {
-      offset = referenceRect.width
-      edge = elementRect.left - referenceRect.left
-      edgeEnd = elementRect.width
-    } else {
-      offset = referenceRect.height
-      edge = elementRect.top - referenceRect.top
-      edgeEnd = elementRect.height
-    }
+		this.handler = this.update.bind(this)
+		this.reference.addEventListener('scroll', this.handler)
+		this.update()
+	}
 
-    var positionCurrent = offset - edge
-    var positionEnd = edgeEnd + offset
+	calculate (elementRect, referenceRect, axis) {
+		var offset, edge, edgeEnd
 
-    return positionCurrent / positionEnd
-  }
+		if (axis === 'x') {
+			offset = referenceRect.width
+			edge = elementRect.left - referenceRect.left
+			edgeEnd = elementRect.width
+		} else {
+			offset = referenceRect.height
+			edge = elementRect.top - referenceRect.top
+			edgeEnd = elementRect.height
+		}
 
-  update () {
-    var rect = this.element.getBoundingClientRect()
-    var refRect
-    var value
+		var positionCurrent = offset - edge
+		var positionEnd = edgeEnd + offset
 
-    if (this.reference instanceof Element) {
-      refRect = this.reference.getBoundingClientRect()
-    } else {
-      refRect = windowClientRect()
-    }
- 
-    value = this.calculate(rect, refRect, this.options.axis)
-    
-    if (this.options.clamp) {
-      value = clamp(value, 0, 1)
-    }
+		return positionCurrent / positionEnd
+	}
 
-    this.setProperty(this.transform.call(this, value))
-  }
+	update () {
+		var rect = this.element.getBoundingClientRect()
+		var refRect
+		var value
 
-  setProperty (property) {
-    if (typeof property === 'object') {
-      for (var k in property) {
-        this.element.style.setProperty(`--${ this.options.name }-${ k }`, property[k])
-      }
-    } else {
-      this.element.style.setProperty(`--${ this.options.name }`, property)
-    }
-  }
+		if (this.reference instanceof Element) {
+			refRect = this.reference.getBoundingClientRect()
+		} else {
+			refRect = windowClientRect()
+		}
 
-  destroy () {
-    this.reference.removeEventListener('scroll', this.handler)
-  }
+		value = this.calculate(rect, refRect, this.options.axis)
+
+		if (this.options.clamp) {
+			value = clamp(value, 0, 1)
+		}
+
+		this.setProperty(this.transform.call(this, value))
+	}
+
+	setProperty (property) {
+		if (typeof property === 'object') {
+			for (var k in property) {
+				this.element.style.setProperty(`--${ this.options.name }-${ k }`, property[k])
+			}
+		} else {
+			this.element.style.setProperty(`--${ this.options.name }`, property)
+		}
+	}
+
+	destroy () {
+		this.reference.removeEventListener('scroll', this.handler)
+	}
 }

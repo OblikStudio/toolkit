@@ -1,80 +1,80 @@
 interface Instruction {
-  name: string
-  arg: string
+	name: string
+	arg: string
 }
 
 export default class {
-  name: string
-  arg: string
-  brackets: number
-  data: Instruction[]
+	name: string
+	arg: string
+	brackets: number
+	data: Instruction[]
 
-  init () {
-    this.clear()
-    this.brackets = 0
-    this.data = []
-  }
+	init () {
+		this.clear()
+		this.brackets = 0
+		this.data = []
+	}
 
-  clear () {
-    this.name = ''
-    this.arg = ''
-  }
+	clear () {
+		this.name = ''
+		this.arg = ''
+	}
 
-  commit () {
-    if (this.name) {
-      this.data.push({
-        name: this.name,
-        arg: this.arg || null
-      })
+	commit () {
+		if (this.name) {
+			this.data.push({
+				name: this.name,
+				arg: this.arg || null
+			})
 
-      this.clear()
-    }
-  }
+			this.clear()
+		}
+	}
 
-  read (char: string) {
-    if (char === '(') {
-      this.brackets++
-      
-      if (this.brackets === 1) {
-        if (!this.name) {
-          throw new Error('Method name expected')
-        }
+	read (char: string) {
+		if (char === '(') {
+			this.brackets++
 
-        return
-      }
-    } else if (char === ')') {
-      this.brackets--
+			if (this.brackets === 1) {
+				if (!this.name) {
+					throw new Error('Method name expected')
+				}
 
-      if (this.brackets === 0) {
-        this.commit()
-        return
-      }
-    }
+				return
+			}
+		} else if (char === ')') {
+			this.brackets--
 
-    if (this.brackets) {
-      this.arg += char
-    } else if (char === '.') {
-      this.commit()
-    } else {
-      this.name += char
-    }
-  }
+			if (this.brackets === 0) {
+				this.commit()
+				return
+			}
+		}
 
-  parse (input: string) {
-    this.init()
+		if (this.brackets) {
+			this.arg += char
+		} else if (char === '.') {
+			this.commit()
+		} else {
+			this.name += char
+		}
+	}
 
-    if (typeof input === 'string' && input.length) {
-      for (let i = 0; i < input.length; i++) {
-        this.read(input[i])
-      }
-  
-      this.commit()
-    }
+	parse (input: string) {
+		this.init()
 
-    if (this.brackets) {
-      throw new Error('Unclosed brackets')
-    }
+		if (typeof input === 'string' && input.length) {
+			for (let i = 0; i < input.length; i++) {
+				this.read(input[i])
+			}
 
-    return this.data
-  }
+			this.commit()
+		}
+
+		if (this.brackets) {
+			throw new Error('Unclosed brackets')
+		}
+
+		return this.data
+	}
 }

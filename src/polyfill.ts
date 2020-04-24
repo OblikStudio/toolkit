@@ -7,6 +7,6 @@ import 'core-js/features/promise'
 import { getViewportScroller } from './utils/overflow'
 
 if (!document.scrollingElement) {
-  // @ts-ignore
-  document.scrollingElement = getViewportScroller()
+	// @ts-ignore
+	document.scrollingElement = getViewportScroller()
 }

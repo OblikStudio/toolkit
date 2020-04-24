@@ -3,29 +3,29 @@ import { Poller } from '../../utils/poller'
 import { Component } from '../..'
 
 interface Options {
-  var: string
-  target: string
+	var: string
+	target: string
 }
 
 export default class Height extends Component<HTMLElement, Options> {
-  varName: string
-  varElement: HTMLElement
+	varName: string
+	varElement: HTMLElement
 	poller: Poller
 
 	create () {
-    this.varName = 'height'
-    this.varElement = null
+		this.varName = 'height'
+		this.varElement = null
 
-    if (this.$options && this.$options.var) {
-      if (typeof this.$options.var === 'string') {
-        this.varName = this.$options.var
-      }
+		if (this.$options && this.$options.var) {
+			if (typeof this.$options.var === 'string') {
+				this.varName = this.$options.var
+			}
 
-      if (this.$options.target) {
-        this.varElement = query(this.$element, this.$options.target, HTMLElement)[0]
-      } else {
-        this.varElement = this.$element
-      }
+			if (this.$options.target) {
+				this.varElement = query(this.$element, this.$options.target, HTMLElement)[0]
+			} else {
+				this.varElement = this.$element
+			}
 		}
 
 		this.poller = new Poller(this.$element.firstElementChild, ['offsetHeight'])
@@ -35,10 +35,10 @@ export default class Height extends Component<HTMLElement, Options> {
 	}
 
 	update (value: number) {
-    if (this.varElement) {
-      this.varElement.style.setProperty('--' + this.varName, value.toString())
-    } else if (value) {
-      this.$element.style.height = value.toString()
-    }
+		if (this.varElement) {
+			this.varElement.style.setProperty('--' + this.varName, value.toString())
+		} else if (value) {
+			this.$element.style.height = value.toString()
+		}
 	}
 }

@@ -74,7 +74,7 @@ export class RectObserver extends Emitter {
 					this.emit('change', this.rect)
 				})
 			}
-	
+
 			this._resizeHandler = () => {
 				measure(() => {
 					this.width = window.innerWidth
@@ -140,7 +140,7 @@ export class RectObserver extends Emitter {
 	}
 
 	destroy () {
-		if (this._scrollHandler) {	
+		if (this._scrollHandler) {
 			window.removeEventListener('scroll', this._scrollHandler)
 		}
 

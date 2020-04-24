@@ -36,12 +36,12 @@ test: Hello, data { type: text, !isActive, numbers [5, 6] }
 
 ```json
 {
-  "test": "Hello",
-  "data": {
-    "type": "text",
-    "isActive": false,
-    "numbers": [5, 6]
-  }
+	"test": "Hello",
+	"data": {
+		"type": "text",
+		"isActive": false,
+		"numbers": [5, 6]
+	}
 }
 ```
 

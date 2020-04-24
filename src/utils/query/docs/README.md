@@ -20,11 +20,11 @@ import { Query } from 'querel'
 var element = document.getElementById('foo')
 var query = new Query(element)
 var result = query
-  .parent(2)        // grandparent of `element`
-  .sibling()        // next sibling
-  .children()       // all child elements
-  .child(3)         // third child of all elements
-  .select('.test')  // elements with class `test` in matched elements
+	.parent(2)        // grandparent of `element`
+	.sibling()        // next sibling
+	.children()       // all child elements
+	.child(3)         // third child of all elements
+	.select('.test')  // elements with class `test` in matched elements
 
 console.log(result.elements) // Array of resulting elements
 ```

@@ -1,136 +1,136 @@
 import { linear } from './easings'
 
 export class Tween {
-  callback: Function
-  duration: number
-  easing: Function
+	callback: Function
+	duration: number
+	easing: Function
 
-  elapsed: number
-  progress: number
-  value: number
-  stamp: number
-  delta: number
+	elapsed: number
+	progress: number
+	value: number
+	stamp: number
+	delta: number
 
-  isComplete: boolean
+	isComplete: boolean
 
-  constructor (callback: Function, duration: number, easing: Function) {
-    this.callback = callback
-    this.duration = duration
-    this.easing = easing
+	constructor (callback: Function, duration: number, easing: Function) {
+		this.callback = callback
+		this.duration = duration
+		this.easing = easing
 
-    if (typeof this.duration !== 'number') {
-      throw new Error('Duration must be a number')
-    }
+		if (typeof this.duration !== 'number') {
+			throw new Error('Duration must be a number')
+		}
 
-    if (typeof this.easing !== 'function') {
-      this.easing = linear
-    }
+		if (typeof this.easing !== 'function') {
+			this.easing = linear
+		}
 
-    this.elapsed = 0
-    this.progress = 0
-    this.value = 0
+		this.elapsed = 0
+		this.progress = 0
+		this.value = 0
 
-    this.stamp = Date.now()
-    this.delta = 0
+		this.stamp = Date.now()
+		this.delta = 0
 
-    this.isComplete = false
-  }
+		this.isComplete = false
+	}
 
-  update () {
-    this.callback.call(this, this.value)
-  }
+	update () {
+		this.callback.call(this, this.value)
+	}
 
-  step () {
-    var newStamp = Date.now()
-    this.delta = newStamp - this.stamp
-    this.elapsed += this.delta
+	step () {
+		var newStamp = Date.now()
+		this.delta = newStamp - this.stamp
+		this.elapsed += this.delta
 
-    if (this.elapsed > this.duration) {
-      this.elapsed = this.duration
-    }
+		if (this.elapsed > this.duration) {
+			this.elapsed = this.duration
+		}
 
-    if (this.duration > 0) {
-      this.progress = this.elapsed / this.duration
-    } else {
-      this.progress = 1
-    }
+		if (this.duration > 0) {
+			this.progress = this.elapsed / this.duration
+		} else {
+			this.progress = 1
+		}
 
-    this.value = this.easing(this.progress)
-    this.update()
+		this.value = this.easing(this.progress)
+		this.update()
 
-    this.isComplete = this.elapsed >= this.duration
-    this.stamp = newStamp
-  }
+		this.isComplete = this.elapsed >= this.duration
+		this.stamp = newStamp
+	}
 }
 
 interface AnimationOptions {
-  update: Function
-  duration: number
-  easing: Function
-  values: object
+	update: Function
+	duration: number
+	easing: Function
+	values: object
 }
 
 export class Animation extends Tween {
-  isRunning: boolean
-  isTicking: boolean
-  values: object
+	isRunning: boolean
+	isTicking: boolean
+	values: object
 
-  constructor (options: AnimationOptions) {
-    super(options.update, options.duration, options.easing)
-    this.isRunning = false
-    this.isTicking = false
+	constructor (options: AnimationOptions) {
+		super(options.update, options.duration, options.easing)
+		this.isRunning = false
+		this.isTicking = false
 
-    this.values = options.values
-    this.updateValues()
-  }
+		this.values = options.values
+		this.updateValues()
+	}
 
-  run () {
-    if (this.isTicking) {
-      // Avoid running multiple times and creating excess RAFs.
-      return
-    }
+	run () {
+		if (this.isTicking) {
+			// Avoid running multiple times and creating excess RAFs.
+			return
+		}
 
-    if (this.isComplete) {
-      this.isRunning = false
-      return
-    }
+		if (this.isComplete) {
+			this.isRunning = false
+			return
+		}
 
-    if (!this.isRunning) {
-      this.isRunning = true
-      this.stamp = Date.now()
-    }
+		if (!this.isRunning) {
+			this.isRunning = true
+			this.stamp = Date.now()
+		}
 
-    if (this.elapsed < this.duration) {
-      setTimeout(() => {
-        this.isTicking = false
-        this.step()
-        
-        if (this.isRunning) {
-          this.run()
-        }
-      }, 0)
+		if (this.elapsed < this.duration) {
+			setTimeout(() => {
+				this.isTicking = false
+				this.step()
 
-      this.isTicking = true
-    } else {
-      this.step()
-    }
-  }
+				if (this.isRunning) {
+					this.run()
+				}
+			}, 0)
 
-  updateValues () {
-    for (let name in this.values) {
-      let value = this.values[name]
-      let diff = value.end - value.start
+			this.isTicking = true
+		} else {
+			this.step()
+		}
+	}
 
-      this[name] = value.start + (diff * this.value)
-    }
-  }
+	updateValues () {
+		for (let name in this.values) {
+			let value = this.values[name]
+			let diff = value.end - value.start
 
-  update () {
-    this.updateValues()
-    super.update()
-  }
+			this[name] = value.start + (diff * this.value)
+		}
+	}
 
-  stop () {
-    this.isRunning = false
-  }
+	update () {
+		this.updateValues()
+		super.update()
+	}
+
+	stop () {
+		this.isRunning = false
+	}
 }

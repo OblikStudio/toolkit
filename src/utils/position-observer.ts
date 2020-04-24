@@ -2,111 +2,111 @@ import { Emitter } from './emitter'
 import { Poller } from './poller'
 
 export class PositionObserver extends Emitter {
-  _parent: PositionObserver
-  _dependents: PositionObserver[] = []
+	_parent: PositionObserver
+	_dependents: PositionObserver[] = []
 
-  element: HTMLElement
-  poller: Poller
-  rect: ClientRect
+	element: HTMLElement
+	poller: Poller
+	rect: ClientRect
 
-  static instances = new Map<HTMLElement, PositionObserver>()
+	static instances = new Map<HTMLElement, PositionObserver>()
 
-  static _attach (instance: PositionObserver, element: HTMLElement) {
-    if (instance._parent) {
-      this._detach(instance)
-    }
-    
-    if (element) {
-      let parent = this.instances.get(element)
-      
-      if (!parent) {
-        parent = new PositionObserver(element)
-        this.instances.set(element, parent)
-      }
+	static _attach (instance: PositionObserver, element: HTMLElement) {
+		if (instance._parent) {
+			this._detach(instance)
+		}
 
-      instance._parent = parent
-      parent.on('change', instance.updatePosition, instance)
-      parent._dependents.push(instance)
-    }
-  }
+		if (element) {
+			let parent = this.instances.get(element)
 
-  static _detach (instance: PositionObserver) {
-    let parent = instance._parent
-    let deps = parent._dependents
-    let index = deps.indexOf(instance)
+			if (!parent) {
+				parent = new PositionObserver(element)
+				this.instances.set(element, parent)
+			}
 
-    if (index >= 0) {
-      deps.splice(index, 1)
-    }
-
-    parent.purge(instance)
-    instance._parent = null
-
-    if (deps.length === 0) {
-      this.instances.delete(parent.element)
-      parent.destroy()
-    }
-  }
-
-	constructor (element: HTMLElement) {
-    super()
-
-    this.element = element
-    this.poller = new Poller(this.element, [
-      'offsetParent',
-      'offsetTop',
-      'offsetLeft',
-      'offsetWidth',
-      'offsetHeight'
-    ])
-    this.poller.on('change', this.change, this)
-    this.rect = null
-  }
-
-  change (changes, initial) {
-		if (changes.offsetParent) {
-      PositionObserver._attach(this, changes.offsetParent.newValue)
-    }
-
-    this.updatePosition()
-    this.emit(initial ? 'init' : 'change', this.rect)
+			instance._parent = parent
+			parent.on('change', instance.updatePosition, instance)
+			parent._dependents.push(instance)
+		}
 	}
 
-  updatePosition () {
-    let x = this.poller.get('offsetLeft')
-    let y = this.poller.get('offsetTop')
-    let width = this.poller.get('offsetWidth')
-    let height = this.poller.get('offsetHeight')
+	static _detach (instance: PositionObserver) {
+		let parent = instance._parent
+		let deps = parent._dependents
+		let index = deps.indexOf(instance)
 
-    if (this._parent) {
-      let parentX = this._parent.poller.get('offsetLeft')
-      let parentY = this._parent.poller.get('offsetTop')
+		if (index >= 0) {
+			deps.splice(index, 1)
+		}
 
-      if (typeof parentX === 'number') {
-        x += parentX
-      }
+		parent.purge(instance)
+		instance._parent = null
 
-      if (typeof parentY === 'number') {
-        y += parentY
-      }
-    }
+		if (deps.length === 0) {
+			this.instances.delete(parent.element)
+			parent.destroy()
+		}
+	}
 
-    this.rect = {
-      width,
-      height,
-      top: y,
-      right: x + width,
-      bottom: y + height,
-      left: x
-    }
-  }
-  
+	constructor (element: HTMLElement) {
+		super()
+
+		this.element = element
+		this.poller = new Poller(this.element, [
+			'offsetParent',
+			'offsetTop',
+			'offsetLeft',
+			'offsetWidth',
+			'offsetHeight'
+		])
+		this.poller.on('change', this.change, this)
+		this.rect = null
+	}
+
+	change (changes, initial) {
+		if (changes.offsetParent) {
+			PositionObserver._attach(this, changes.offsetParent.newValue)
+		}
+
+		this.updatePosition()
+		this.emit(initial ? 'init' : 'change', this.rect)
+	}
+
+	updatePosition () {
+		let x = this.poller.get('offsetLeft')
+		let y = this.poller.get('offsetTop')
+		let width = this.poller.get('offsetWidth')
+		let height = this.poller.get('offsetHeight')
+
+		if (this._parent) {
+			let parentX = this._parent.poller.get('offsetLeft')
+			let parentY = this._parent.poller.get('offsetTop')
+
+			if (typeof parentX === 'number') {
+				x += parentX
+			}
+
+			if (typeof parentY === 'number') {
+				y += parentY
+			}
+		}
+
+		this.rect = {
+			width,
+			height,
+			top: y,
+			right: x + width,
+			bottom: y + height,
+			left: x
+		}
+	}
+
 	destroy () {
-    if (this._parent) {
-      PositionObserver._detach(this)
-    }
+		if (this._parent) {
+			PositionObserver._detach(this)
+		}
 
-    this.poller.destroy()
+		this.poller.destroy()
 		super.destroy()
 	}
 }

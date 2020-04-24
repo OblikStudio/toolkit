@@ -1,228 +1,228 @@
 const RE_NUMBER = /^\-?\d*\.?\d+(?:e\d+)?$/
 
 export function parseValue (value: any) {
-  if (typeof value === 'string') {
-    if (value.match(RE_NUMBER)) {
-      return parseFloat(value)
-    } else if (value === 'true') {
-      return true
-    } else if (value === 'false') {
-      return false
-    } else if (value === 'null') {
-      return null
-    }
-  }
+	if (typeof value === 'string') {
+		if (value.match(RE_NUMBER)) {
+			return parseFloat(value)
+		} else if (value === 'true') {
+			return true
+		} else if (value === 'false') {
+			return false
+		} else if (value === 'null') {
+			return null
+		}
+	}
 
-  return value
+	return value
 }
 
 export class Parser {
-  input: string
-  index: number
-  buffer: string
+	input: string
+	index: number
+	buffer: string
 
-  key: null | string
-  context: any[] | object
-  lastContext: object
-  contextStack: object[]
+	key: null | string
+	context: any[] | object
+	lastContext: object
+	contextStack: object[]
 
-  isImplicitContext: boolean
-  isInQuote: boolean | string
-  isEscapeNext: boolean
-  isQuotedToken: boolean
-  
-  init (input) {
-    this.input = input
-    this.index = 0
-    this.buffer = ''
+	isImplicitContext: boolean
+	isInQuote: boolean | string
+	isEscapeNext: boolean
+	isQuotedToken: boolean
 
-    this.key = null
-    this.context = null
-    this.lastContext = null
-    this.contextStack = []
-    
-    this.isImplicitContext = null
-    this.isInQuote = false
-    this.isEscapeNext = false
-    this.isQuotedToken = false
-  }
+	init (input) {
+		this.input = input
+		this.index = 0
+		this.buffer = ''
 
-  error (message: string) {
-    throw new Error(`${ message } at index ${ this.index }`)
-  }
+		this.key = null
+		this.context = null
+		this.lastContext = null
+		this.contextStack = []
 
-  isEmpty () {
-    return Object.keys(this.context).length === 0
-  }
+		this.isImplicitContext = null
+		this.isInQuote = false
+		this.isEscapeNext = false
+		this.isQuotedToken = false
+	}
 
-  isInArray () {
-    return Array.isArray(this.context)
-  }
+	error (message: string) {
+		throw new Error(`${ message } at index ${ this.index }`)
+	}
 
-  isExpectingKey () {
-    return !this.key && !this.isInArray()
-  }
+	isEmpty () {
+		return Object.keys(this.context).length === 0
+	}
 
-  setContext (value: object) {
-    this.context = value
-    this.contextStack = [this.context]
-    this.isImplicitContext = true
-  }
+	isInArray () {
+		return Array.isArray(this.context)
+	}
 
-  pushContext (value: object) {
-    this.flush()
+	isExpectingKey () {
+		return !this.key && !this.isInArray()
+	}
 
-    if (this.lastContext && !this.contextStack.length) {
-      // If there was a root context, it has been popped off, and a new one
-      // begins, assume an implicit array context with the previous root as the
-      // first entry inside.
-      this.setContext([this.lastContext])
-    }
+	setContext (value: object) {
+		this.context = value
+		this.contextStack = [this.context]
+		this.isImplicitContext = true
+	}
 
-    if (this.context || this.key) {
-      this.commit(value)
-    }
-    
-    if (!this.context) {
-      // The root context is explicitly defined by the input, i.e. the input
-      // string begins with `{` or `[`.
-      this.isImplicitContext = false
-    }
+	pushContext (value: object) {
+		this.flush()
 
-    this.context = value
-    this.contextStack.push(this.context)
-  }
+		if (this.lastContext && !this.contextStack.length) {
+			// If there was a root context, it has been popped off, and a new one
+			// begins, assume an implicit array context with the previous root as the
+			// first entry inside.
+			this.setContext([this.lastContext])
+		}
 
-  popContext () {
-    this.clear()
+		if (this.context || this.key) {
+			this.commit(value)
+		}
 
-    if (this.contextStack.length > 0) {
-      this.contextStack.pop()
-      this.lastContext = this.context
-      this.context = this.contextStack[this.contextStack.length - 1]
-    } else {
-      this.error('Can not pop context')
-    }
-  }
+		if (!this.context) {
+			// The root context is explicitly defined by the input, i.e. the input
+			// string begins with `{` or `[`.
+			this.isImplicitContext = false
+		}
 
-  commit (value) {
-    if (!this.context) {
-      // The first value is being commited and there's no explicit context;
-      // assume an object context.
-      this.setContext({})
-    }
+		this.context = value
+		this.contextStack.push(this.context)
+	}
 
-    if (this.isQuotedToken) {
-      this.isQuotedToken = false
-    } else {
-      value = parseValue(value)
-    }
+	popContext () {
+		this.clear()
 
-    if (this.isInArray()) {
-      let ctx = this.context as any[]
-      ctx.push(value)
-    } else if (this.key) {
-      this.context[this.key] = value
-    } else {
-      this.error('Missing value key')
-    }
+		if (this.contextStack.length > 0) {
+			this.contextStack.pop()
+			this.lastContext = this.context
+			this.context = this.contextStack[this.contextStack.length - 1]
+		} else {
+			this.error('Can not pop context')
+		}
+	}
 
-    this.key = null
-  }
+	commit (value) {
+		if (!this.context) {
+			// The first value is being commited and there's no explicit context;
+			// assume an object context.
+			this.setContext({})
+		}
 
-  flush () {
-    var content = this.buffer.trim()
-    if (content.length) {
-      if (this.isExpectingKey()) {
-        this.key = content
-      } else {
-        this.commit(content)
-      }
-    }
+		if (this.isQuotedToken) {
+			this.isQuotedToken = false
+		} else {
+			value = parseValue(value)
+		}
 
-    this.buffer = ''
-  }
+		if (this.isInArray()) {
+			let ctx = this.context as any[]
+			ctx.push(value)
+		} else if (this.key) {
+			this.context[this.key] = value
+		} else {
+			this.error('Missing value key')
+		}
 
-  clear () {
-    this.flush()
+		this.key = null
+	}
 
-    if (this.key) {
-      if (this.key[0] === '!') {
-        this.key = this.key.substr(1)
-        this.commit(false)
-      } else {
-        this.commit(true)
-      }
-    }
-  }
+	flush () {
+		var content = this.buffer.trim()
+		if (content.length) {
+			if (this.isExpectingKey()) {
+				this.key = content
+			} else {
+				this.commit(content)
+			}
+		}
 
-  read (char: string) {
-    if (this.isEscapeNext) {
-      this.isEscapeNext = false
-    } else if (this.isInQuote) {
-      if (char === '`') {
-        this.isQuotedToken = true
-        return this.isInQuote = false
-      } else if (char === '\\') {
-        return this.isEscapeNext = true
-      }
-    } else {
-      if (char === ':') {
-        if (this.isExpectingKey()) {
-          return this.flush()
-        }
-      } else if (char === ',') {
-        return this.clear()
-      } else if (char === '{') {
-        return this.pushContext({})
-      } else if (char === '[') {
-        return this.pushContext([])
-      } else if (char === '}' || char === ']') {
-        return this.popContext()
-      } else if (char === '`') {
-        return this.isInQuote = true
-      }
-    }
+		this.buffer = ''
+	}
 
-    this.buffer += char
-  }
+	clear () {
+		this.flush()
 
-  next () {
-    this.read(this.input[this.index])
-    this.index++
-  }
+		if (this.key) {
+			if (this.key[0] === '!') {
+				this.key = this.key.substr(1)
+				this.commit(false)
+			} else {
+				this.commit(true)
+			}
+		}
+	}
 
-  parse (input: string) {
-    this.init(input)
+	read (char: string) {
+		if (this.isEscapeNext) {
+			this.isEscapeNext = false
+		} else if (this.isInQuote) {
+			if (char === '`') {
+				this.isQuotedToken = true
+				return this.isInQuote = false
+			} else if (char === '\\') {
+				return this.isEscapeNext = true
+			}
+		} else {
+			if (char === ':') {
+				if (this.isExpectingKey()) {
+					return this.flush()
+				}
+			} else if (char === ',') {
+				return this.clear()
+			} else if (char === '{') {
+				return this.pushContext({})
+			} else if (char === '[') {
+				return this.pushContext([])
+			} else if (char === '}' || char === ']') {
+				return this.popContext()
+			} else if (char === '`') {
+				return this.isInQuote = true
+			}
+		}
 
-    if (typeof this.input !== 'string') {
-      return input
-    }
+		this.buffer += char
+	}
 
-    while (this.index < this.input.length) {
-      this.next()
-    }
-    
-    if (this.isInQuote) {
-      this.error('Unterminated string')
-    }
+	next () {
+		this.read(this.input[this.index])
+		this.index++
+	}
 
-    if (this.key || this.context) {
-      this.clear()
-    }
+	parse (input: string) {
+		this.init(input)
 
-    if (this.context && this.isImplicitContext) {
-      this.popContext()
-    }
+		if (typeof this.input !== 'string') {
+			return input
+		}
 
-    if (this.contextStack.length > 0) {
-      this.error('Unclosed context')
-    }
-    
-    if (this.lastContext) {
-      return this.lastContext
-    } else {
-      return parseValue(this.buffer)
-    }
-  }
+		while (this.index < this.input.length) {
+			this.next()
+		}
+
+		if (this.isInQuote) {
+			this.error('Unterminated string')
+		}
+
+		if (this.key || this.context) {
+			this.clear()
+		}
+
+		if (this.context && this.isImplicitContext) {
+			this.popContext()
+		}
+
+		if (this.contextStack.length > 0) {
+			this.error('Unclosed context')
+		}
+
+		if (this.lastContext) {
+			return this.lastContext
+		} else {
+			return parseValue(this.buffer)
+		}
+	}
 }
