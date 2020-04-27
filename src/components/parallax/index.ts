@@ -2,6 +2,7 @@ import { query } from '../../utils'
 import { windowClientRect } from '../../utils/dom'
 import { clamp } from '../../utils/math'
 import { linear } from '../../utils/easings'
+import { Component } from '../..'
 
 const transformers = {
 	ratio: function (value) {
@@ -34,46 +35,45 @@ export function registerEasigns (input) {
 	Object.assign(easings, input)
 }
 
-export default class {
-	element: HTMLElement
-	options: {
-		type: string
-		reference: string
-		easing: string
-		axis: string
-		name: string,
-		clamp: boolean
+interface Options {
+	type: string
+	reference: string
+	easing: string
+	axis: string
+	name: string,
+	clamp: boolean
+}
+
+export class Parallax extends Component<HTMLElement, Options> {
+	static defaults = {
+		type: 'signed',
+		easing: 'linear',
+		name: 'parallax',
+		axis: 'y',
+		reference: null,
+		clamp: true
 	}
+
 	reference: Window | Element
 	transform: (value: number) => any
 	easing: () => any
 	handler: () => any
 
-	constructor (element, options) {
-		this.element = element
-		this.options = Object.assign({
-			type: 'signed',
-			easing: 'linear',
-			name: 'parallax',
-			axis: 'y',
-			reference: null,
-			clamp: true
-		}, options)
-
-		if (!this.options.reference) {
+	create () {
+		if (!this.$options.reference) {
 			this.reference = window
 		} else {
-			this.reference = query(this.element, this.options.reference)[0]
+			this.reference = query(this.$element, this.$options.reference)[0]
 		}
 
-		this.transform = transformers[this.options.type]
+		this.transform = transformers[this.$options.type]
 		if (typeof this.transform !== 'function') {
-			throw new Error(`Invalid transformer ${ this.options.type }`)
+			throw new Error(`Invalid transformer ${this.$options.type}`)
 		}
 
-		this.easing = easings[this.options.easing]
+		this.easing = easings[this.$options.easing]
 		if (typeof this.easing !== 'function') {
-			throw new Error(`Invalid easing ${ this.options.easing }`)
+			throw new Error(`Invalid easing ${this.$options.easing}`)
 		}
 
 		this.handler = this.update.bind(this)
@@ -101,7 +101,7 @@ export default class {
 	}
 
 	update () {
-		var rect = this.element.getBoundingClientRect()
+		var rect = this.$element.getBoundingClientRect()
 		var refRect
 		var value
 
@@ -111,9 +111,9 @@ export default class {
 			refRect = windowClientRect()
 		}
 
-		value = this.calculate(rect, refRect, this.options.axis)
+		value = this.calculate(rect, refRect, this.$options.axis)
 
-		if (this.options.clamp) {
+		if (this.$options.clamp) {
 			value = clamp(value, 0, 1)
 		}
 
@@ -123,10 +123,10 @@ export default class {
 	setProperty (property) {
 		if (typeof property === 'object') {
 			for (var k in property) {
-				this.element.style.setProperty(`--${ this.options.name }-${ k }`, property[k])
+				this.$element.style.setProperty(`--${this.$options.name}-${k}`, property[k])
 			}
 		} else {
-			this.element.style.setProperty(`--${ this.options.name }`, property)
+			this.$element.style.setProperty(`--${this.$options.name}`, property)
 		}
 	}
 
@@ -134,3 +134,5 @@ export default class {
 		this.reference.removeEventListener('scroll', this.handler)
 	}
 }
+
+export default Parallax
