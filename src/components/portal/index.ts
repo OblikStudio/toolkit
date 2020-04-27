@@ -26,7 +26,7 @@ export class Portal extends Component<Element, Options> {
 		let mediaQuery = Portal.queries[this.$options.media]
 
 		if (!mediaQuery) {
-			throw new Error(`Missing query: ${ this.$options.media }`)
+			throw new Error(`Missing query: ${this.$options.media}`)
 		}
 
 		this.media = window.matchMedia(mediaQuery)
@@ -59,3 +59,5 @@ export class Portal extends Component<Element, Options> {
 		}
 	}
 }
+
+export default Portal

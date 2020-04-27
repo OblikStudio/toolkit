@@ -29,7 +29,7 @@ export class Tweet extends Component<HTMLElement, Options> {
 		this.$element.setAttribute('data-lang', this.$options.lang)
 
 		// The tweet URL is inferred from this anchor element.
-		this.$element.innerHTML = `<a href="${ this.$options.url }"></a>`
+		this.$element.innerHTML = `<a href="${this.$options.url}"></a>`
 
 		if (!Tweet.injected) {
 			Tweet.injected = true

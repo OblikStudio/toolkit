@@ -4,7 +4,7 @@ class Visual extends Component {
 	$element: HTMLElement
 }
 
-export default class extends Component {
+export class Cursor extends Component {
 	$element: HTMLElement
 	$visual: Visual
 
@@ -29,3 +29,5 @@ export default class extends Component {
 		})
 	}
 }
+
+export default Cursor

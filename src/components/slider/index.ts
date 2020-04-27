@@ -98,7 +98,7 @@ class Next extends Prev {
 
 class Rail extends Component<HTMLElement> { }
 
-export default class Slider extends Component<HTMLElement> {
+export class Slider extends Component<HTMLElement> {
 	static components = {
 		slide: Slide,
 		rail: Rail,
@@ -397,7 +397,7 @@ export default class Slider extends Component<HTMLElement> {
 			}
 		}
 
-		this.$rail.$element.style.transform = `translateX(${ itemsX }px)`
+		this.$rail.$element.style.transform = `translateX(${itemsX}px)`
 	}
 
 	destroy () {
@@ -405,3 +405,5 @@ export default class Slider extends Component<HTMLElement> {
 		window.removeEventListener('resize', this.resizeHandler)
 	}
 }
+
+export default Slider

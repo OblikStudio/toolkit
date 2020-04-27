@@ -217,3 +217,5 @@ export class Sticky extends Sensor {
 		this.placeholder.parentNode.removeChild(this.placeholder)
 	}
 }
+
+export default Sticky

@@ -47,7 +47,7 @@ function getPageRect (element) {
 	return data
 }
 
-export default class extends Component<HTMLElement> {
+export class Magnetic extends Component<HTMLElement> {
 	attached = false
 	posRef = new Point()
 	posRender = new Point()
@@ -113,11 +113,13 @@ export default class extends Component<HTMLElement> {
 
 			this.update()
 			this.$element.style.transform = `translate(
-        ${ this.posRender.x - this.posRef.x }px,
-        ${ this.posRender.y - this.posRef.y }px
-      )`
+				${this.posRender.x - this.posRef.x}px,
+				${this.posRender.y - this.posRef.y}px
+			)`
 
 			this.render()
 		})
 	}
 }
+
+export default Magnetic

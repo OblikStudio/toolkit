@@ -19,7 +19,7 @@ interface Options {
 	active: number
 }
 
-export default class Accordion extends Component<Element, Options> {
+export class Accordion extends Component<Element, Options> {
 	static components = {
 		slide: Slide
 	}
@@ -51,3 +51,5 @@ export default class Accordion extends Component<Element, Options> {
 		})
 	}
 }
+
+export default Accordion

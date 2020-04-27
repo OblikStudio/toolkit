@@ -7,7 +7,7 @@ interface Options {
 	target: string
 }
 
-export default class Height extends Component<HTMLElement, Options> {
+export class Height extends Component<HTMLElement, Options> {
 	varName: string
 	varElement: HTMLElement
 	poller: Poller
@@ -42,3 +42,5 @@ export default class Height extends Component<HTMLElement, Options> {
 		}
 	}
 }
+
+export default Height

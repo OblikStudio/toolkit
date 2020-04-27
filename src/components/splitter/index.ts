@@ -38,7 +38,7 @@ interface Options {
 	}
 }
 
-export default class Splitter extends Component<Element, Options> {
+export class Splitter extends Component<Element, Options> {
 	static defaults: Options = {
 		chars: false,
 		class: {
@@ -64,7 +64,7 @@ export default class Splitter extends Component<Element, Options> {
 	createWord (text: string) {
 		let elem = document.createElement('span')
 		elem.classList.add(this.$options.class.word)
-		elem.innerHTML = ` ${ text } `
+		elem.innerHTML = ` ${text} `
 		return elem
 	}
 
@@ -143,3 +143,5 @@ export default class Splitter extends Component<Element, Options> {
 		this.splitLines()
 	}
 }
+
+export default Splitter
