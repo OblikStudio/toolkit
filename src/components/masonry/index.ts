@@ -81,7 +81,7 @@ export class Masonry extends Component<HTMLElement> {
 				var currentMarginTop = parseInt(window.getComputedStyle(node).marginTop)
 				var marginTop = getNodeBottom(lowestNode) - node.offsetTop + (currentMarginTop * 2)
 
-				node.style.marginTop = `${ marginTop }px`
+				node.style.marginTop = `${marginTop}px`
 			}
 
 			previousNodes.push(node)

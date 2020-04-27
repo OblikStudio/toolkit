@@ -48,12 +48,12 @@ export class Component<E extends Element = Element, O = object> {
 			if (names.length === 1) {
 				return names[0]
 			} else if (names.length < 1) {
-				throw new Error(`${ parent.name } has no child: ${ ctor.name }`)
+				throw new Error(`${parent.name} has no child: ${ctor.name}`)
 			} else if (names.length > 1) {
-				throw new Error(`Child has multiple names: ${ names }`)
+				throw new Error(`Child has multiple names: ${names}`)
 			}
 		} else {
-			throw new Error(`Parent has no children: ${ parent.name }`)
+			throw new Error(`Parent has no children: ${parent.name}`)
 		}
 	}
 
