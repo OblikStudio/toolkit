@@ -58,11 +58,12 @@ export class ScrollDirection extends Component<HTMLElement, Options> {
 
 	updateActive (down: boolean) {
 		let expected = this.$options.direction === 'down'
+		let className = `is-scrolled-${this.$options.direction}`
 
 		if (expected === down) {
-			this.$element.classList.add('is-active')
+			this.$element.classList.add(className)
 		} else {
-			this.$element.classList.remove('is-active')
+			this.$element.classList.remove(className)
 		}
 	}
 
