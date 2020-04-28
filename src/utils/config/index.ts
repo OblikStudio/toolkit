@@ -48,7 +48,7 @@ export class Parser {
 	}
 
 	error (message: string) {
-		throw new Error(`${ message } at index ${ this.index }`)
+		throw new Error(`${message} at index ${this.index}`)
 	}
 
 	isEmpty () {

@@ -48,7 +48,7 @@ export function parse (target: QueryTarget, query?: string, type?: any) {
 		})
 
 		if (count && !elements.length) {
-			throw new Error(`No matched elements are of type: ${ type.name }`)
+			throw new Error(`No matched elements are of type: ${type.name}`)
 		}
 	}
 

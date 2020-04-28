@@ -1,18 +1,18 @@
 function nextFrame (callback) {
-  /**
-   * Double RAF needed due to IE11 and Firefox. A single one doesn't catch the
-   * transition changes. Also used in Vue @see
-   * https://github.com/vuejs/vue/blob/master/src/platforms/web/runtime/transition-util.js#L67
-   */
+	/**
+	 * Double RAF needed due to IE11 and Firefox. A single one doesn't catch the
+	 * transition changes. Also used in Vue @see
+	 * https://github.com/vuejs/vue/blob/master/src/platforms/web/runtime/transition-util.js#L67
+	 */
 	window.requestAnimationFrame(() => {
 		window.requestAnimationFrame(callback)
 	})
 }
 
 export function transition (element: HTMLElement, name: string) {
-	let classStart = `${ name }-start`
-	let classActive = `${ name }-active`
-	let classEnd = `${ name }-end`
+	let classStart = `${name}-start`
+	let classActive = `${name}-active`
+	let classEnd = `${name}-end`
 
 	return new Promise((resolve, reject) => {
 		let pending = []

@@ -35,12 +35,12 @@ class NonMovable extends Tester {
 describe('watcher', () => {
 	it('initializes components', () => {
 		fixture.set(`
-      <main>
-        <div ob-test>
-          <div ob-test-child></div>
-        </div>
-      </main>
-    `)
+			<main>
+				<div ob-test>
+					<div ob-test-child></div>
+				</div>
+			</main>
+		`)
 
 		let main = fixture.el.querySelector('main')
 		let parent = main.firstElementChild
@@ -109,12 +109,12 @@ describe('watcher', () => {
 
 	it('moves components', function (done) {
 		fixture.set(`
-      <main>
-        <div><div ob-test></div></div>
-        <div><div ob-test2></div></div>
-        <div id="dest"></div>
-      </main>
-    `)
+			<main>
+				<div><div ob-test></div></div>
+				<div><div ob-test2></div></div>
+				<div id="dest"></div>
+			</main>
+		`)
 
 		let main = fixture.el.querySelector('main')
 		let target1 = main.querySelector('[ob-test]')

@@ -23,7 +23,7 @@ export function execute (query: Query, instructions: string) {
 		if (typeof query[action.name] === 'function') {
 			query = query[action.name](argument(action.arg))
 		} else {
-			throw new Error(`Invalid query method: ${ action.name }`)
+			throw new Error(`Invalid query method: ${action.name}`)
 		}
 	}
 

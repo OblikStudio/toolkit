@@ -9,10 +9,10 @@ export class MutationEmitter extends Emitter {
 	predicate: (input: Node) => boolean
 	observer: MutationObserver
 
-  /**
-   * Creates a MutationObserver and emits events based on whether changed nodes
-   * and their children pass through a predicate function.
-   */
+	/**
+	 * Creates a MutationObserver and emits events based on whether changed nodes
+	 * and their children pass through a predicate function.
+	 */
 	constructor (predicate: MutationEmitter['predicate']) {
 		super()
 
@@ -41,7 +41,7 @@ export class MutationEmitter extends Emitter {
 
 	search (node: Node, event: string) {
 		if (this.predicate(node) === true) {
-			this.emit(`before:${ event }`, node)
+			this.emit(`before:${event}`, node)
 		}
 
 		if (node instanceof Element) {
@@ -52,7 +52,7 @@ export class MutationEmitter extends Emitter {
 			})
 		}
 
-		this.emit(`after:${ event }`, node)
+		this.emit(`after:${event}`, node)
 	}
 
 	observe (...args: Parameters<MutationObserver['observe']>) {

@@ -15,36 +15,36 @@ declare global {
 }
 
 document.body.innerHTML = `
-  <div id="a">
-    <div id="a-a">
-      <div id="a-a-a"></div>
-      <div id="a-a-b"></div>
-      <div id="a-a-c"></div>
-      <svg id="a-a-svg"></svg>
-    </div>
+	<div id="a">
+		<div id="a-a">
+			<div id="a-a-a"></div>
+			<div id="a-a-b"></div>
+			<div id="a-a-c"></div>
+			<svg id="a-a-svg"></svg>
+		</div>
 
-    <div id="a-b">
-      <div id="a-b-a"></div>
-      <div id="a-b-b"></div>
-      <div id="a-b-c"></div>
-    </div>
-  </div>
+		<div id="a-b">
+			<div id="a-b-a"></div>
+			<div id="a-b-b"></div>
+			<div id="a-b-c"></div>
+		</div>
+	</div>
 
-  <div id="b">
-    <div id="b-a">
-      <div id="b-a-a"></div>
-      <div id="b-a-b"></div>
-      <div id="b-a-c"></div>
-    </div>
+	<div id="b">
+		<div id="b-a">
+			<div id="b-a-a"></div>
+			<div id="b-a-b"></div>
+			<div id="b-a-c"></div>
+		</div>
 
-    <div id="b-b">
-      <div id="b-b-a"></div>
-      <div id="b-b-b"></div>
-      <div id="b-b-c"></div>
-    </div>
-  </div>
+		<div id="b-b">
+			<div id="b-b-a"></div>
+			<div id="b-b-b"></div>
+			<div id="b-b-c"></div>
+		</div>
+	</div>
 
-  <div id="c"></div>
+	<div id="c"></div>
 `
 
 describe('Query', function () {

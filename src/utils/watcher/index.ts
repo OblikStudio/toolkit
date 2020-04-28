@@ -33,7 +33,7 @@ export class Watcher {
 		})
 
 		this._hosts = new Map()
-		this._regex = new RegExp(`^${ this.options.prefix }\\-(.*)`)
+		this._regex = new RegExp(`^${this.options.prefix}\\-(.*)`)
 		this._components = this.options.components
 
 		this._observer = new MutationEmitter(node => {
@@ -70,13 +70,13 @@ export class Watcher {
 				if (child) {
 					ctor = child
 				} else {
-					throw new Error(`Missing child ${ childName } in: ${ componentId }`)
+					throw new Error(`Missing child ${childName} in: ${componentId}`)
 				}
 			}
 		}
 
 		if (typeof ctor !== 'function') {
-			throw new Error(`Missing component: ${ name }`)
+			throw new Error(`Missing component: ${name}`)
 		}
 
 		return ctor
@@ -106,7 +106,7 @@ export class Watcher {
 			parent = this.getInstance(parentElement, meta.parentId)
 
 			if (!parent) {
-				throw new Error(`Parent element of ${ meta.name } not found: ${ meta.parentAttr }`)
+				throw new Error(`Parent element of ${meta.name} not found: ${meta.parentAttr}`)
 			}
 		}
 
