@@ -2,29 +2,37 @@ import Component from '../../component'
 import Slider from './index'
 
 interface SlideRect extends ClientRect {
-  centerX: number
-  centerDiff: number
-  thresholdLeft: number
-  thresholdRight: number
+	centerX: number
+	centerDiff: number
+	thresholdLeft: number
+	thresholdRight: number
 }
 
 export default class Slide extends Component<HTMLElement> {
-  $parent: Slider
-  rect: SlideRect
+	$parent: Slider
+	rect: SlideRect
 
-  update () {
-    var parentCenter = this.$parent.center
-    var threshold = this.$element.offsetWidth * 0.15
+	init () {
+		/**
+		 * Needed because otherwise, Safari doesn't bubble up touch events on iOS
+		 * @see https://stackoverflow.com/a/41287408/3130281
+		 */
+		this.$element.addEventListener('touchstart', () => { })
+	}
 
-    let clientRect = this.$element.getBoundingClientRect()
-    let centerX = clientRect.left + (clientRect.width / 2)
+	update () {
+		var parentCenter = this.$parent.center
+		var threshold = this.$element.offsetWidth * 0.15
 
-    this.rect = {
-      ...clientRect,
-      centerX,
-      centerDiff: Math.abs(parentCenter - centerX),
-      thresholdLeft: centerX - threshold,
-      thresholdRight: centerX + threshold
-    }
-  }
+		let clientRect = this.$element.getBoundingClientRect()
+		let centerX = clientRect.left + (clientRect.width / 2)
+
+		this.rect = {
+			...clientRect,
+			centerX,
+			centerDiff: Math.abs(parentCenter - centerX),
+			thresholdLeft: centerX - threshold,
+			thresholdRight: centerX + threshold
+		}
+	}
 }
