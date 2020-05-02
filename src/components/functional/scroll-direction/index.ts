@@ -2,17 +2,22 @@ import { Component } from '../../../core'
 import { getViewportScroller } from '../../../utils'
 
 interface Options {
-	direction: 'up' | 'down',
+	target: string
+	class: string
+	direction: 'up' | 'down'
 	slack: number
 }
 
 export class ScrollDirection extends Component<HTMLElement, Options> {
-	static defaults: Options = {
+	static defaults: Partial<Options> = {
+		class: 'is-scrolled',
 		direction: 'up',
 		slack: 200
 	}
 
+	target: Element
 	scroller: Element
+	handler: Element | Window
 	anchor: number
 	position: number
 	scrolled: boolean
@@ -23,10 +28,21 @@ export class ScrollDirection extends Component<HTMLElement, Options> {
 	init () {
 		this.anchor = null
 		this.position = null
-		this.scroller = getViewportScroller()
+		this.target = this.$element
+		this.scroller = this.$element
+		this.handler = this.$element
+
+		if (this.$options.target) {
+			this.target = document.querySelector(this.$options.target)
+		}
+
+		if (this.$element === document.body) {
+			this.scroller = getViewportScroller()
+			this.handler = window
+		}
 
 		this.checkHandler = this.check.bind(this)
-		window.addEventListener('scroll', this.checkHandler)
+		this.handler.addEventListener('scroll', this.checkHandler)
 	}
 
 	check () {
@@ -58,12 +74,12 @@ export class ScrollDirection extends Component<HTMLElement, Options> {
 
 	updateActive (down: boolean) {
 		let expected = this.$options.direction === 'down'
-		let className = `is-scrolled-${this.$options.direction}`
+		let className = `${this.$options.class}-${this.$options.direction}`
 
 		if (expected === down) {
-			this.$element.classList.add(className)
+			this.target.classList.add(className)
 		} else {
-			this.$element.classList.remove(className)
+			this.target.classList.remove(className)
 		}
 	}
 
@@ -71,14 +87,14 @@ export class ScrollDirection extends Component<HTMLElement, Options> {
 		this.scrolled = value
 
 		if (value) {
-			this.$element.classList.add('is-scrolled')
+			this.target.classList.add(this.$options.class)
 		} else {
-			this.$element.classList.remove('is-scrolled')
+			this.target.classList.remove(this.$options.class)
 		}
 	}
 
 	destroy () {
-		window.removeEventListener('scroll', this.checkHandler)
+		this.handler.removeEventListener('scroll', this.checkHandler)
 	}
 }
 
