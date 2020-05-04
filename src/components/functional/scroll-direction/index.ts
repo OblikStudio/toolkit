@@ -49,7 +49,7 @@ export class ScrollDirection extends Component<HTMLElement, Options> {
 		let lastPosition = this.position
 		this.position = this.scroller.scrollTop
 
-		let scrolled = (this.position > 10)
+		let scrolled = (this.position > 100)
 		if (scrolled !== this.scrolled) {
 			this.updateScrolled(scrolled)
 		}
@@ -65,7 +65,7 @@ export class ScrollDirection extends Component<HTMLElement, Options> {
 			if (diff > slack) {
 				this.anchor = null
 				this.updateActive(true)
-			} else if (diff < -slack) {
+			} else if (diff < -slack / 10) {
 				this.anchor = null
 				this.updateActive(false)
 			}
