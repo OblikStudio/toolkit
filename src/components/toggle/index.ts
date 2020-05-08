@@ -1,4 +1,3 @@
-import { query } from '../../utils'
 import { debounce } from 'lodash-es'
 import { Component } from '../..'
 
@@ -7,7 +6,7 @@ interface Options {
 	off: keyof GlobalEventHandlersEventMap
 	class: string
 	delay: null
-	target: string
+	target: Element
 }
 
 export class Toggle extends Component<Element, Options> {
@@ -24,14 +23,14 @@ export class Toggle extends Component<Element, Options> {
 		}
 	}
 
-	targets: Element[]
+	target: Element
 	state = false
 	onHandler: () => void
 	offHandler: () => void
 	offHandlerDebounced: ReturnType<typeof debounce>
 
 	create () {
-		this.targets = query(this.$element, this.$options.target)
+		this.target = this.$options.target
 
 		if (this.$options.off && this.$options.off !== this.$options.on) {
 			this.onHandler = this.on.bind(this)
@@ -74,13 +73,11 @@ export class Toggle extends Component<Element, Options> {
 	}
 
 	update () {
-		this.targets.forEach(element => {
-			if (this.state === true) {
-				element.classList.add(this.$options.class)
-			} else {
-				element.classList.remove(this.$options.class)
-			}
-		})
+		if (this.state === true) {
+			this.target.classList.add(this.$options.class)
+		} else {
+			this.target.classList.remove(this.$options.class)
+		}
 
 		this.$emitter.emit('change', this.state)
 	}

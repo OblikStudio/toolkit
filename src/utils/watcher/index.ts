@@ -2,6 +2,7 @@ import { defaultsDeep } from 'lodash-es'
 import { Component, ComponentConstructor } from '../..'
 import { MutationEmitter, findAncestor } from '..'
 import { value, attribute, ComponentMeta } from './parse'
+import { resolve } from './resolve'
 
 interface ComponentList {
 	[key: string]: ComponentConstructor
@@ -110,7 +111,10 @@ export class Watcher {
 			}
 		}
 
-		return new Constructor(element, value(meta.value), parent)
+		let options = value(meta.value)
+		resolve(options, element)
+
+		return new Constructor(element, options, parent)
 	}
 
 	_createComponents (element: Element) {
