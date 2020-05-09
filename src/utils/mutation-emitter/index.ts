@@ -1,26 +1,21 @@
-import { Emitter } from '../utils/emitter'
+import { Emitter } from '../emitter'
 
-export interface MutationEmitter {
-	emit (event: string, node: Node): any
-	on (event: string, callback: (node: Node) => void, context?: any): any
-}
-
+/**
+ * Creates a MutationObserver and emits events based on whether changed nodes
+ * and their children pass through a predicate function.
+ */
 export class MutationEmitter extends Emitter {
-	predicate: (input: Node) => boolean
 	observer: MutationObserver
+	predicate: (input: Node) => boolean
 
-	/**
-	 * Creates a MutationObserver and emits events based on whether changed nodes
-	 * and their children pass through a predicate function.
-	 */
 	constructor (predicate: MutationEmitter['predicate']) {
 		super()
 
+		this.observer = new MutationObserver(list => this.handleMutations(list))
 		this.predicate = predicate
-		this.observer = new MutationObserver(list => this._handleMutations(list))
 	}
 
-	_handleMutations (list: MutationRecord[]) {
+	private handleMutations (list: MutationRecord[]) {
 		let added = []
 		let removed = []
 		let moved = []
@@ -45,8 +40,8 @@ export class MutationEmitter extends Emitter {
 		}
 
 		if (node instanceof Element) {
-			// Children must be cached in an array before iteration because event
-			// listeners might alter the child list.
+			// Children must be cached in an array before iteration because
+			// event listeners might alter the child list.
 			Array.from(node.childNodes).forEach(node => {
 				this.search(node, event)
 			})
@@ -55,12 +50,17 @@ export class MutationEmitter extends Emitter {
 		this.emit(`after:${event}`, node)
 	}
 
-	observe (...args: Parameters<MutationObserver['observe']>) {
+	init (...args: Parameters<MutationObserver['observe']>) {
 		return this.observer.observe.apply(this.observer, args)
 	}
 
 	destroy () {
-		super.destroy()
 		this.observer.disconnect()
+		super.destroy()
 	}
+}
+
+export interface MutationEmitter {
+	on (event: string, callback: (node: Node) => void, context?: any): any
+	emit (event: string, node: Node): any
 }

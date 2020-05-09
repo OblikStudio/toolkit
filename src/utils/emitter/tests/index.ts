@@ -27,7 +27,7 @@ describe('emitter', () => {
 
 		expect(fn).callCount(1)
 		expect(fn2).callCount(2)
-		expect(e.listeners.test.length).equal(0)
+		expect(e['listeners'].test.length).equal(0)
 	})
 
 	it('turns off', () => {

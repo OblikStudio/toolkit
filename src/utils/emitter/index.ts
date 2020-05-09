@@ -22,17 +22,15 @@ interface ListenersIndex {
 }
 
 export class Emitter {
-	listeners: ListenersIndex = {}
+	private listeners: ListenersIndex = {}
 
 	list (name: string) {
 		return this.listeners[name] || (this.listeners[name] = [])
 	}
 
 	on (name: string, callback: EmitterCallback, context?: any) {
-		let list = this.list(name)
 		let listener = new Listener(callback, context)
-
-		list.push(listener)
+		this.list(name).push(listener)
 		return listener
 	}
 
@@ -53,10 +51,9 @@ export class Emitter {
 	}
 
 	emit (name: string, ...args: any[]) {
-		let list = this.list(name)
 		let obsolete = []
 
-		list.forEach(listener => {
+		this.list(name).forEach(listener => {
 			if (listener.calls < listener.limit) {
 				listener.invoke(args)
 			}
@@ -75,7 +72,7 @@ export class Emitter {
 		let list = this.list(name)
 
 		if (listeners) {
-			list = list.filter(l => listeners.indexOf(l) < 0)
+			list = list.filter(lnr => !listeners.includes(lnr))
 		} else {
 			list = []
 		}
@@ -89,19 +86,19 @@ export class Emitter {
 
 	off (name: string, callback?: EmitterCallback, context?: any) {
 		if (arguments.length > 1) {
-			let list = this.list(name)
-			let obsolete = list.filter(l => {
-				let result = false
+			let obsolete = this.list(name).filter(lnr => {
+				let matchesCallback = true
+				let matchesContext = true
 
 				if (typeof callback === 'function') {
-					result = l.callback === callback
+					matchesCallback = lnr.callback === callback
 				}
 
 				if (typeof context !== 'undefined') {
-					result = l.context === context
+					matchesContext = lnr.context === context
 				}
 
-				return result
+				return matchesCallback && matchesContext
 			})
 
 			this.remove(name, obsolete)
