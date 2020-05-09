@@ -1,32 +1,35 @@
 import { Parser } from '../config'
 
-export interface ComponentMeta {
-	attr: string
-	value: string
-
-	id: string
-	name: string
-	parentId: string
-	parentName: string
-	parentAttr: string
-}
-
 const config = new Parser()
 
-export function value (input) {
-	if (!input || typeof input !== 'string') {
-		return undefined
-	}
-
-	if (input.length && input[0] === '{') {
-		return JSON.parse(input)
+export function value (input: any) {
+	if (typeof input === 'string' && input.length > 0) {
+		if (input[0] === '{') {
+			return JSON.parse(input)
+		} else {
+			return config.parse(input)
+		}
 	} else {
-		return config.parse(input)
+		return undefined
 	}
 }
 
-export function attribute (attr: Attr, regex: RegExp): ComponentMeta {
-	let matches = regex.exec(attr.name)
+export interface ComponentMeta {
+	attr: string
+	id: string
+	name: string
+
+	parentAttr: string
+	parentId: string
+	parentName: string
+
+	value: string
+}
+
+export function attribute (input: Attr, regex: RegExp): ComponentMeta {
+	let attr = input.name
+	let value = input.value
+	let matches = regex.exec(attr)
 
 	if (matches) {
 		let id = matches[1]
@@ -37,20 +40,20 @@ export function attribute (attr: Attr, regex: RegExp): ComponentMeta {
 		let parentAttr = null
 
 		if (parentName) {
-			parentAttr = attr.name.replace(id, parentId)
+			parentAttr = attr.replace(id, parentId)
 		} else {
 			parentId = null
 			parentName = null
 		}
 
 		return {
-			attr: attr.name,
-			value: attr.value,
+			attr,
 			id,
 			name,
+			parentAttr,
 			parentId,
 			parentName,
-			parentAttr
+			value
 		}
 	}
 

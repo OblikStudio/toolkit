@@ -1,10 +1,11 @@
 import { Component, ComponentConstructor } from '../..'
-import { MutationEmitter, findAncestor } from '..'
+import { findAncestor } from '../dom'
+import { merge } from '../functions'
+import { MutationEmitter } from '../mutation-emitter'
 import { value, attribute, ComponentMeta } from './parse'
 import { resolve } from './resolve'
-import { merge } from '../functions'
 
-interface ComponentList {
+interface ComponentConstructors {
 	[key: string]: ComponentConstructor
 }
 
@@ -14,59 +15,57 @@ interface ComponentInstances {
 
 interface WatcherSettings {
 	prefix?: string
-	components: ComponentList
+	components: ComponentConstructors
 }
 
 export class Watcher {
-	_hosts: Map<Element, ComponentInstances>
-	_regex: RegExp
-	_components: ComponentList
-	_observer: MutationEmitter
+	private instances: Map<Element, ComponentInstances>
+	private attrRegex: RegExp
+	private mutations: MutationEmitter
 
-	element: Element
+	target: Element
 	options: WatcherSettings
 
 	constructor (element: Element, settings: WatcherSettings) {
-		this.element = element
+		this.target = element
 		this.options = merge({
 			prefix: 'ob',
 			components: {}
 		}, settings)
 
-		this._hosts = new Map()
-		this._regex = new RegExp(`^${this.options.prefix}\\-(.*)`)
-		this._components = this.options.components
+		this.instances = new Map()
+		this.attrRegex = new RegExp(`^${this.options.prefix}\\-(.*)`)
 
-		this._observer = new MutationEmitter(node => {
+		this.mutations = new MutationEmitter(node => {
 			if (node instanceof Element) {
 				for (let attribute of node.attributes) {
-					if (this._regex.exec(attribute.name)) {
+					if (this.attrRegex.exec(attribute.name)) {
 						return true
 					}
 				}
 			}
 		})
 
-		this._observer.on('before:add', this._createComponents, this)
-		this._observer.on('after:add', this._initComponents, this)
-		this._observer.on('before:move', this._moveComponents, this)
-		this._observer.on('after:move', this._initComponents, this)
-		this._observer.on('before:remove', this._destroyComponents, this)
+		this.mutations.on('before:add', this.createComponents, this)
+		this.mutations.on('after:add', this.initComponents, this)
+		this.mutations.on('before:move', this.moveComponents, this)
+		this.mutations.on('after:move', this.initComponents, this)
+		this.mutations.on('before:remove', this.destroyComponents, this)
 
-		this._observer.observe(this.element, {
+		this.mutations.init(this.target, {
 			childList: true,
 			subtree: true
 		})
 	}
 
-	_ctor (componentId: string) {
+	private resolveConstructor (componentId: string) {
 		let path = componentId.split('-')
 		let name = path.shift()
-		let ctor = this._components[name]
+		let ctor = this.options.components[name]
 
 		if (path.length && ctor) {
 			for (let childName of path) {
-				let child = ctor.components && ctor.components[childName]
+				let child = ctor?.components[childName]
 
 				if (child) {
 					ctor = child
@@ -83,31 +82,17 @@ export class Watcher {
 		return ctor
 	}
 
-	_elementMeta (element: Element) {
-		let results: ComponentMeta[] = []
-
-		for (let entry of element.attributes) {
-			let meta = attribute(entry, this._regex)
-
-			if (meta) {
-				results.push(meta)
-			}
-		}
-
-		return results
-	}
-
-	_create (element: Element, meta: ComponentMeta) {
-		let Constructor = this._ctor(meta.id)
+	private createComponentInstance (element: Element, meta: ComponentMeta) {
+		let Constructor = this.resolveConstructor(meta.id)
 		let parentElement = null
 		let parent = null
 
 		if (meta.parentAttr) {
 			parentElement = findAncestor(element, element => element.hasAttribute(meta.parentAttr))
-			parent = this.getInstance(parentElement, meta.parentId)
+			parent = this.instance(parentElement, meta.parentId)
 
 			if (!parent) {
-				throw new Error(`Parent element of ${meta.name} not found: ${meta.parentAttr}`)
+				throw new Error(`Parent of ${meta.name} not found: ${meta.parentAttr}`)
 			}
 		}
 
@@ -117,33 +102,53 @@ export class Watcher {
 		return new Constructor(element, options, parent)
 	}
 
-	_createComponents (element: Element) {
-		let attributes = this._elementMeta(element)
-		let instances = this._hosts.get(element)
+	private getComponentMeta (element: Element) {
+		let results: ComponentMeta[] = []
+
+		for (let entry of element.attributes) {
+			let meta = attribute(entry, this.attrRegex)
+
+			if (meta) {
+				results.push(meta)
+			}
+		}
+
+		return results
+	}
+
+	private attempt (fn: () => void) {
+		try {
+			fn()
+		} catch (e) {
+			console.warn(e)
+		}
+	}
+
+	private createComponents (element: Element) {
+		let attributes = this.getComponentMeta(element)
+		let instances = this.instances.get(element)
 
 		if (!instances) {
 			instances = {}
-			this._hosts.set(element, instances)
+			this.instances.set(element, instances)
 		}
 
 		attributes.forEach(meta => {
 			if (!instances[meta.id]) {
-				try {
-					instances[meta.id] = this._create(element, meta)
-				} catch (e) {
-					console.warn(e)
-				}
+				this.attempt(() => {
+					instances[meta.id] = this.createComponentInstance(element, meta)
+				})
 			}
 		})
 	}
 
-	_moveComponents (element: Element) {
-		let attributes = this._elementMeta(element)
-		let instances = this._hosts.get(element)
+	private moveComponents (element: Element) {
+		let attributes = this.getComponentMeta(element)
+		let instances = this.instances.get(element)
 
 		if (!instances) {
 			instances = {}
-			this._hosts.set(element, instances)
+			this.instances.set(element, instances)
 		}
 
 		attributes.forEach(meta => {
@@ -151,65 +156,52 @@ export class Watcher {
 			let movable = component?.constructor?.isMovable
 
 			if (component && !movable) {
-				component.$destroy()
-
-				try {
-					instances[meta.id] = this._create(element, meta)
-				} catch (e) {
-					console.warn(e)
-				}
+				this.attempt(() => {
+					component.$destroy()
+					instances[meta.id] = this.createComponentInstance(element, meta)
+				})
 			}
 		})
 	}
 
-	_initComponents (element: Element) {
-		let instances = this._hosts.get(element)
+	private initComponents (element: Element) {
+		let instances = this.instances.get(element)
 		if (instances) {
 			for (let name in instances) {
-				instances[name].$init()
+				this.attempt(() => {
+					instances[name].$init()
+				})
 			}
 		}
 	}
 
-	_destroyComponents (element: Element) {
-		let instances = this._hosts.get(element)
+	private destroyComponents (element: Element) {
+		let instances = this.instances.get(element)
 		if (instances) {
 			for (let name in instances) {
-				instances[name].$destroy()
+				this.attempt(() => {
+					instances[name].$destroy()
+				})
+
 				delete instances[name]
 			}
 
-			this._hosts.delete(element)
+			this.instances.delete(element)
 		}
 	}
 
 	init () {
-		this._observer.search(this.element, 'add')
+		this.mutations.search(this.target, 'add')
 	}
 
-	getInstance (element: Element): ComponentInstances
-	getInstance (element: Element, id: string): Component
-	getInstance (element: Element, id?: string): any {
-		let instances = this._hosts.get(element)
-
-		if (instances) {
-			if (id) {
-				return instances[id] || null
-			} else {
-				return instances
-			}
-		}
-
-		return null
+	instance (element: Element, id: string): Component {
+		return this.instances.get(element)?.[id]
 	}
 
 	destroy () {
-		this._observer.destroy()
-		this._hosts.clear()
-
-		this._hosts = null
-		this._components = null
-		this.element = null
+		this.target = null
+		this.instances.clear()
+		this.mutations.destroy()
 	}
 }
 
