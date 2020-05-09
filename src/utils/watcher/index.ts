@@ -1,8 +1,8 @@
-import { defaultsDeep } from 'lodash-es'
 import { Component, ComponentConstructor } from '../..'
 import { MutationEmitter, findAncestor } from '..'
 import { value, attribute, ComponentMeta } from './parse'
 import { resolve } from './resolve'
+import { merge } from '../functions'
 
 interface ComponentList {
 	[key: string]: ComponentConstructor
@@ -28,10 +28,10 @@ export class Watcher {
 
 	constructor (element: Element, settings: WatcherSettings) {
 		this.element = element
-		this.options = defaultsDeep(settings, {
+		this.options = merge({
 			prefix: 'ob',
 			components: {}
-		})
+		}, settings)
 
 		this._hosts = new Map()
 		this._regex = new RegExp(`^${this.options.prefix}\\-(.*)`)
