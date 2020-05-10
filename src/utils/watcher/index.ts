@@ -65,7 +65,7 @@ export class Watcher {
 
 		if (path.length && ctor) {
 			for (let childName of path) {
-				let child = ctor?.components[childName]
+				let child = ctor.components?.[childName]
 
 				if (child) {
 					ctor = child
