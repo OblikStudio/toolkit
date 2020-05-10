@@ -53,8 +53,8 @@ describe('watcher', () => {
 
 		watcher.init()
 
-		let parentInstance = watcher.getInstance(parent, 'test') as Parent
-		let childInstance = watcher.getInstance(child, 'test-child') as Tester
+		let parentInstance = watcher.instance(parent, 'test') as Parent
+		let childInstance = watcher.instance(child, 'test-child') as Tester
 
 		expect(parentInstance.spyCreate.called).true
 		expect(childInstance.spyCreate).calledAfter(parentInstance.spyCreate)
@@ -79,7 +79,7 @@ describe('watcher', () => {
 		main.appendChild(el)
 
 		window.requestAnimationFrame(() => {
-			let component = watcher.getInstance(el, 'test') as Tester
+			let component = watcher.instance(el, 'test') as Tester
 			expect(component.spyInit.called).true
 			done()
 		})
@@ -98,7 +98,7 @@ describe('watcher', () => {
 
 		watcher.init()
 
-		let component = watcher.getInstance(target, 'test') as Tester
+		let component = watcher.instance(target, 'test') as Tester
 		main.removeChild(target)
 
 		window.requestAnimationFrame(() => {
@@ -129,8 +129,8 @@ describe('watcher', () => {
 
 		watcher.init()
 
-		let comp1 = watcher.getInstance(target1, 'test') as Tester
-		let comp2 = watcher.getInstance(target2, 'test2') as NonMovable
+		let comp1 = watcher.instance(target1, 'test') as Tester
+		let comp2 = watcher.instance(target2, 'test2') as NonMovable
 
 		dest.appendChild(target1)
 		dest.appendChild(target2)
@@ -139,7 +139,7 @@ describe('watcher', () => {
 			expect(comp1.spyDestroy.called).false
 			expect(comp2.spyDestroy.called).true
 
-			let newComp2 = watcher.getInstance(target2, 'test2') as NonMovable
+			let newComp2 = watcher.instance(target2, 'test2') as NonMovable
 			expect(newComp2).not.equal(comp2)
 			expect(newComp2.spyInit.called).true
 			done()
