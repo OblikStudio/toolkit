@@ -1,4 +1,4 @@
-import { Parser } from '../config'
+import { Parser } from '../../utils/config'
 
 const config = new Parser()
 

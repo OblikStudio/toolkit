@@ -1,4 +1,4 @@
-import { parse } from '../query'
+import { parse } from '../../utils/query'
 
 function query (input: string, element: Element) {
 	let elements = parse(element, input)

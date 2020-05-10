@@ -1,6 +1,6 @@
-export * from './components/component'
-export * from './utils/ticker/timer'
-export * from './utils/watcher'
+export * from './core/component'
+export * from './core/timer'
+export * from './core/watcher'
 
 import * as components from './components'
 import * as utils from './utils'

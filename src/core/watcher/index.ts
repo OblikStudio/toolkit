@@ -1,7 +1,7 @@
 import { Component, ComponentConstructor } from '../..'
-import { findAncestor } from '../dom'
-import { merge } from '../functions'
-import { MutationEmitter } from '../mutation-emitter'
+import { findAncestor } from '../../utils/dom'
+import { merge } from '../../utils/functions'
+import { MutationEmitter } from '../../utils/mutation-emitter'
 import { value, attribute, ComponentMeta } from './parse'
 import { resolve } from './resolve'
 

@@ -1,5 +1,5 @@
-import { Emitter } from '../utils/emitter'
-import { merge } from '../utils/functions'
+import { Emitter } from '../../utils/emitter'
+import { merge } from '../../utils/functions'
 
 type Options<O> = Partial<O> & { $preset?: string }
 type Input<O> = string | Partial<Options<O>>

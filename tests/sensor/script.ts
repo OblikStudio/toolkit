@@ -1,11 +1,9 @@
 import '../../src/polyfill'
 
-import Watcher from '../../src/utils/watcher'
-
 import sensor from '../../src/components/sensor'
 import sticky from '../../src/components/sensor/sticky'
 import { PositionObserver } from '../../src/utils/position-observer'
-import { Component } from '../../src'
+import { Component, Watcher } from '../../src'
 
 let w = new Watcher(document.body, {
 	components: {

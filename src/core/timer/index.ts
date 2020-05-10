@@ -1,4 +1,4 @@
-import { Ticker } from './index'
+import { Ticker } from '../../utils/ticker'
 
 let ticker = new Ticker()
 ticker.start()
