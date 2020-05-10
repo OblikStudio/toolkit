@@ -1,8 +1,8 @@
-import { isObject, defaultsDeep } from 'lodash-es'
 import { Emitter } from '../utils/emitter'
+import { merge } from '../utils/functions'
 
-type Input<O> = boolean | number | string | Partial<O> & { $preset?: string }
-type Options<O> = Partial<O> & { $preset?: string, value?: any }
+type Options<O> = Partial<O> & { $preset?: string }
+type Input<O> = string | Partial<Options<O>>
 
 export interface ComponentConstructor<O = object> {
 	new(element: Element, options?: Input<O>, parent?: Component): Component
@@ -13,11 +13,7 @@ export interface ComponentConstructor<O = object> {
 	presets?: {
 		[key: string]: Partial<O>
 	}
-	resources?: {
-		[key: string]: any
-	}
 	isMovable?: boolean
-	isPersistent?: boolean
 	$name (ctor: ComponentConstructor): string
 	$options (input: Input<O>): Options<O>
 }
@@ -25,10 +21,10 @@ export interface ComponentConstructor<O = object> {
 export class Component<E extends Element = Element, O = object> {
 	['constructor']: ComponentConstructor<O>
 
-	_isInit = false
-	_isDestroyed = false
-	_name: string = null
-	_children: Component[] = []
+	private _isInit = false
+	private _isDestroyed = false
+	private _name: string = null
+	private _children: Component[] = []
 
 	$element: E
 	$options: Options<O>
@@ -36,12 +32,10 @@ export class Component<E extends Element = Element, O = object> {
 	$emitter: Emitter
 
 	static isMovable = true
-	static isPersistent = false
 
 	static $name (this: ComponentConstructor, ctor: ComponentConstructor) {
-		let subcomponents = this.components
-		if (subcomponents) {
-			let names = Object.entries(subcomponents)
+		if (this.components) {
+			let names = Object.entries(this.components)
 				.filter(entry => entry[1] === ctor)
 				.map(tuple => tuple[0])
 
@@ -50,39 +44,37 @@ export class Component<E extends Element = Element, O = object> {
 			} else if (names.length < 1) {
 				throw new Error(`${parent.name} has no child: ${ctor.name}`)
 			} else if (names.length > 1) {
-				throw new Error(`Child has multiple names: ${names}`)
+				throw new Error(`Subcomponent has multiple names: ${names}`)
 			}
 		} else {
-			throw new Error(`Parent has no children: ${parent.name}`)
+			throw new Error(`Component has no children: ${parent.name}`)
 		}
 	}
 
 	static $options (this: ComponentConstructor, input: Input<object>): Options<object> {
-		let presets = this.presets
-		let defaults = this.defaults
+		let options: Options<object>
+		let preset: Options<object>
+		let presetName: string
 
-		let options = {} as Options<object>
-		let preset = null
-		let presetName: string = null
+		if (input) {
+			if (typeof input === 'string') {
+				presetName = input
+			} else if (typeof input === 'object') {
+				presetName = input.$preset
+				delete input.$preset
+				options = input
+			}
 
-		if (typeof input === 'string') {
-			presetName = input
-		} else if (isObject(input)) {
-			options = input
-			presetName = input.$preset
+			if (presetName) {
+				preset = this.presets?.[presetName]
+
+				if (!preset) {
+					throw new Error(`Invalid preset: ${presetName}`)
+				}
+			}
 		}
 
-		if (presets && presetName) {
-			preset = presets[presetName]
-		}
-
-		if (preset) {
-			options.$preset = presetName
-		} else if (typeof input === 'string') {
-			options.value = input
-		}
-
-		return defaultsDeep(options, preset, defaults)
+		return merge({}, this.defaults, preset, options)
 	}
 
 	constructor (element: E, options?: Input<O>, parent?: Component) {
@@ -109,7 +101,7 @@ export class Component<E extends Element = Element, O = object> {
 		}
 	}
 
-	_ref (component: Component, remove = false) {
+	private _ref (component: Component, remove = false) {
 		let prop = '$' + component._name
 		let value = this[prop]
 
@@ -135,7 +127,7 @@ export class Component<E extends Element = Element, O = object> {
 		}
 	}
 
-	_addChild (component: Component) {
+	private _addChild (component: Component) {
 		if (this._children.indexOf(component) < 0) {
 			this._children.push(component)
 			this._ref(component)
@@ -143,7 +135,7 @@ export class Component<E extends Element = Element, O = object> {
 		}
 	}
 
-	_removeChild (component: Component) {
+	private _removeChild (component: Component) {
 		let index = this._children.indexOf(component)
 		if (index >= 0) {
 			this._children.splice(index, 1)
