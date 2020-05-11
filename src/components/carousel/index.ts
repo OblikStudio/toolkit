@@ -5,28 +5,39 @@ import { ticker } from '../..'
 
 export class Item extends Component<HTMLElement> { }
 
-export class Carousel extends Component<HTMLElement> {
+interface Screen {
+	left: number
+	right: number
+}
+
+interface Options {
+	clickThreshold: number
+}
+
+export class Carousel extends Component<HTMLElement, Options> {
 	static components = {
 		item: Item,
 	}
 
+	static defaults: Options = {
+		clickThreshold: 40
+	}
+
 	$item: Item[] = []
-	currentScreen: number
 	origin: number
 	dragOrigin: number
 	delta: number
-	clickThreshold = 40
 	isDraggingLink: boolean
 	isDrag: boolean
 	isDragging: boolean
 	offset: number
 	drag: Drag
+	activeScreen: Screen
+	screens: Screen[]
 
 	init () {
-		this.clickThreshold = 40
 		this.isDraggingLink = null
 		this.isDrag = null
-		this.currentScreen = null
 		this.origin = 0
 		this.offset = 0
 
@@ -41,6 +52,8 @@ export class Carousel extends Component<HTMLElement> {
 				event.preventDefault()
 			}
 		})
+
+		this.screens = this.getAllScreens(1)
 	}
 
 	pointerDown (event) {
@@ -68,12 +81,12 @@ export class Carousel extends Component<HTMLElement> {
 	pointerUpdate (vector) {
 		this.delta = this.drag.position.x - this.dragOrigin
 
-		if (!this.isDrag && Math.abs(this.delta) >= this.clickThreshold) {
+		if (!this.isDrag && Math.abs(this.delta) >= this.$options.clickThreshold) {
 			this.isDrag = true
 		}
 	}
 
-	getScreen (index: number, direction: number) {
+	getScreen (index: number, direction: number): Screen {
 		let itemsPerScreen = 2
 		let leftItem = this.$item[index * itemsPerScreen]
 		let rightItem = this.$item[index * itemsPerScreen + (itemsPerScreen - 1)]
@@ -86,15 +99,15 @@ export class Carousel extends Component<HTMLElement> {
 			return null
 		}
 
-		return [
-			leftItem.$element.offsetLeft,
-			rightItem.$element.offsetLeft + rightItem.$element.offsetWidth
-		]
+		return {
+			left: leftItem.$element.offsetLeft,
+			right: rightItem.$element.offsetLeft + rightItem.$element.offsetWidth
+		}
 	}
 
-	getAllScreens (direction: number) {
+	getAllScreens (direction: number): Screen[] {
 		let idx = 0
-		let screens = []
+		let screens: Screen[] = []
 
 		do {
 			let screen = this.getScreen(idx, direction)
@@ -107,11 +120,11 @@ export class Carousel extends Component<HTMLElement> {
 		return screens
 	}
 
-	getClosestScreen (screens: number[][], center: number) {
+	getClosestScreen (center: number): Screen {
 		let closest = null
 
-		screens.reduce((prev, curr) => {
-			let screenCenter = (curr[0] + curr[1]) / 2
+		this.screens.reduce((prev, curr) => {
+			let screenCenter = (curr.left + curr.right) / 2
 			let diff = Math.abs(center - screenCenter)
 
 			if (!prev || (typeof prev === 'number' && diff < prev)) {
@@ -125,15 +138,44 @@ export class Carousel extends Component<HTMLElement> {
 		return closest
 	}
 
+	setScreen (screen: Screen) {
+		if (this.screens.includes(screen) && this.activeScreen !== screen) {
+			let center = (screen.left + screen.right) / 2
+
+			this.offset = -center + (this.$element.offsetWidth / 2)
+			return this.activeScreen = screen
+		}
+
+		return false
+	}
+
+	setScreenByOffset (offset: number) {
+		let idx = this.screens.indexOf(this.activeScreen)
+		return this.setScreen(this.screens[idx + offset])
+	}
+
+	nextScreen () {
+		return this.setScreenByOffset(1)
+	}
+
+	prevScreen () {
+		return this.setScreenByOffset(-1)
+	}
+
 	pointerUp (event) {
 		let dir = Math.sign(Math.cos(this.drag.movement.direction))
 		let center = -this.offset - this.delta + (this.$element.offsetWidth / 2)
-		let screens = this.getAllScreens(dir)
-		let closest = this.getClosestScreen(screens, center)
-		let closestCenter = (closest[0] + closest[1]) / 2
+		let closestScreen = this.getClosestScreen(center)
 
-		this.currentScreen = screens.indexOf(closest)
-		this.offset = -closestCenter + (this.$element.offsetWidth / 2)
+		if (closestScreen !== this.activeScreen) {
+			this.setScreen(closestScreen)
+		} else if (this.drag.movement.magnitude > 500) {
+			if (dir === 1) {
+				this.prevScreen()
+			} else {
+				this.nextScreen()
+			}
+		}
 
 		this.dragOrigin = null
 		this.delta = null

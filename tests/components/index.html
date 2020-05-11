@@ -2,6 +2,7 @@
 <html>
 
 <head>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<style>
 		[ob-masonry-item] {
 			display: inline-block;
@@ -36,6 +37,10 @@
 			outline: 4px solid blue;
 		}
 
+		[ob-carousel]:not(.is-dragged) {
+			transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+		}
+
 		[ob-carousel-rail] {
 			display: flex;
 			flex-flow: row nowrap;
@@ -49,27 +54,24 @@
 			padding: 0 20px;
 			box-sizing: border-box;
 			flex-shrink: 0;
-			background: midnightblue;
-		}
-
-		[ob-carousel-item]:nth-child(2n) {
-			background: orchid;
 		}
 	</style>
 </head>
 
 <body>
-	<button ob-toggle="$target: @sibling">Test Document</button>
+	<div style="overflow-x: hidden; min-height: 200vh;">
+		<button ob-toggle="$target: @sibling">Test Document</button>
 
-	<p>Test</p>
+		<p>Test</p>
 
-	<div style="outline: 8px solid red; width: 400px; margin: 0 auto;">
-		<div ob-carousel>
-			<div ob-carousel-item></div>
-			<div ob-carousel-item></div>
-			<div ob-carousel-item></div>
-			<div ob-carousel-item></div>
-			<div ob-carousel-item></div>
+		<div style="outline: 8px solid red; width: 400px; margin: 0 auto;">
+			<div ob-carousel>
+				<div ob-carousel-item style="background: midnightblue">1</div>
+				<div ob-carousel-item style="background: orchid">2</div>
+				<div ob-carousel-item style="background: midnightblue">3</div>
+				<div ob-carousel-item style="background: orchid">4</div>
+				<div ob-carousel-item style="background: midnightblue">5</div>
+			</div>
 		</div>
 	</div>
 
