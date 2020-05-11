@@ -1,10 +1,77 @@
 <!DOCTYPE html>
 <html>
 
+<head>
+	<style>
+		[ob-masonry-item] {
+			display: inline-block;
+			vertical-align: top;
+			width: 20%;
+			height: 60px;
+			margin: 5px;
+			background: midnightblue;
+			transition: height 0.3s ease;
+		}
+
+		[ob-masonry-item]:hover {
+			height: 100px !important;
+		}
+
+		[ob-masonry-item]:nth-child(2n) {
+			height: 40px;
+			background: olivedrab;
+		}
+
+		[ob-masonry-item]:nth-child(3n) {
+			height: 80px;
+			background: orchid;
+		}
+
+		[ob-carousel] {
+			display: flex;
+			flex-flow: row nowrap;
+			position: relative;
+			width: 400px;
+			margin: 200px auto;
+			outline: 4px solid blue;
+		}
+
+		[ob-carousel-rail] {
+			display: flex;
+			flex-flow: row nowrap;
+			position: relative;
+			outline: 2px solid red;
+		}
+
+		[ob-carousel-item] {
+			width: 50%;
+			height: 200px;
+			padding: 0 20px;
+			box-sizing: border-box;
+			flex-shrink: 0;
+			background: midnightblue;
+		}
+
+		[ob-carousel-item]:nth-child(2n) {
+			background: orchid;
+		}
+	</style>
+</head>
+
 <body>
 	<button ob-toggle="$target: @sibling">Test Document</button>
 
 	<p>Test</p>
+
+	<div style="outline: 8px solid red; width: 400px; margin: 0 auto;">
+		<div ob-carousel>
+			<div ob-carousel-item></div>
+			<div ob-carousel-item></div>
+			<div ob-carousel-item></div>
+			<div ob-carousel-item></div>
+			<div ob-carousel-item></div>
+		</div>
+	</div>
 
 	<script src="/components.js"></script>
 </body>

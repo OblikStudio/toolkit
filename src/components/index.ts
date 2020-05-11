@@ -1,4 +1,5 @@
 export { Accordion } from './accordion'
+export { Carousel } from './carousel'
 export { Cursor } from './cursor'
 export { Height } from './height'
 export { Loader } from './loader'
