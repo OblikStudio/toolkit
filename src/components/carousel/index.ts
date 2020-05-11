@@ -43,7 +43,7 @@ export class Carousel extends Component<HTMLElement, Options> {
 
 		this.drag = new Drag(this.$element)
 		this.drag.on('start', this.pointerDown.bind(this))
-		this.drag.on('change', this.pointerUpdate.bind(this))
+		this.drag.on('move', this.pointerUpdate.bind(this))
 		this.drag.on('end', this.pointerUp.bind(this))
 
 		this.$element.addEventListener('click', (event) => {
@@ -57,7 +57,7 @@ export class Carousel extends Component<HTMLElement, Options> {
 	}
 
 	pointerDown (event) {
-		this.dragOrigin = event.pageX
+		this.dragOrigin = this.drag.origin().x
 
 		this.isDrag = false
 		this.isDragging = false
@@ -79,7 +79,7 @@ export class Carousel extends Component<HTMLElement, Options> {
 	}
 
 	pointerUpdate (vector) {
-		this.delta = this.drag.position.x - this.dragOrigin
+		this.delta = this.drag.getOffset().x
 
 		if (!this.isDrag && Math.abs(this.delta) >= this.$options.clickThreshold) {
 			this.isDrag = true
@@ -163,19 +163,20 @@ export class Carousel extends Component<HTMLElement, Options> {
 	}
 
 	pointerUp (event) {
-		let dir = Math.sign(Math.cos(this.drag.movement.direction))
+		// let dir = Math.sign(Math.cos(this.drag.movement.direction))
 		let center = -this.offset - this.delta + (this.$element.offsetWidth / 2)
 		let closestScreen = this.getClosestScreen(center)
 
 		if (closestScreen !== this.activeScreen) {
 			this.setScreen(closestScreen)
-		} else if (this.drag.movement.magnitude > 500) {
-			if (dir === 1) {
-				this.prevScreen()
-			} else {
-				this.nextScreen()
-			}
 		}
+		// } else if (this.drag.movement.magnitude > 500) {
+		// 	if (dir === 1) {
+		// 		this.prevScreen()
+		// 	} else {
+		// 		this.nextScreen()
+		// 	}
+		// }
 
 		this.dragOrigin = null
 		this.delta = null

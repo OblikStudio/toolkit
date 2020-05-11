@@ -1,141 +1,141 @@
-import { Point, Vector } from './math'
 import { Emitter } from './emitter'
-import { ticker } from '..'
+import { Point } from './math'
 
-function isTouchEvent (event: Event): event is TouchEvent {
-	return (event.type && event.type.indexOf('touch') === 0)
+interface Delta {
+	id: number | string
+	origin: Point
+	position: Point
 }
 
 export class Drag extends Emitter {
 	element: HTMLElement
-	activeTouch: Touch
-	origin: Point
-	position: Point
-	positionTick: Point
-	movement: Vector
-	startHandler: Drag['start']
-	moveHandler: Drag['move']
-	endHandler: Drag['end']
+	deltas: Delta[]
+
+	mouseStartHandler = this.mouseStart.bind(this)
+	mouseMoveHandler = this.mouseMove.bind(this)
+	mouseEndHandler = this.mouseEnd.bind(this)
+	touchStartHandler = this.touchStart.bind(this)
+	touchMoveHandler = this.touchMove.bind(this)
+	touchEndHandler = this.touchEnd.bind(this)
 
 	constructor (element) {
 		super()
+
 		this.element = element
-		this.activeTouch = null
-		this.position = null
-		this.positionTick = null
+		this.deltas = []
 
-		this.startHandler = this.start.bind(this)
-		this.moveHandler = this.move.bind(this)
-		this.endHandler = this.end.bind(this)
-
-		this.element.addEventListener('mousedown', this.startHandler)
-		this.element.addEventListener('touchstart', this.startHandler)
+		this.element.addEventListener('mousedown', this.mouseStartHandler)
+		this.element.addEventListener('touchstart', this.touchStartHandler)
+		this.element.addEventListener('touchmove', this.touchMoveHandler)
+		this.element.addEventListener('touchend', this.touchEndHandler)
+		this.element.addEventListener('touchcancel', this.touchEndHandler)
 	}
 
-	assignTouch (event) {
-		var assigned = false
+	touchStart (event: TouchEvent) {
+		for (let touch of event.changedTouches) {
+			let origin = new Point(touch.clientX, touch.clientY)
+			let position = new Point(touch.clientX, touch.clientY)
 
-		if (this.activeTouch && event.changedTouches) {
-			for (var touch of event.changedTouches) {
-				if (touch.identifier === this.activeTouch.identifier) {
-					for (var k in touch) {
-						if (typeof event[k] === 'undefined') {
-							event[k] = touch[k]
-						}
-					}
+			this.deltas.push({
+				id: touch.identifier,
+				origin,
+				position
+			})
+		}
 
-					assigned = true
-				}
+		this.emitStart(event)
+	}
+
+	touchMove (event: TouchEvent) {
+		for (let touch of event.changedTouches) {
+			let delta = this.deltas.find(el => el.id === touch.identifier)
+
+			if (delta) {
+				delta.position.set(touch.clientX, touch.clientY)
 			}
 		}
 
-		return assigned
+		this.emitMove(event)
 	}
 
-	start (event: MouseEvent | TouchEvent) {
-		if (isTouchEvent(event)) {
-			var previousTouch = this.activeTouch
-
-			this.activeTouch = event.changedTouches[0]
-			this.assignTouch(event)
-
-			if (previousTouch) {
-				this.emit('retouch', event)
-				return
-			}
+	touchEnd (event: TouchEvent) {
+		for (let touch of event.changedTouches) {
+			this.deltas = this.deltas.filter(delta => delta.id !== touch.identifier)
 		}
 
-		/**
-		 * Touch properties are assigned to the TouchEvent so clientX and clientY
-		 * are available, like a MouseEvent.
-		 * @todo let's not do that.
-		 */
-		event = event as MouseEvent
-
-		this.origin = new Point(event.clientX, event.clientY)
-		this.position = this.origin
-
-		this.element.addEventListener('mousemove', this.moveHandler)
-		this.element.addEventListener('touchmove', this.moveHandler)
-
-		this.element.addEventListener('mouseup', this.endHandler)
-		this.element.addEventListener('mouseleave', this.endHandler)
-		this.element.addEventListener('touchend', this.endHandler)
-		this.element.addEventListener('touchcancel', this.endHandler)
-
-		ticker.on('tick', this.tick, this)
-
-		this.emit('start', event)
+		this.emitEnd(event)
 	}
 
-	move (event) {
-		if (event.type.indexOf('touch') === 0) {
-			if (!this.assignTouch(event)) {
-				return
-			}
+	mouseStart (event: MouseEvent) {
+		let origin = new Point(event.clientX, event.clientY)
+		let position = new Point(event.clientX, event.clientY)
+		let delta: Delta = {
+			id: 'mouse',
+			origin,
+			position
 		}
 
-		let clientPosition = new Point(event.clientX, event.clientY)
-		let delta = new Vector(this.position, clientPosition)
-		this.position = clientPosition
+		this.deltas.push(delta)
 
-		this.emit('move', event, delta)
+		this.element.addEventListener('mousemove', this.mouseMoveHandler)
+		this.element.addEventListener('mouseup', this.mouseEndHandler)
+		this.element.addEventListener('mouseleave', this.mouseEndHandler)
+
+		this.emitStart(event)
 	}
 
-	tick (delta) {
-		if (this.positionTick) {
-			this.movement = new Vector(this.positionTick, this.position)
-			this.movement.magnitude *= 1000 / delta
-
-			if (this.positionTick !== this.position) {
-				this.emit('change', this.movement)
-			}
+	mouseMove (event: MouseEvent) {
+		let delta = this.deltas.find(el => el.id === 'mouse')
+		if (delta) {
+			delta.position.set(event.clientX, event.clientY)
 		}
 
-		this.positionTick = this.position
+		this.emitMove(event)
 	}
 
-	end (event) {
-		if (event.type.indexOf('touch') === 0) {
-			if (this.assignTouch(event)) {
-				this.activeTouch = null
-			} else {
-				return
-			}
+	mouseEnd (event: MouseEvent) {
+		this.element.removeEventListener('mousemove', this.mouseMoveHandler)
+		this.element.removeEventListener('mouseup', this.mouseEndHandler)
+		this.element.removeEventListener('mouseleave', this.mouseEndHandler)
+
+		this.deltas = this.deltas.filter(delta => delta.id !== 'mouse')
+		this.emitEnd(event)
+	}
+
+	emitStart (event: Event) {
+		if (this.deltas.length === 1) {
+			this.emit('start', event)
 		}
 
-		this.element.removeEventListener('mouseup', this.endHandler)
-		this.element.removeEventListener('mouseleave', this.endHandler)
-		this.element.removeEventListener('touchend', this.endHandler)
-		this.element.removeEventListener('touchcancel', this.endHandler)
+		this.emit('down', event)
+	}
 
-		this.element.removeEventListener('mousemove', this.moveHandler)
-		this.element.removeEventListener('touchmove', this.moveHandler)
+	emitMove (event: Event) {
+		this.emit('move', event, this.getOffset())
+	}
 
-		ticker.off('tick', this.tick, this)
+	emitEnd (event: Event) {
+		if (this.deltas.length === 0) {
+			this.emit('end', event)
+		}
 
-		this.emit('end', event)
+		this.emit('up', event)
+	}
 
-		this.origin = null
+	origin () {
+		if (this.deltas.length) {
+			return this.deltas[0].origin
+		}
+	}
+
+	getOffset () {
+		let result = new Point()
+
+		this.deltas.forEach(delta => {
+			result.x += delta.position.x - delta.origin.x
+			result.y += delta.position.y - delta.origin.y
+		})
+
+		return result
 	}
 }
