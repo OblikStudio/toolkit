@@ -13,6 +13,10 @@ export class Point {
 		this.set(x, y)
 	}
 
+	copy () {
+		return new Point(this.x, this.y)
+	}
+
 	set (input: number | Point, y?: number) {
 		if (typeof input === 'number') {
 			this.x = input
@@ -31,6 +35,16 @@ export class Point {
 				input.magnitude * Math.sin(input.direction)
 			)
 		}
+	}
+
+	subtract (input: Point) {
+		this.x -= input.x
+		this.y -= input.y
+		return this
+	}
+
+	to (input: Point) {
+		return new Vector(this, input)
 	}
 }
 
