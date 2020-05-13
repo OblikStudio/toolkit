@@ -29,26 +29,31 @@
 		}
 
 		[ob-carousel] {
+			width: 400px;
+			margin: 200px auto;
+			outline: 8px solid red;
+		}
+
+		[ob-carousel-slider] {
 			display: flex;
 			flex-flow: row nowrap;
 			position: relative;
 			width: 100%;
-			margin: 200px auto;
 			outline: 4px solid blue;
 		}
 
-		[ob-carousel]:not(.is-dragged) {
+		[ob-carousel-slider]:not(.is-dragged) {
 			transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 		}
 
-		[ob-carousel-rail] {
+		[ob-carousel-slider-rail] {
 			display: flex;
 			flex-flow: row nowrap;
 			position: relative;
 			outline: 2px solid red;
 		}
 
-		[ob-carousel-item] {
+		[ob-carousel-slider-item] {
 			width: 50%;
 			height: 200px;
 			padding: 0 20px;
@@ -64,14 +69,17 @@
 
 		<p>Test</p>
 
-		<div style="outline: 8px solid red; width: 400px; margin: 0 auto;">
-			<div ob-carousel>
-				<div ob-carousel-item style="background: midnightblue">1</div>
-				<div ob-carousel-item style="background: orchid">2</div>
-				<div ob-carousel-item style="background: midnightblue">3</div>
-				<div ob-carousel-item style="background: orchid">4</div>
-				<div ob-carousel-item style="background: midnightblue">5</div>
+		<div ob-carousel>
+			<div ob-carousel-slider>
+				<div ob-carousel-slider-item style="background: midnightblue">1</div>
+				<div ob-carousel-slider-item style="background: orchid">2</div>
+				<div ob-carousel-slider-item style="background: midnightblue"></div>
+				<div ob-carousel-slider-item style="background: orchid">4</div>
+				<div ob-carousel-slider-item style="background: midnightblue">5</div>
 			</div>
+
+			<button ob-carousel-prev>Prev</button>
+			<button ob-carousel-next>Next</button>
 		</div>
 	</div>
 
