@@ -118,20 +118,19 @@ export class Carousel extends Component<HTMLElement, Options> {
 		return screens
 	}
 
-	getClosestScreen (center: number): Screen {
+	getClosestScreen (offset: number): Screen {
 		let closest = null
+		let min = null
 
-		this.screens.reduce((prev, curr) => {
-			let screenCenter = (curr.left + curr.right) / 2
-			let diff = Math.abs(center - screenCenter)
+		for (let screen of this.screens) {
+			let center = (screen.left + screen.right) / 2
+			let diff = Math.abs(offset - center)
 
-			if (!prev || (typeof prev === 'number' && diff < prev)) {
-				closest = curr
-				return diff
-			} else {
-				return prev
+			if (typeof min !== 'number' || diff < min) {
+				closest = screen
+				min = diff
 			}
-		}, null)
+		}
 
 		return closest
 	}
