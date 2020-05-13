@@ -54,7 +54,7 @@ export class Carousel extends Component<HTMLElement, Options> {
 			}
 		})
 
-		this.screens = this.getAllScreens(1)
+		this.screens = this.getAllScreens()
 	}
 
 	pointerDown (event) {
@@ -84,17 +84,17 @@ export class Carousel extends Component<HTMLElement, Options> {
 		}
 	}
 
-	getScreen (index: number, direction: number): Screen {
+	getScreen (index: number): Screen {
 		let itemsPerScreen = 2
 		let leftItem = this.$item[index * itemsPerScreen]
 		let rightItem = this.$item[index * itemsPerScreen + (itemsPerScreen - 1)]
 
-		if (!rightItem) {
-			rightItem = leftItem
-		}
-
 		if (!leftItem) {
 			return null
+		}
+
+		if (!rightItem) {
+			rightItem = leftItem
 		}
 
 		return {
@@ -103,12 +103,12 @@ export class Carousel extends Component<HTMLElement, Options> {
 		}
 	}
 
-	getAllScreens (direction: number): Screen[] {
+	getAllScreens (): Screen[] {
 		let idx = 0
 		let screens: Screen[] = []
 
 		do {
-			let screen = this.getScreen(idx, direction)
+			let screen = this.getScreen(idx)
 			if (screen) {
 				screens.push(screen)
 				idx++
