@@ -1,7 +1,6 @@
-import { Component } from '../..'
-import { Gesture, Swipe } from '../../utils/gesture'
 import { getTag } from '../../utils/dom'
-import { ticker } from '../..'
+import { Gesture, Swipe } from '../../utils/gesture'
+import { Component, ticker } from '../..'
 
 export class Item extends Component<HTMLElement> { }
 
@@ -12,6 +11,8 @@ interface Screen {
 
 interface Options {
 	clickThreshold: number
+	screenChangeSpeed: number
+	overdrag: number
 }
 
 export class Carousel extends Component<HTMLElement, Options> {
@@ -20,7 +21,9 @@ export class Carousel extends Component<HTMLElement, Options> {
 	}
 
 	static defaults: Options = {
-		clickThreshold: 40
+		clickThreshold: 40,
+		screenChangeSpeed: 500,
+		overdrag: 0.3
 	}
 
 	$item: Item[] = []
@@ -32,6 +35,7 @@ export class Carousel extends Component<HTMLElement, Options> {
 	activeScreen: Screen
 	screens: Screen[]
 	offset: number
+	offsetRender: number
 
 	init () {
 		this.isDraggingLink = null
@@ -71,7 +75,7 @@ export class Carousel extends Component<HTMLElement, Options> {
 		// Stop propagating so when nesting sliders, parent sliders don't move.
 		event.stopPropagation()
 
-		ticker.on('tick', this.render, this)
+		ticker.on('tick', this.update, this)
 	}
 
 	pointerUpdate () {
@@ -132,11 +136,14 @@ export class Carousel extends Component<HTMLElement, Options> {
 		return closest
 	}
 
+	getScreenOffset (screen: Screen) {
+		let center = (screen.left + screen.right) / 2
+		return -center + (this.$element.offsetWidth / 2)
+	}
+
 	setScreen (screen: Screen) {
 		if (this.screens.includes(screen) && this.activeScreen !== screen) {
-			let center = (screen.left + screen.right) / 2
-
-			this.offset = -center + (this.$element.offsetWidth / 2)
+			this.offset = this.getScreenOffset(screen)
 			return this.activeScreen = screen
 		}
 
@@ -158,14 +165,14 @@ export class Carousel extends Component<HTMLElement, Options> {
 
 	pointerUp () {
 		let diff = this.swipe.origin.to(this.swipe.position)
-		let dir = Math.sign(Math.cos(diff.direction))
+		let direction = Math.sign(Math.cos(diff.direction))
 		let center = -this.offset - this.swipe.offset().x + (this.$element.offsetWidth / 2)
 		let closestScreen = this.getClosestScreen(center)
 
 		if (closestScreen !== this.activeScreen) {
 			this.setScreen(closestScreen)
-		} else if (this.swipe.speed > 500) {
-			if (dir === 1) {
+		} else if (this.swipe.speed > this.$options.screenChangeSpeed) {
+			if (direction === 1) {
 				this.prevScreen()
 			} else {
 				this.nextScreen()
@@ -174,20 +181,41 @@ export class Carousel extends Component<HTMLElement, Options> {
 
 		this.swipe = null
 
-		ticker.off('tick', this.render, this)
-		this.render()
+		ticker.off('tick', this.update, this)
+		this.update()
 
 		this.$element.classList.remove('is-dragged')
 	}
 
-	render () {
-		let renderOffset = this.offset
+	overdrag (amount: number) {
+		let limit = this.$element.offsetWidth * this.$options.overdrag
+		return (amount * limit) / (amount + limit)
+	}
+
+	constrainRender () {
+		let left = this.getScreenOffset(this.screens[0])
+		let right = this.getScreenOffset(this.screens[this.screens.length - 1])
+
+		if (this.offsetRender > left) {
+			this.offsetRender = left + this.overdrag(this.offsetRender - left)
+		} else if (this.offsetRender < right) {
+			this.offsetRender = right - this.overdrag(right - this.offsetRender)
+		}
+	}
+
+	update () {
+		this.offsetRender = this.offset
 
 		if (this.swipe) {
-			renderOffset += this.swipe.offset().x
+			this.offsetRender += this.swipe.offset().x
 		}
 
-		this.$element.style.transform = `translateX(${renderOffset}px)`
+		this.constrainRender()
+		this.render()
+	}
+
+	render () {
+		this.$element.style.transform = `translateX(${this.offsetRender}px)`
 	}
 }
 
