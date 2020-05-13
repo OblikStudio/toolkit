@@ -36,11 +36,15 @@ export class Slider extends Component<HTMLElement, Options> {
 	screens: Screen[]
 	offset: number
 	offsetRender: number
+	order: HTMLElement[]
+	orderNum: number = 1
+	offsetLogical: number
 
 	init () {
 		this.isDraggingLink = null
 		this.isDrag = null
 		this.offset = 0
+		this.offsetLogical = 0
 
 		this.drag = new Gesture(this.$element)
 		this.drag.on('start', this.pointerDown.bind(this))
@@ -55,7 +59,7 @@ export class Slider extends Component<HTMLElement, Options> {
 		})
 
 		this.screens = this.getAllScreens()
-		this.setScreen(this.screens[0])
+		this.order = this.$item.map(el => el.$element)
 	}
 
 	pointerDown (event) {
@@ -123,8 +127,11 @@ export class Slider extends Component<HTMLElement, Options> {
 		let closest = null
 		let min = null
 
+		// Offsets are incorrect.
+		debugger;
+
 		for (let screen of this.screens) {
-			let center = (screen.left + screen.right) / 2
+			let center = (screen.left + screen.right) / 2 - this.offsetLogical
 			let diff = Math.abs(offset - center)
 
 			if (typeof min !== 'number' || diff < min) {
@@ -138,7 +145,7 @@ export class Slider extends Component<HTMLElement, Options> {
 
 	getScreenOffset (screen: Screen) {
 		let center = (screen.left + screen.right) / 2
-		return -center + (this.$element.offsetWidth / 2)
+		return -center + (this.$element.offsetWidth / 2) + this.offsetLogical
 	}
 
 	setScreen (screen: Screen) {
@@ -204,13 +211,27 @@ export class Slider extends Component<HTMLElement, Options> {
 	}
 
 	update () {
+		let lastRenderOffset = this.offsetRender
 		this.offsetRender = this.offset
 
 		if (this.swipe) {
 			this.offsetRender += this.swipe.offset().x
 		}
 
-		this.constrainRender()
+		// this.constrainRender()
+
+		let last = this.order[this.order.length - 1]
+		let right = -lastRenderOffset + this.$element.offsetWidth
+		if (last.offsetLeft < right) {
+			let first = this.order.shift()
+			first.style.order = this.orderNum.toString()
+			this.order.push(first)
+			this.offsetLogical -= first.offsetWidth
+			this.orderNum++
+		}
+
+		this.offsetRender -= this.offsetLogical
+
 		this.render()
 	}
 
