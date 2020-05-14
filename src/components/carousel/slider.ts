@@ -127,12 +127,11 @@ export class Slider extends Component<HTMLElement, Options> {
 		let closest = null
 		let min = null
 
-		// Offsets are incorrect.
-		debugger;
-
 		for (let screen of this.screens) {
-			let center = (screen.left + screen.right) / 2 - this.offsetLogical
-			let diff = Math.abs(offset - center)
+			let offsetScreen = this.getScreenOffset(screen)
+			let diff = Math.abs(offset - offsetScreen)
+
+			debugger;
 
 			if (typeof min !== 'number' || diff < min) {
 				closest = screen
@@ -144,8 +143,14 @@ export class Slider extends Component<HTMLElement, Options> {
 	}
 
 	getScreenOffset (screen: Screen) {
-		let center = (screen.left + screen.right) / 2
-		return -center + (this.$element.offsetWidth / 2) + this.offsetLogical
+		let width = this.screens[this.screens.length - 1].right
+		let loops = Math.floor(this.offsetLogical / width)
+
+		if (this.offsetLogical % width >= screen.right) {
+			loops++
+		}
+
+		return screen.left + loops * width
 	}
 
 	setScreen (screen: Screen) {
@@ -158,8 +163,15 @@ export class Slider extends Component<HTMLElement, Options> {
 	}
 
 	setScreenByOffset (offset: number) {
-		let idx = this.screens.indexOf(this.activeScreen)
-		return this.setScreen(this.screens[idx + offset])
+		let idx = this.screens.indexOf(this.activeScreen) + offset
+
+		if (idx >= this.screens.length) {
+			idx = 0
+		} else if (idx < 0) {
+			idx = this.screens.length - 1
+		}
+
+		return this.setScreen(this.screens[idx])
 	}
 
 	nextScreen () {
@@ -173,8 +185,11 @@ export class Slider extends Component<HTMLElement, Options> {
 	pointerUp () {
 		let diff = this.swipe.origin.to(this.swipe.position)
 		let direction = Math.sign(Math.cos(diff.direction))
-		let center = -this.offset - this.swipe.offset().x + (this.$element.offsetWidth / 2)
-		let closestScreen = this.getClosestScreen(center)
+		let location = this.offset - this.swipe.offset().x
+		let closestScreen = this.getClosestScreen(location)
+
+		console.log('closest', closestScreen);
+
 
 		if (closestScreen !== this.activeScreen) {
 			this.setScreen(closestScreen)
@@ -185,6 +200,8 @@ export class Slider extends Component<HTMLElement, Options> {
 				this.nextScreen()
 			}
 		}
+
+		this.screens.forEach(scr => console.log(this.getScreenOffset(scr)))
 
 		this.swipe = null
 
@@ -212,7 +229,7 @@ export class Slider extends Component<HTMLElement, Options> {
 
 	update () {
 		let lastRenderOffset = this.offsetRender
-		this.offsetRender = this.offset
+		this.offsetRender = -this.offset
 
 		if (this.swipe) {
 			this.offsetRender += this.swipe.offset().x
@@ -226,11 +243,11 @@ export class Slider extends Component<HTMLElement, Options> {
 			let first = this.order.shift()
 			first.style.order = this.orderNum.toString()
 			this.order.push(first)
-			this.offsetLogical -= first.offsetWidth
+			this.offsetLogical += first.offsetWidth
 			this.orderNum++
 		}
 
-		this.offsetRender -= this.offsetLogical
+		this.offsetRender += this.offsetLogical
 
 		this.render()
 	}
