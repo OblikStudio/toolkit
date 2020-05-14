@@ -38,6 +38,7 @@ export class Slider extends Component<HTMLElement, Options> {
 	offsetRender: number
 	order: HTMLElement[]
 	orderNum: number = 1
+	orderNumBack: number = -1
 	offsetLogical: number
 
 	init () {
@@ -60,6 +61,7 @@ export class Slider extends Component<HTMLElement, Options> {
 
 		this.screens = this.getAllScreens()
 		this.order = this.$item.map(el => el.$element)
+		this.setScreen(this.screens[0])
 	}
 
 	pointerDown (event) {
@@ -131,8 +133,6 @@ export class Slider extends Component<HTMLElement, Options> {
 			let offsetScreen = this.getScreenOffset(screen)
 			let diff = Math.abs(offset - offsetScreen)
 
-			debugger;
-
 			if (typeof min !== 'number' || diff < min) {
 				closest = screen
 				min = diff
@@ -150,7 +150,11 @@ export class Slider extends Component<HTMLElement, Options> {
 			loops++
 		}
 
-		return screen.left + loops * width
+		let offset = screen.left + loops * width
+
+		console.log(screen, 'offset', offset, 'loops', loops);
+
+		return offset
 	}
 
 	setScreen (screen: Screen) {
@@ -188,8 +192,7 @@ export class Slider extends Component<HTMLElement, Options> {
 		let location = this.offset - this.swipe.offset().x
 		let closestScreen = this.getClosestScreen(location)
 
-		console.log('closest', closestScreen);
-
+		console.log('off', this.offset, 'logical', this.offsetLogical, 'closest', closestScreen);
 
 		if (closestScreen !== this.activeScreen) {
 			this.setScreen(closestScreen)
@@ -201,12 +204,10 @@ export class Slider extends Component<HTMLElement, Options> {
 			}
 		}
 
-		this.screens.forEach(scr => console.log(this.getScreenOffset(scr)))
-
 		this.swipe = null
 
 		ticker.off('tick', this.update, this)
-		this.update()
+		this.update(true)
 
 		this.$element.classList.remove('is-dragged')
 	}
@@ -227,33 +228,46 @@ export class Slider extends Component<HTMLElement, Options> {
 		}
 	}
 
-	update () {
+	update (isForced?: boolean) {
 		let lastRenderOffset = this.offsetRender
-		this.offsetRender = -this.offset
+		this.offsetRender = this.offset
 
 		if (this.swipe) {
-			this.offsetRender += this.swipe.offset().x
+			this.offsetRender -= this.swipe.offset().x
 		}
 
 		// this.constrainRender()
 
-		let last = this.order[this.order.length - 1]
-		let right = -lastRenderOffset + this.$element.offsetWidth
-		if (last.offsetLeft < right) {
-			let first = this.order.shift()
-			first.style.order = this.orderNum.toString()
-			this.order.push(first)
-			this.offsetLogical += first.offsetWidth
-			this.orderNum++
+		if (isForced !== true) {
+			let first = this.order[0]
+			let last = this.order[this.order.length - 1]
+
+			if (last.offsetLeft + last.offsetWidth < lastRenderOffset + this.$element.offsetWidth) {
+				let target = this.order.shift()
+				target.style.order = this.orderNum.toString()
+				this.order.push(target)
+				this.offsetLogical += target.offsetWidth
+				this.orderNum++
+				console.log('add back');
+
+			} else if (first.offsetLeft > lastRenderOffset) {
+				let target = this.order.pop()
+				target.style.order = this.orderNumBack.toString()
+				this.order.unshift(target)
+				this.offsetLogical -= target.offsetWidth
+				this.orderNumBack--
+				console.log('add front');
+
+			}
 		}
 
-		this.offsetRender += this.offsetLogical
+		this.offsetRender -= this.offsetLogical
 
 		this.render()
 	}
 
 	render () {
-		this.$element.style.transform = `translateX(${this.offsetRender}px)`
+		this.$element.style.transform = `translateX(${-this.offsetRender}px)`
 	}
 }
 
