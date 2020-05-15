@@ -13,6 +13,7 @@ interface Options {
 	clickThreshold: number
 	screenChangeSpeed: number
 	overdrag: number
+	infinite: boolean
 }
 
 export class Slider extends Component<HTMLElement, Options> {
@@ -23,7 +24,8 @@ export class Slider extends Component<HTMLElement, Options> {
 	static defaults: Options = {
 		clickThreshold: 40,
 		screenChangeSpeed: 500,
-		overdrag: 0.3
+		overdrag: 0.3,
+		infinite: false
 	}
 
 	$item: Item[] = []
@@ -227,17 +229,18 @@ export class Slider extends Component<HTMLElement, Options> {
 		return offset
 	}
 
-	checkSlidesVisible (offset: number) {
+	reorderElements (offset: number) {
 		let first = this.order[0]
 		let last = this.order[this.order.length - 1]
+		let renderOffset = offset - this.offsetLogical
 
-		if (last.offsetLeft + last.offsetWidth < offset + this.$element.offsetWidth) {
+		if (last.offsetLeft + last.offsetWidth < renderOffset + this.$element.offsetWidth) {
 			let target = this.order.shift()
 			target.style.order = this.orderNum.toString()
 			this.order.push(target)
 			this.offsetLogical += target.offsetWidth
 			this.orderNum++
-		} else if (first.offsetLeft > offset) {
+		} else if (first.offsetLeft > renderOffset) {
 			let target = this.order.pop()
 			target.style.order = this.orderNumBack.toString()
 			this.order.unshift(target)
@@ -253,13 +256,12 @@ export class Slider extends Component<HTMLElement, Options> {
 			renderOffset -= this.swipe.offset().x
 		}
 
-		// renderOffset = this.constrainOffset(renderOffset)
-
-		let offs = renderOffset - this.offsetLogical
-
-		this.checkSlidesVisible(offs)
-
-		renderOffset -= this.offsetLogical
+		if (this.$options.infinite) {
+			this.reorderElements(renderOffset)
+			renderOffset -= this.offsetLogical
+		} else {
+			renderOffset = this.constrainOffset(renderOffset)
+		}
 
 		this.render(renderOffset)
 	}
