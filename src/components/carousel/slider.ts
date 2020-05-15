@@ -35,7 +35,6 @@ export class Slider extends Component<HTMLElement, Options> {
 	activeScreen: Screen
 	screens: Screen[]
 	offset: number
-	offsetRender: number
 	order: HTMLElement[]
 	orderNum: number = 1
 	orderNumBack: number = -1
@@ -205,7 +204,7 @@ export class Slider extends Component<HTMLElement, Options> {
 		this.swipe = null
 
 		ticker.off('tick', this.update, this)
-		this.update(true)
+		this.update()
 
 		this.$element.classList.remove('is-dragged')
 	}
@@ -215,15 +214,17 @@ export class Slider extends Component<HTMLElement, Options> {
 		return (amount * limit) / (amount + limit)
 	}
 
-	constrainRender () {
+	constrainOffset (offset: number) {
 		let left = this.getScreenOffset(this.screens[0])
 		let right = this.getScreenOffset(this.screens[this.screens.length - 1])
 
-		if (this.offsetRender > left) {
-			this.offsetRender = left + this.overdrag(this.offsetRender - left)
-		} else if (this.offsetRender < right) {
-			this.offsetRender = right - this.overdrag(right - this.offsetRender)
+		if (offset < left) {
+			return left - this.overdrag(left - offset)
+		} else if (offset > right) {
+			return right + this.overdrag(offset - right)
 		}
+
+		return offset
 	}
 
 	checkSlidesVisible (offset: number) {
@@ -245,31 +246,26 @@ export class Slider extends Component<HTMLElement, Options> {
 		}
 	}
 
-	update (isForced?: boolean) {
-		let lastRenderOffset = this.offsetRender
-		this.offsetRender = this.offset
+	update () {
+		let renderOffset = this.offset
 
 		if (this.swipe) {
-			this.offsetRender -= this.swipe.offset().x
+			renderOffset -= this.swipe.offset().x
 		}
 
-		// this.constrainRender()
+		// renderOffset = this.constrainOffset(renderOffset)
 
-		// if (isForced !== true) {
-		// 	this.checkSlidesVisible(lastRenderOffset)
-		// }
-
-		let offs = this.offsetRender - this.offsetLogical
+		let offs = renderOffset - this.offsetLogical
 
 		this.checkSlidesVisible(offs)
 
-		this.offsetRender -= this.offsetLogical
+		renderOffset -= this.offsetLogical
 
-		this.render()
+		this.render(renderOffset)
 	}
 
-	render () {
-		this.$element.style.transform = `translateX(${-this.offsetRender}px)`
+	render (offset: number) {
+		this.$element.style.transform = `translateX(${-offset}px)`
 	}
 }
 
