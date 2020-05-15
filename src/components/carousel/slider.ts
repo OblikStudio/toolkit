@@ -5,8 +5,10 @@ import { Component, ticker } from '../..'
 export class Item extends Component<HTMLElement> { }
 
 interface Screen {
+	id: number
 	left: number
 	right: number
+	elements: Element[]
 }
 
 interface Options {
@@ -36,6 +38,7 @@ export class Slider extends Component<HTMLElement, Options> {
 	swipe: Swipe
 	activeScreen: Screen
 	screens: Screen[]
+	screensDefinition: Screen[]
 	offset: number
 	order: HTMLElement[]
 	orderNum: number = 1
@@ -60,9 +63,50 @@ export class Slider extends Component<HTMLElement, Options> {
 			}
 		})
 
-		this.screens = this.getAllScreens()
+		this.screensDefinition = this.getAllScreens()
 		this.order = this.$item.map(el => el.$element)
-		this.setScreen(this.screens[0])
+		this.screens = this.getScreens()
+		this.setScreen(this.screens[5])
+	}
+
+	getScreens () {
+		let screens: Screen[] = []
+
+		this.screensDefinition.forEach(screen => {
+			screens.push({
+				...screen
+			})
+		})
+
+		for (let index = 0; index < 5; index++) {
+			let first = screens[0]
+			let copy = screens[this.screensDefinition.length - 1]
+			let width = copy.right - copy.left
+
+			let newScreen = {
+				...copy,
+				left: first.left - width,
+				right: first.left
+			}
+
+			screens.unshift(newScreen)
+		}
+
+		for (let index = 0; index < 5; index++) {
+			let last = screens[screens.length - 1]
+			let copy = screens[screens.length - 1 - (this.screensDefinition.length - 1)]
+			let width = copy.right - copy.left
+
+			let newScreen = {
+				...copy,
+				left: last.right,
+				right: last.right + width
+			}
+
+			screens.push(newScreen)
+		}
+
+		return screens
 	}
 
 	pointerDown (event) {
@@ -94,8 +138,17 @@ export class Slider extends Component<HTMLElement, Options> {
 
 	getScreen (index: number): Screen {
 		let itemsPerScreen = 2
+		let elements = []
 		let leftItem = this.$item[index * itemsPerScreen]
 		let rightItem = this.$item[index * itemsPerScreen + (itemsPerScreen - 1)]
+
+		if (leftItem) {
+			elements.push(leftItem)
+		}
+
+		if (rightItem) {
+			elements.push(rightItem)
+		}
 
 		if (!leftItem) {
 			return null
@@ -106,8 +159,10 @@ export class Slider extends Component<HTMLElement, Options> {
 		}
 
 		return {
+			id: index,
 			left: leftItem.$element.offsetLeft,
-			right: rightItem.$element.offsetLeft + rightItem.$element.offsetWidth
+			right: rightItem.$element.offsetLeft + rightItem.$element.offsetWidth,
+			elements
 		}
 	}
 
@@ -144,20 +199,11 @@ export class Slider extends Component<HTMLElement, Options> {
 	}
 
 	getScreenOffset (screen: Screen) {
-		let width = this.screens[this.screens.length - 1].right
-		let loops = Math.floor(this.offsetLogical / width)
-
-		if (this.offsetLogical % width >= screen.right) {
-			loops++
-		}
-
-		let offset = screen.left + loops * width
-
-		return offset
+		return screen.left
 	}
 
 	setScreen (screen: Screen) {
-		if (this.screens.includes(screen)) {
+		if (this.screens.includes(screen) && this.activeScreen !== screen) {
 			this.offset = this.getScreenOffset(screen)
 			return this.activeScreen = screen
 		}
@@ -186,22 +232,20 @@ export class Slider extends Component<HTMLElement, Options> {
 	}
 
 	pointerUp () {
-		// debugger;
-
 		let diff = this.swipe.origin.to(this.swipe.position)
 		let direction = Math.sign(Math.cos(diff.direction))
 		let location = this.offset - this.swipe.offset().x
 		let closestScreen = this.getClosestScreen(location)
 
-		this.setScreen(closestScreen)
-
-		// if (this.swipe.speed > this.$options.screenChangeSpeed) {
-		// 	if (direction === 1) {
-		// 		this.prevScreen()
-		// 	} else {
-		// 		this.nextScreen()
-		// 	}
-		// }
+		if (closestScreen !== this.activeScreen) {
+			this.setScreen(closestScreen)
+		} else if (this.swipe.speed > this.$options.screenChangeSpeed) {
+			if (direction === 1) {
+				this.prevScreen()
+			} else {
+				this.nextScreen()
+			}
+		}
 
 		this.swipe = null
 
@@ -227,6 +271,15 @@ export class Slider extends Component<HTMLElement, Options> {
 		}
 
 		return offset
+	}
+
+	ensureElementsVisible (screen: Screen) {
+		let max = this.screensDefinition[this.screensDefinition.length - 1].right
+		let left = screen.left % max
+		let right = screen.right % max
+
+		console.log(screen, max, left, right);
+
 	}
 
 	reorderElements (offset: number) {
@@ -256,12 +309,12 @@ export class Slider extends Component<HTMLElement, Options> {
 			renderOffset -= this.swipe.offset().x
 		}
 
-		if (this.$options.infinite) {
-			this.reorderElements(renderOffset)
-			renderOffset -= this.offsetLogical
-		} else {
-			renderOffset = this.constrainOffset(renderOffset)
-		}
+		renderOffset = this.constrainOffset(renderOffset)
+
+		// this.reorderElements(renderOffset)
+		// renderOffset -= this.offsetLogical
+
+		this.ensureElementsVisible(this.activeScreen)
 
 		this.render(renderOffset)
 	}
