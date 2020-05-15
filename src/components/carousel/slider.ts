@@ -152,13 +152,11 @@ export class Slider extends Component<HTMLElement, Options> {
 
 		let offset = screen.left + loops * width
 
-		console.log(screen, 'offset', offset, 'loops', loops);
-
 		return offset
 	}
 
 	setScreen (screen: Screen) {
-		if (this.screens.includes(screen) && this.activeScreen !== screen) {
+		if (this.screens.includes(screen)) {
 			this.offset = this.getScreenOffset(screen)
 			return this.activeScreen = screen
 		}
@@ -187,22 +185,22 @@ export class Slider extends Component<HTMLElement, Options> {
 	}
 
 	pointerUp () {
+		// debugger;
+
 		let diff = this.swipe.origin.to(this.swipe.position)
 		let direction = Math.sign(Math.cos(diff.direction))
 		let location = this.offset - this.swipe.offset().x
 		let closestScreen = this.getClosestScreen(location)
 
-		console.log('off', this.offset, 'logical', this.offsetLogical, 'closest', closestScreen);
+		this.setScreen(closestScreen)
 
-		if (closestScreen !== this.activeScreen) {
-			this.setScreen(closestScreen)
-		} else if (this.swipe.speed > this.$options.screenChangeSpeed) {
-			if (direction === 1) {
-				this.prevScreen()
-			} else {
-				this.nextScreen()
-			}
-		}
+		// if (this.swipe.speed > this.$options.screenChangeSpeed) {
+		// 	if (direction === 1) {
+		// 		this.prevScreen()
+		// 	} else {
+		// 		this.nextScreen()
+		// 	}
+		// }
 
 		this.swipe = null
 
@@ -228,6 +226,25 @@ export class Slider extends Component<HTMLElement, Options> {
 		}
 	}
 
+	checkSlidesVisible (offset: number) {
+		let first = this.order[0]
+		let last = this.order[this.order.length - 1]
+
+		if (last.offsetLeft + last.offsetWidth < offset + this.$element.offsetWidth) {
+			let target = this.order.shift()
+			target.style.order = this.orderNum.toString()
+			this.order.push(target)
+			this.offsetLogical += target.offsetWidth
+			this.orderNum++
+		} else if (first.offsetLeft > offset) {
+			let target = this.order.pop()
+			target.style.order = this.orderNumBack.toString()
+			this.order.unshift(target)
+			this.offsetLogical -= target.offsetWidth
+			this.orderNumBack--
+		}
+	}
+
 	update (isForced?: boolean) {
 		let lastRenderOffset = this.offsetRender
 		this.offsetRender = this.offset
@@ -238,28 +255,13 @@ export class Slider extends Component<HTMLElement, Options> {
 
 		// this.constrainRender()
 
-		if (isForced !== true) {
-			let first = this.order[0]
-			let last = this.order[this.order.length - 1]
+		// if (isForced !== true) {
+		// 	this.checkSlidesVisible(lastRenderOffset)
+		// }
 
-			if (last.offsetLeft + last.offsetWidth < lastRenderOffset + this.$element.offsetWidth) {
-				let target = this.order.shift()
-				target.style.order = this.orderNum.toString()
-				this.order.push(target)
-				this.offsetLogical += target.offsetWidth
-				this.orderNum++
-				console.log('add back');
+		let offs = this.offsetRender - this.offsetLogical
 
-			} else if (first.offsetLeft > lastRenderOffset) {
-				let target = this.order.pop()
-				target.style.order = this.orderNumBack.toString()
-				this.order.unshift(target)
-				this.offsetLogical -= target.offsetWidth
-				this.orderNumBack--
-				console.log('add front');
-
-			}
-		}
+		this.checkSlidesVisible(offs)
 
 		this.offsetRender -= this.offsetLogical
 
