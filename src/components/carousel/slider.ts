@@ -1,7 +1,7 @@
 import { getTag } from '../../utils/dom'
 import { Gesture, Swipe } from '../../utils/gesture'
-import { Component, ticker } from '../..'
 import { Ticker } from '../../utils'
+import { Component } from '../..'
 
 export class Item extends Component<HTMLElement> { }
 
@@ -58,12 +58,13 @@ export class Slider extends Component<HTMLElement, Options> {
 	screens: Screen[]
 	offset: number
 	offsetRender: number
+	offsetLogical: number
 	order: HTMLElement[]
 	orderNum: number = 1
 	orderNumBack: number = -1
-	offsetLogical: number
 	elements: Elem[]
 	elReference: HTMLElement
+	ticker: Ticker
 
 	init () {
 		this.isDraggingLink = null
@@ -94,15 +95,13 @@ export class Slider extends Component<HTMLElement, Options> {
 
 		this.screens = this.getScreens(this.elements)
 		this.setScreen(this.screens[0])
-		this.elReference = this.$element.parentElement
+
+		this.ticker = new Ticker()
+		this.ticker.start()
 
 		if (this.$options.infinite) {
-			let ticker = new Ticker()
-			ticker.on('tick', () => {
-				let rect = this.elReference.getBoundingClientRect()
-				this.reorderElements(rect)
-			})
-			ticker.start()
+			this.elReference = this.$element.parentElement
+			this.ticker.on('tick', this.reorderElements, this)
 		}
 	}
 
@@ -140,7 +139,7 @@ export class Slider extends Component<HTMLElement, Options> {
 		// Stop propagating so when nesting sliders, parent sliders don't move.
 		event.stopPropagation()
 
-		ticker.on('tick', this.update, this)
+		this.ticker.on('tick', this.update, this)
 	}
 
 	pointerUpdate () {
@@ -149,60 +148,38 @@ export class Slider extends Component<HTMLElement, Options> {
 		}
 	}
 
-	getClosestScreen (offset: number): Screen {
+	getClosestScreen (offset: number) {
+		return this.screens.reduce((prev, curr) => {
+			let offsetPrev = this.getClosestScreenOffset(offset, prev)
+			let offsetCurr = this.getClosestScreenOffset(offset, curr)
+			return Math.abs(offsetCurr) < Math.abs(offsetPrev) ? curr : prev
+		})
+	}
+
+	getClosestScreenOffset (offset: number, screen: Screen) {
 		let width = this.screens[this.screens.length - 1].right()
-		let closest = null
-		let min = null
-		let finalOffset = offset % width
+		let diff = screen.left() - (offset % width)
 
-		for (let screen of this.screens) {
-			let offsetScreen = screen.left()
-			let diff = Math.abs(finalOffset - offsetScreen)
-			let point: number
-
-			if (this.$options.infinite) {
-				point = Math.min(diff, Math.abs(diff - width), Math.abs(diff + width))
-			} else {
-				point = diff
-			}
-
-			if (typeof min !== 'number' || point < min) {
-				closest = screen
-				min = point
-			}
+		if (this.$options.infinite) {
+			return [diff, width + diff, -width + diff].reduce((prev, curr) => {
+				return Math.abs(curr) < Math.abs(prev) ? curr : prev
+			})
+		} else {
+			return diff
 		}
-
-		return closest
 	}
 
 	setScreen (screen: Screen) {
-		if (this.screens.includes(screen)) {
-			if (this.$options.infinite) {
-				let width = this.screens[this.screens.length - 1].right()
-				let offset = this.offsetRender % width
-				let off1 = (width + screen.left()) - offset
-				let off2 = screen.left() - offset
-				let off3 = (screen.left() - width) - offset
-				let final = [off1, off2, off3].reduce((prev, curr) => {
-					if (Math.abs(curr) < Math.abs(prev)) {
-						return curr
-					} else {
-						return prev
-					}
-				})
-
-				this.offset = this.offsetRender + final
-			} else {
-				this.offset = screen.left()
-			}
-
-			return this.activeScreen = screen
+		if (this.$options.infinite) {
+			this.offset = this.offsetRender + this.getClosestScreenOffset(this.offsetRender, screen)
+		} else {
+			this.offset = screen.left()
 		}
 
-		return false
+		this.activeScreen = screen
 	}
 
-	setScreenByOffset (offset: number) {
+	getScreenByOffset (offset: number) {
 		let idx = this.screens.indexOf(this.activeScreen) + offset
 
 		if (this.$options.infinite) {
@@ -213,15 +190,23 @@ export class Slider extends Component<HTMLElement, Options> {
 			}
 		}
 
-		return this.setScreen(this.screens[idx])
+		return this.screens[idx]
 	}
 
 	nextScreen () {
-		return this.setScreenByOffset(1)
+		let screen = this.getScreenByOffset(1)
+
+		if (screen) {
+			this.setScreen(screen)
+		}
 	}
 
 	prevScreen () {
-		return this.setScreenByOffset(-1)
+		let screen = this.getScreenByOffset(-1)
+
+		if (screen) {
+			this.setScreen(screen)
+		}
 	}
 
 	pointerUp () {
@@ -241,7 +226,7 @@ export class Slider extends Component<HTMLElement, Options> {
 
 		this.swipe = null
 
-		ticker.off('tick', this.update, this)
+		this.ticker.off('tick', this.update, this)
 		this.update()
 
 		this.$element.classList.remove('is-dragged')
@@ -265,20 +250,18 @@ export class Slider extends Component<HTMLElement, Options> {
 		return offset
 	}
 
-	reorderElements (rect: DOMRect) {
-		let first = this.elements[0]
-		let last = this.elements[this.elements.length - 1]
+	reorderElements () {
+		let rectRef = this.elReference.getBoundingClientRect()
+		let rectFirst = this.elements[0].element.getBoundingClientRect()
+		let rectLast = this.elements[this.elements.length - 1].element.getBoundingClientRect()
 
-		let rectFirst = first.element.getBoundingClientRect()
-		let rectLast = last.element.getBoundingClientRect()
-
-		if (rectLast.right < rect.right) {
+		if (rectLast.right < rectRef.right) {
 			let target = this.elements.shift()
 			target.element.style.order = this.orderNum.toString()
 			this.elements.push(target)
 			this.offsetLogical += target.element.offsetWidth
 			this.orderNum++
-		} else if (rectFirst.left > rect.left) {
+		} else if (rectFirst.left > rectRef.left) {
 			let target = this.elements.pop()
 			target.element.style.order = this.orderNumBack.toString()
 			this.elements.unshift(target)
