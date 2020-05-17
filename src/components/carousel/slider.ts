@@ -1,6 +1,7 @@
 import { getTag } from '../../utils/dom'
 import { Gesture, Swipe } from '../../utils/gesture'
 import { Component, ticker } from '../..'
+import { Ticker } from '../../utils'
 
 export class Item extends Component<HTMLElement> { }
 
@@ -62,11 +63,13 @@ export class Slider extends Component<HTMLElement, Options> {
 	orderNumBack: number = -1
 	offsetLogical: number
 	elements: Elem[]
+	elReference: HTMLElement
 
 	init () {
 		this.isDraggingLink = null
 		this.isDrag = null
 		this.offset = 0
+		this.offsetRender = 0
 		this.offsetLogical = 0
 
 		this.drag = new Gesture(this.$element)
@@ -89,13 +92,18 @@ export class Slider extends Component<HTMLElement, Options> {
 			}
 		})
 
-		this.order = this.$item.map(el => el.$element)
 		this.screens = this.getScreens(this.elements)
 		this.setScreen(this.screens[0])
+		this.elReference = this.$element.parentElement
 
-		this.elements.forEach(el => {
-			console.log(this.getOrderByCenter(el));
-		})
+		if (this.$options.infinite) {
+			let ticker = new Ticker()
+			ticker.on('tick', () => {
+				let rect = this.elReference.getBoundingClientRect()
+				this.reorderElements(rect)
+			})
+			ticker.start()
+		}
 	}
 
 	getScreens (elements: Elem[]) {
@@ -112,24 +120,6 @@ export class Slider extends Component<HTMLElement, Options> {
 		})
 
 		return screens
-	}
-
-	getOrderByCenter (element: Elem) {
-		let idx = this.elements.indexOf(element)
-		let idxTarget = Math.floor(this.elements.length / 2)
-		let diff = idx - idxTarget
-
-		if (diff < 0) {
-			let prepend = this.elements.slice(diff)
-			let rest = this.elements.filter(el => !prepend.includes(el))
-			return [...prepend, ...rest]
-		} else if (diff > 0) {
-			let append = this.elements.slice(0, diff)
-			let rest = this.elements.filter(el => !append.includes(el))
-			return [...rest, ...append]
-		} else {
-			return [...this.elements]
-		}
 	}
 
 	pointerDown (event) {
@@ -159,36 +149,22 @@ export class Slider extends Component<HTMLElement, Options> {
 		}
 	}
 
-	getClosestElement (offset: number): Elem {
-		let width = this.screens[this.screens.length - 1].right()
-		let closest = null
-		let min = null
-
-		offset = offset % width
-
-		for (let el of this.elements) {
-			let offsetEl = el.left
-			let diff = Math.abs(offset - offsetEl)
-			let point = Math.min(diff, Math.abs(diff - width), Math.abs(diff + width))
-
-			if (typeof min !== 'number' || point < min) {
-				closest = el
-				min = point
-			}
-		}
-
-		return closest
-	}
-
 	getClosestScreen (offset: number): Screen {
 		let width = this.screens[this.screens.length - 1].right()
 		let closest = null
 		let min = null
+		let finalOffset = offset % width
 
 		for (let screen of this.screens) {
 			let offsetScreen = screen.left()
-			let diff = Math.abs(offset - offsetScreen)
-			let point = Math.min(diff, Math.abs(diff - width), Math.abs(diff + width))
+			let diff = Math.abs(finalOffset - offsetScreen)
+			let point: number
+
+			if (this.$options.infinite) {
+				point = Math.min(diff, Math.abs(diff - width), Math.abs(diff + width))
+			} else {
+				point = diff
+			}
 
 			if (typeof min !== 'number' || point < min) {
 				closest = screen
@@ -200,8 +176,26 @@ export class Slider extends Component<HTMLElement, Options> {
 	}
 
 	setScreen (screen: Screen) {
-		if (this.screens.includes(screen) && this.activeScreen !== screen) {
-			this.offset = screen.left()
+		if (this.screens.includes(screen)) {
+			if (this.$options.infinite) {
+				let width = this.screens[this.screens.length - 1].right()
+				let offset = this.offsetRender % width
+				let off1 = (width + screen.left()) - offset
+				let off2 = screen.left() - offset
+				let off3 = (screen.left() - width) - offset
+				let final = [off1, off2, off3].reduce((prev, curr) => {
+					if (Math.abs(curr) < Math.abs(prev)) {
+						return curr
+					} else {
+						return prev
+					}
+				})
+
+				this.offset = this.offsetRender + final
+			} else {
+				this.offset = screen.left()
+			}
+
 			return this.activeScreen = screen
 		}
 
@@ -211,10 +205,12 @@ export class Slider extends Component<HTMLElement, Options> {
 	setScreenByOffset (offset: number) {
 		let idx = this.screens.indexOf(this.activeScreen) + offset
 
-		if (idx >= this.screens.length) {
-			idx = 0
-		} else if (idx < 0) {
-			idx = this.screens.length - 1
+		if (this.$options.infinite) {
+			if (idx >= this.screens.length) {
+				idx = 0
+			} else if (idx < 0) {
+				idx = this.screens.length - 1
+			}
 		}
 
 		return this.setScreen(this.screens[idx])
@@ -233,9 +229,9 @@ export class Slider extends Component<HTMLElement, Options> {
 		let direction = Math.sign(Math.cos(diff.direction))
 		let closestScreen = this.getClosestScreen(this.offsetRender)
 
-		if (closestScreen !== this.activeScreen) {
-			this.setScreen(closestScreen)
-		} else if (this.swipe.speed > this.$options.screenChangeSpeed) {
+		this.setScreen(closestScreen)
+
+		if (this.swipe.speed > this.$options.screenChangeSpeed) {
 			if (direction === 1) {
 				this.prevScreen()
 			} else {
@@ -269,40 +265,28 @@ export class Slider extends Component<HTMLElement, Options> {
 		return offset
 	}
 
-	reorderElements (offset: number) {
-		let first = this.order[0]
-		let last = this.order[this.order.length - 1]
-		let renderOffset = offset - this.offsetLogical
+	reorderElements (rect: DOMRect) {
+		let first = this.elements[0]
+		let last = this.elements[this.elements.length - 1]
 
-		if (last.offsetLeft + last.offsetWidth < renderOffset + this.$element.offsetWidth) {
-			let target = this.order.shift()
-			target.style.order = this.orderNum.toString()
-			this.order.push(target)
-			this.offsetLogical += target.offsetWidth
+		let rectFirst = first.element.getBoundingClientRect()
+		let rectLast = last.element.getBoundingClientRect()
+
+		if (rectLast.right < rect.right) {
+			let target = this.elements.shift()
+			target.element.style.order = this.orderNum.toString()
+			this.elements.push(target)
+			this.offsetLogical += target.element.offsetWidth
 			this.orderNum++
-		} else if (first.offsetLeft > renderOffset) {
-			let target = this.order.pop()
-			target.style.order = this.orderNumBack.toString()
-			this.order.unshift(target)
-			this.offsetLogical -= target.offsetWidth
+		} else if (rectFirst.left > rect.left) {
+			let target = this.elements.pop()
+			target.element.style.order = this.orderNumBack.toString()
+			this.elements.unshift(target)
+			this.offsetLogical -= target.element.offsetWidth
 			this.orderNumBack--
 		}
-	}
 
-	arrangeElements (offset: number) {
-		let closest = this.getClosestElement(offset)
-		let order = this.getOrderByCenter(closest)
-
-		order.forEach((el, i) => {
-			el.element.style.order = i.toString()
-		})
-
-		this.offsetLogical = 0
-		if (order[0].element === this.$item[0].$element) this.offsetLogical = 0
-		if (order[1].element === this.$item[0].$element) this.offsetLogical = 200
-		if (order[2].element === this.$item[0].$element) this.offsetLogical = 400
-		if (order[3].element === this.$item[0].$element) this.offsetLogical = -400
-		if (order[4].element === this.$item[0].$element) this.offsetLogical = -200
+		this.$element.style.left = `${this.offsetLogical}px`
 	}
 
 	update () {
@@ -312,19 +296,15 @@ export class Slider extends Component<HTMLElement, Options> {
 			renderOffset -= this.swipe.offset().x
 		}
 
-		// renderOffset = this.constrainOffset(renderOffset)
-
-		this.arrangeElements(renderOffset)
-
-		// this.reorderElements(renderOffset)
-		// renderOffset -= this.offsetLogical
+		if (!this.$options.infinite) {
+			renderOffset = this.constrainOffset(renderOffset)
+		}
 
 		this.render(renderOffset)
 	}
 
 	render (offset: number) {
 		this.$element.style.transform = `translateX(${-offset}px)`
-		this.$element.style.marginLeft = `${-this.offsetLogical}px`
 		this.offsetRender = offset
 	}
 }
