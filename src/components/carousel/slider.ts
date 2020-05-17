@@ -92,6 +92,10 @@ export class Slider extends Component<HTMLElement, Options> {
 		this.order = this.$item.map(el => el.$element)
 		this.screens = this.getScreens(this.elements)
 		this.setScreen(this.screens[0])
+
+		this.elements.forEach(el => {
+			console.log(this.getOrderByCenter(el));
+		})
 	}
 
 	getScreens (elements: Elem[]) {
@@ -108,6 +112,24 @@ export class Slider extends Component<HTMLElement, Options> {
 		})
 
 		return screens
+	}
+
+	getOrderByCenter (element: Elem) {
+		let idx = this.elements.indexOf(element)
+		let idxTarget = Math.floor(this.elements.length / 2)
+		let diff = idx - idxTarget
+
+		if (diff < 0) {
+			let prepend = this.elements.slice(diff)
+			let rest = this.elements.filter(el => !prepend.includes(el))
+			return [...prepend, ...rest]
+		} else if (diff > 0) {
+			let append = this.elements.slice(0, diff)
+			let rest = this.elements.filter(el => !append.includes(el))
+			return [...rest, ...append]
+		} else {
+			return [...this.elements]
+		}
 	}
 
 	pointerDown (event) {
@@ -137,6 +159,27 @@ export class Slider extends Component<HTMLElement, Options> {
 		}
 	}
 
+	getClosestElement (offset: number): Elem {
+		let width = this.screens[this.screens.length - 1].right()
+		let closest = null
+		let min = null
+
+		offset = offset % width
+
+		for (let el of this.elements) {
+			let offsetEl = el.left
+			let diff = Math.abs(offset - offsetEl)
+			let point = Math.min(diff, Math.abs(diff - width), Math.abs(diff + width))
+
+			if (typeof min !== 'number' || point < min) {
+				closest = el
+				min = point
+			}
+		}
+
+		return closest
+	}
+
 	getClosestScreen (offset: number): Screen {
 		let width = this.screens[this.screens.length - 1].right()
 		let closest = null
@@ -146,8 +189,6 @@ export class Slider extends Component<HTMLElement, Options> {
 			let offsetScreen = screen.left()
 			let diff = Math.abs(offset - offsetScreen)
 			let point = Math.min(diff, Math.abs(diff - width), Math.abs(diff + width))
-
-			console.log(offset, offsetScreen, diff, point);
 
 			if (typeof min !== 'number' || point < min) {
 				closest = screen
@@ -248,6 +289,22 @@ export class Slider extends Component<HTMLElement, Options> {
 		}
 	}
 
+	arrangeElements (offset: number) {
+		let closest = this.getClosestElement(offset)
+		let order = this.getOrderByCenter(closest)
+
+		order.forEach((el, i) => {
+			el.element.style.order = i.toString()
+		})
+
+		this.offsetLogical = 0
+		if (order[0].element === this.$item[0].$element) this.offsetLogical = 0
+		if (order[1].element === this.$item[0].$element) this.offsetLogical = 200
+		if (order[2].element === this.$item[0].$element) this.offsetLogical = 400
+		if (order[3].element === this.$item[0].$element) this.offsetLogical = -400
+		if (order[4].element === this.$item[0].$element) this.offsetLogical = -200
+	}
+
 	update () {
 		let renderOffset = this.offset
 
@@ -255,7 +312,9 @@ export class Slider extends Component<HTMLElement, Options> {
 			renderOffset -= this.swipe.offset().x
 		}
 
-		renderOffset = this.constrainOffset(renderOffset)
+		// renderOffset = this.constrainOffset(renderOffset)
+
+		this.arrangeElements(renderOffset)
 
 		// this.reorderElements(renderOffset)
 		// renderOffset -= this.offsetLogical
@@ -265,6 +324,7 @@ export class Slider extends Component<HTMLElement, Options> {
 
 	render (offset: number) {
 		this.$element.style.transform = `translateX(${-offset}px)`
+		this.$element.style.marginLeft = `${-this.offsetLogical}px`
 		this.offsetRender = offset
 	}
 }
