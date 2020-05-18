@@ -15,6 +15,7 @@ interface Options {
 interface Screen {
 	left: number
 	right: number
+	offset: number
 }
 
 export class Slider extends Component<HTMLElement, Options> {
@@ -96,7 +97,8 @@ export class Slider extends Component<HTMLElement, Options> {
 
 			return {
 				left: first.$element.offsetLeft,
-				right: last.$element.offsetLeft + last.$element.offsetWidth
+				right: last.$element.offsetLeft + last.$element.offsetWidth,
+				offset: 0.5
 			}
 		})
 	}
@@ -138,7 +140,7 @@ export class Slider extends Component<HTMLElement, Options> {
 
 	getClosestScreenOffset (offset: number, screen: Screen, direction?: number) {
 		let width = this.screens[this.screens.length - 1].right
-		let diff = (screen.left - offset) % width
+		let diff = (this.getScreenAnchor(screen) - offset) % width
 
 		if (this.$options.infinite) {
 			let points = [diff, diff + width, diff - width]
@@ -155,11 +157,17 @@ export class Slider extends Component<HTMLElement, Options> {
 		}
 	}
 
+	getScreenAnchor (screen: Screen) {
+		let width = screen.right - screen.left
+		let space = this.$element.offsetWidth - width
+		return screen.left - space * screen.offset
+	}
+
 	setScreen (screen: Screen, direction?: number) {
 		if (this.$options.infinite) {
 			this.offset = this.offsetRender + this.getClosestScreenOffset(this.offsetRender, screen, direction)
 		} else {
-			this.offset = screen.left
+			this.offset = this.getScreenAnchor(screen)
 		}
 
 		this.activeScreen = screen
@@ -224,8 +232,8 @@ export class Slider extends Component<HTMLElement, Options> {
 	}
 
 	constrainOffset (offset: number) {
-		let left = this.screens[0].left
-		let right = this.screens[this.screens.length - 1].left
+		let left = this.getScreenAnchor(this.screens[0])
+		let right = this.getScreenAnchor(this.screens[this.screens.length - 1])
 
 		if (offset < left) {
 			return left - this.overdrag(left - offset)
