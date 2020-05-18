@@ -138,12 +138,18 @@ export class Slider extends Component<HTMLElement, Options> {
 		})
 	}
 
-	getClosestScreenOffset (offset: number, screen: Screen) {
+	getClosestScreenOffset (offset: number, screen: Screen, direction?: number) {
 		let width = this.screens[this.screens.length - 1].right
-		let diff = screen.left - (offset % width)
+		let diff = (screen.left - offset) % width
 
 		if (this.$options.infinite) {
-			return [diff, width + diff, -width + diff].reduce((prev, curr) => {
+			let points = [diff, diff + width, diff - width]
+
+			if (typeof direction === 'number') {
+				points = points.filter(n => Math.sign(n) === direction)
+			}
+
+			return points.reduce((prev, curr) => {
 				return Math.abs(curr) < Math.abs(prev) ? curr : prev
 			})
 		} else {
@@ -151,9 +157,9 @@ export class Slider extends Component<HTMLElement, Options> {
 		}
 	}
 
-	setScreen (screen: Screen) {
+	setScreen (screen: Screen, direction?: number) {
 		if (this.$options.infinite) {
-			this.offset = this.offsetRender + this.getClosestScreenOffset(this.offsetRender, screen)
+			this.offset = this.offsetRender + this.getClosestScreenOffset(this.offsetRender, screen, direction)
 		} else {
 			this.offset = screen.left
 		}
@@ -179,7 +185,7 @@ export class Slider extends Component<HTMLElement, Options> {
 		let screen = this.getScreenByOffset(1)
 
 		if (screen) {
-			this.setScreen(screen)
+			this.setScreen(screen, 1)
 		}
 	}
 
@@ -187,7 +193,7 @@ export class Slider extends Component<HTMLElement, Options> {
 		let screen = this.getScreenByOffset(-1)
 
 		if (screen) {
-			this.setScreen(screen)
+			this.setScreen(screen, -1)
 		}
 	}
 
