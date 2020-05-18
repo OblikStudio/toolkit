@@ -41,9 +41,8 @@ export class Slider extends Component<HTMLElement, Options> {
 	offsetRender: number
 	offsetLogical: number
 	order: Item[]
-	orderNum: number = 1
-	orderNumBack: number = -1
-	elReference: HTMLElement
+	orderIndex: number = 1
+	orderContainer: HTMLElement
 	ticker: Ticker
 
 	init () {
@@ -72,9 +71,8 @@ export class Slider extends Component<HTMLElement, Options> {
 		this.ticker.start()
 
 		if (this.$options.infinite) {
-			this.elReference = this.$element.parentElement
 			this.order = [...this.$item]
-
+			this.orderContainer = this.$element.parentElement
 			this.ticker.on('tick', this.reorderElements, this)
 		}
 	}
@@ -239,25 +237,27 @@ export class Slider extends Component<HTMLElement, Options> {
 	}
 
 	reorderElements () {
-		let rectRef = this.elReference.getBoundingClientRect()
+		let rectContainer = this.orderContainer.getBoundingClientRect()
 		let rectFirst = this.order[0].$element.getBoundingClientRect()
 		let rectLast = this.order[this.order.length - 1].$element.getBoundingClientRect()
+		let target: Item
 
-		if (rectLast.right < rectRef.right && rectFirst.right <= rectRef.left) {
-			let target = this.order.shift()
-			target.$element.style.order = this.orderNum.toString()
-			this.order.push(target)
+		if (rectLast.right < rectContainer.right && rectFirst.right <= rectContainer.left) {
+			target = this.order.shift()
+			target.$element.style.order = this.orderIndex.toString()
 			this.offsetLogical += rectFirst.width
-			this.orderNum++
-		} else if (rectFirst.left > rectRef.left && rectLast.left >= rectRef.right) {
-			let target = this.order.pop()
-			target.$element.style.order = this.orderNumBack.toString()
-			this.order.unshift(target)
+			this.order.push(target)
+		} else if (rectFirst.left > rectContainer.left && rectLast.left >= rectContainer.right) {
+			target = this.order.pop()
+			target.$element.style.order = (-this.orderIndex).toString()
 			this.offsetLogical -= rectLast.width
-			this.orderNumBack--
+			this.order.unshift(target)
 		}
 
-		this.$element.style.left = `${this.offsetLogical}px`
+		if (target) {
+			this.$element.style.left = `${this.offsetLogical}px`
+			this.orderIndex++
+		}
 	}
 
 	update () {
