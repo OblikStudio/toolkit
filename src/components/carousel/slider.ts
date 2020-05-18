@@ -93,9 +93,12 @@ export class Slider extends Component<HTMLElement, Options> {
 		})
 
 		return groups.map(el => {
+			let first = el[0]
+			let last = el[el.length - 1]
+
 			return {
-				left: el[0].$element.offsetLeft,
-				right: el[0].$element.offsetLeft + el[0].$element.offsetWidth
+				left: first.$element.offsetLeft,
+				right: last.$element.offsetLeft + last.$element.offsetWidth
 			}
 		})
 	}
