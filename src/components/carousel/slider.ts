@@ -10,6 +10,7 @@ interface Options {
 	screenChangeSpeed: number
 	overdrag: number
 	infinite: boolean
+	itemsPerScreen?: number
 }
 
 interface Screen {
@@ -45,6 +46,7 @@ export class Slider extends Component<HTMLElement, Options> {
 	orderIndex: number = 1
 	orderContainer: HTMLElement
 	ticker: Ticker
+	itemsPerScreen: number
 
 	init () {
 		this.isDraggingLink = null
@@ -65,6 +67,12 @@ export class Slider extends Component<HTMLElement, Options> {
 			}
 		})
 
+		if (typeof this.$options.itemsPerScreen === 'number') {
+			this.itemsPerScreen = this.$options.itemsPerScreen
+		} else {
+			this.itemsPerScreen = Math.floor(this.$element.offsetWidth / this.$item[0].$element.offsetWidth)
+		}
+
 		this.screens = this.getScreens()
 		this.setScreen(this.screens[0])
 
@@ -83,7 +91,7 @@ export class Slider extends Component<HTMLElement, Options> {
 		let current: Item[] = null
 
 		this.$item.forEach(el => {
-			if (!current || current.length >= 2) {
+			if (!current || current.length >= this.itemsPerScreen) {
 				current = []
 				groups.push(current)
 			}
