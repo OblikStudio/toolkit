@@ -12,28 +12,9 @@ interface Options {
 	infinite: boolean
 }
 
-interface Elem {
+interface Screen {
 	left: number
 	right: number
-	element: HTMLElement
-}
-
-class Screen {
-	elements: Elem[]
-	offset: number
-
-	constructor () {
-		this.elements = []
-		this.offset = 0
-	}
-
-	left () {
-		return this.elements[0].left
-	}
-
-	right () {
-		return this.elements[this.elements.length - 1].right
-	}
 }
 
 export class Slider extends Component<HTMLElement, Options> {
@@ -59,10 +40,9 @@ export class Slider extends Component<HTMLElement, Options> {
 	offset: number
 	offsetRender: number
 	offsetLogical: number
-	order: HTMLElement[]
+	order: Item[]
 	orderNum: number = 1
 	orderNumBack: number = -1
-	elements: Elem[]
 	elReference: HTMLElement
 	ticker: Ticker
 
@@ -85,15 +65,7 @@ export class Slider extends Component<HTMLElement, Options> {
 			}
 		})
 
-		this.elements = this.$item.map(cmp => {
-			return {
-				left: cmp.$element.offsetLeft,
-				right: cmp.$element.offsetLeft + cmp.$element.offsetWidth,
-				element: cmp.$element
-			}
-		})
-
-		this.screens = this.getScreens(this.elements)
+		this.screens = this.getScreens()
 		this.setScreen(this.screens[0])
 
 		this.ticker = new Ticker()
@@ -101,24 +73,31 @@ export class Slider extends Component<HTMLElement, Options> {
 
 		if (this.$options.infinite) {
 			this.elReference = this.$element.parentElement
+			this.order = [...this.$item]
+
 			this.ticker.on('tick', this.reorderElements, this)
 		}
 	}
 
-	getScreens (elements: Elem[]) {
-		let screens: Screen[] = []
-		let current: Screen = null
+	getScreens (): Screen[] {
+		let groups: Item[][] = []
+		let current: Item[] = null
 
-		elements.forEach(el => {
-			if (!current || current.elements.length >= 2) {
-				current = new Screen()
-				screens.push(current)
+		this.$item.forEach(el => {
+			if (!current || current.length >= 2) {
+				current = []
+				groups.push(current)
 			}
 
-			current.elements.push(el)
+			current.push(el)
 		})
 
-		return screens
+		return groups.map(el => {
+			return {
+				left: el[0].$element.offsetLeft,
+				right: el[0].$element.offsetLeft + el[0].$element.offsetWidth
+			}
+		})
 	}
 
 	pointerDown (event) {
@@ -157,8 +136,8 @@ export class Slider extends Component<HTMLElement, Options> {
 	}
 
 	getClosestScreenOffset (offset: number, screen: Screen) {
-		let width = this.screens[this.screens.length - 1].right()
-		let diff = screen.left() - (offset % width)
+		let width = this.screens[this.screens.length - 1].right
+		let diff = screen.left - (offset % width)
 
 		if (this.$options.infinite) {
 			return [diff, width + diff, -width + diff].reduce((prev, curr) => {
@@ -173,7 +152,7 @@ export class Slider extends Component<HTMLElement, Options> {
 		if (this.$options.infinite) {
 			this.offset = this.offsetRender + this.getClosestScreenOffset(this.offsetRender, screen)
 		} else {
-			this.offset = screen.left()
+			this.offset = screen.left
 		}
 
 		this.activeScreen = screen
@@ -238,8 +217,8 @@ export class Slider extends Component<HTMLElement, Options> {
 	}
 
 	constrainOffset (offset: number) {
-		let left = this.screens[0].left()
-		let right = this.screens[this.screens.length - 1].left()
+		let left = this.screens[0].left
+		let right = this.screens[this.screens.length - 1].left
 
 		if (offset < left) {
 			return left - this.overdrag(left - offset)
@@ -252,20 +231,20 @@ export class Slider extends Component<HTMLElement, Options> {
 
 	reorderElements () {
 		let rectRef = this.elReference.getBoundingClientRect()
-		let rectFirst = this.elements[0].element.getBoundingClientRect()
-		let rectLast = this.elements[this.elements.length - 1].element.getBoundingClientRect()
+		let rectFirst = this.order[0].$element.getBoundingClientRect()
+		let rectLast = this.order[this.order.length - 1].$element.getBoundingClientRect()
 
 		if (rectLast.right < rectRef.right) {
-			let target = this.elements.shift()
-			target.element.style.order = this.orderNum.toString()
-			this.elements.push(target)
-			this.offsetLogical += target.element.offsetWidth
+			let target = this.order.shift()
+			target.$element.style.order = this.orderNum.toString()
+			this.order.push(target)
+			this.offsetLogical += target.$element.offsetWidth
 			this.orderNum++
 		} else if (rectFirst.left > rectRef.left) {
-			let target = this.elements.pop()
-			target.element.style.order = this.orderNumBack.toString()
-			this.elements.unshift(target)
-			this.offsetLogical -= target.element.offsetWidth
+			let target = this.order.pop()
+			target.$element.style.order = this.orderNumBack.toString()
+			this.order.unshift(target)
+			this.offsetLogical -= target.$element.offsetWidth
 			this.orderNumBack--
 		}
 
