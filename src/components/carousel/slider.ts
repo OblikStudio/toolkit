@@ -243,17 +243,17 @@ export class Slider extends Component<HTMLElement, Options> {
 		let rectFirst = this.order[0].$element.getBoundingClientRect()
 		let rectLast = this.order[this.order.length - 1].$element.getBoundingClientRect()
 
-		if (rectLast.right < rectRef.right) {
+		if (rectLast.right < rectRef.right && rectFirst.right <= rectRef.left) {
 			let target = this.order.shift()
 			target.$element.style.order = this.orderNum.toString()
 			this.order.push(target)
-			this.offsetLogical += target.$element.offsetWidth
+			this.offsetLogical += rectFirst.width
 			this.orderNum++
-		} else if (rectFirst.left > rectRef.left) {
+		} else if (rectFirst.left > rectRef.left && rectLast.left >= rectRef.right) {
 			let target = this.order.pop()
 			target.$element.style.order = this.orderNumBack.toString()
 			this.order.unshift(target)
-			this.offsetLogical -= target.$element.offsetWidth
+			this.offsetLogical -= rectLast.width
 			this.orderNumBack--
 		}
 
