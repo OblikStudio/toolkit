@@ -29,7 +29,7 @@
 		}
 
 		[ob-carousel] {
-			width: 400px;
+			width: 30%;
 			margin: 200px auto;
 			outline: 8px solid red;
 		}
@@ -38,7 +38,6 @@
 			display: flex;
 			flex-flow: row nowrap;
 			position: relative;
-			width: 100%;
 			outline: 4px solid blue;
 		}
 
@@ -54,14 +53,22 @@
 		}
 
 		[ob-carousel-slider-item] {
+			display: flex;
+			align-items: center;
+			justify-content: center;
 			width: 50%;
 			height: 200px;
-			padding: 0 20px;
 			box-sizing: border-box;
 			flex-shrink: 0;
-			font-size: 128px;
+			font-size: 64px;
 			outline: 1px solid green;
 			user-select: none;
+		}
+
+		@media (max-width: 900px) {
+			[ob-carousel-slider-item] {
+				width: 33.33%;
+			}
 		}
 	</style>
 </head>
