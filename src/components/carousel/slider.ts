@@ -3,11 +3,26 @@ import { Gesture, Swipe } from '../../utils/gesture'
 import { Ticker } from '../../utils'
 import { Component } from '../..'
 
-export class Item extends Component<HTMLElement> {
-	reorders: number
+interface Location {
+	left: number
+	right: number
+}
 
-	init () {
-		this.reorders = 0
+export class Item extends Component<HTMLElement> {
+	location: Location = null
+	marginLeft: number = 0
+	marginRight: number = 0
+	width: number = 0
+
+	update () {
+		let style = window.getComputedStyle(this.$element)
+		this.marginLeft = parseFloat(style.marginLeft)
+		this.marginRight = parseFloat(style.marginRight)
+		this.width = parseFloat(style.width)
+	}
+
+	space () {
+		return this.marginLeft + this.width + this.marginRight
 	}
 }
 
@@ -52,12 +67,15 @@ export class Slider extends Component<HTMLElement, Options> {
 	orderContainer: HTMLElement
 	ticker: Ticker
 	itemsPerScreen: number
+	offsetLogical: number
+	width: number
 
 	init () {
 		this.isDraggingLink = null
 		this.isDrag = null
 		this.offset = 0
 		this.offsetRender = 0
+		this.offsetLogical = 0
 
 		this.drag = new Gesture(this.$element)
 		this.drag.on('start', this.pointerDown.bind(this))
@@ -71,15 +89,6 @@ export class Slider extends Component<HTMLElement, Options> {
 			}
 		})
 
-		if (typeof this.$options.itemsPerScreen === 'number') {
-			this.itemsPerScreen = this.$options.itemsPerScreen
-		} else {
-			this.itemsPerScreen = Math.floor(this.$element.offsetWidth / this.$item[0].$element.offsetWidth)
-		}
-
-		this.screens = this.getScreens()
-		this.setScreen(this.screens[0])
-
 		this.ticker = new Ticker()
 		this.ticker.start()
 
@@ -89,15 +98,22 @@ export class Slider extends Component<HTMLElement, Options> {
 			this.ticker.on('tick', this.reorderElements, this)
 		}
 
+		this.updateDimensions()
+		this.updateItemsPerScreen()
+		this.screens = this.getScreens()
+		this.setScreen(this.screens[0])
+
+		this.update()
+
+		if (this.$options.infinite) {
+			this.updateOffsetLogical()
+		}
+
 		window.addEventListener('resize', () => {
 			let idx = this.screens.indexOf(this.activeScreen)
 
-			if (typeof this.$options.itemsPerScreen === 'number') {
-				this.itemsPerScreen = this.$options.itemsPerScreen
-			} else {
-				this.itemsPerScreen = Math.floor((this.$element.offsetWidth + 1) / this.$item[0].$element.offsetWidth)
-			}
-
+			this.updateDimensions()
+			this.updateItemsPerScreen()
 			this.screens = this.getScreens()
 
 			if (this.screens[idx]) {
@@ -107,9 +123,33 @@ export class Slider extends Component<HTMLElement, Options> {
 			this.update()
 
 			if (this.$options.infinite) {
-				this.$element.style.left = `${this.getLogicalOffset()}px`
+				this.updateOffsetLogical()
 			}
 		})
+	}
+
+	updateDimensions () {
+		let width = 0
+
+		for (let item of this.$item) {
+			item.update()
+			item.location = {
+				left: width + item.marginLeft,
+				right: width + item.marginLeft + item.width
+			}
+
+			width += item.space()
+		}
+
+		this.width = width
+	}
+
+	updateItemsPerScreen () {
+		if (typeof this.$options.itemsPerScreen === 'number') {
+			this.itemsPerScreen = this.$options.itemsPerScreen
+		} else {
+			this.itemsPerScreen = Math.round(this.$element.offsetWidth / this.$item[0].width)
+		}
 	}
 
 	getScreens (): Screen[] {
@@ -125,26 +165,10 @@ export class Slider extends Component<HTMLElement, Options> {
 			current.push(el)
 		})
 
-		let offset = this.$item[0].$element.offsetLeft
-		let width = this.$element.scrollWidth
-
 		return groups.map(el => {
-			let first = el[0]
-			let last = el[el.length - 1]
-			let left = first.$element.offsetLeft - offset
-			let right = last.$element.offsetLeft + last.$element.offsetWidth - offset
-
-			if (left < 0) {
-				left = width + left
-			}
-
-			if (right < 0 || right < left) {
-				right = width + right
-			}
-
 			return {
-				left,
-				right,
+				left: el[0].location.left,
+				right: el[el.length - 1].location.right,
 				offset: 0.5
 			}
 		})
@@ -186,11 +210,10 @@ export class Slider extends Component<HTMLElement, Options> {
 	}
 
 	getClosestScreenOffset (offset: number, screen: Screen, direction?: number) {
-		let width = this.screens[this.screens.length - 1].right
-		let diff = (this.getScreenAnchor(screen) - offset) % width
+		let diff = (this.getScreenAnchor(screen) - offset) % this.width
 
 		if (this.$options.infinite) {
-			let points = [diff, diff + width, diff - width]
+			let points = [diff, diff + this.width, diff - this.width]
 
 			if (typeof direction === 'number') {
 				points = points.filter(n => Math.sign(n) === direction)
@@ -300,25 +323,36 @@ export class Slider extends Component<HTMLElement, Options> {
 		if (rectLast.right < rectContainer.right && rectFirst.right <= rectContainer.left) {
 			target = this.order.shift()
 			target.$element.style.order = this.orderIndex.toString()
-			target.reorders++
+			this.offsetLogical += target.space()
 			this.order.push(target)
 		} else if (rectFirst.left > rectContainer.left && rectLast.left >= rectContainer.right) {
 			target = this.order.pop()
 			target.$element.style.order = (-this.orderIndex).toString()
-			target.reorders--
+			this.offsetLogical -= target.space()
 			this.order.unshift(target)
 		}
 
 		if (target) {
-			this.$element.style.left = `${this.getLogicalOffset()}px`
+			this.updateOffsetLogical()
 			this.orderIndex++
 		}
 	}
 
-	getLogicalOffset () {
-		return this.$item.reduce((val, item) => {
-			return val + item.reorders * item.$element.offsetWidth
-		}, 0)
+	updateOffsetLogical () {
+		this.offsetLogical += this.getOffsetLogicalDifference(this.offsetLogical)
+		this.$element.style.left = `${this.offsetLogical}px`
+	}
+
+	getOffsetLogicalDifference (offset: number) {
+		let item = this.order[0]
+		let itemOffset = item.location.left - item.marginLeft
+
+		let diff = (itemOffset - offset) % this.width
+		let points = [diff, diff + this.width, diff - this.width]
+
+		return points.reduce((prev, curr) => {
+			return Math.abs(curr) < Math.abs(prev) ? curr : prev
+		})
 	}
 
 	update () {
