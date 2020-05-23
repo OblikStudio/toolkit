@@ -34,10 +34,31 @@ interface Options {
 	itemsPerScreen?: number
 }
 
-interface Screen {
-	left: number
-	right: number
+class Screen {
+	items: Item[]
 	offset: number
+
+	constructor (items: Item[]) {
+		this.items = items
+		this.offset = 0.5
+	}
+
+	left () {
+		return this.items[0].location.left
+	}
+
+	right () {
+		return this.items[this.items.length - 1].location.right
+	}
+
+	width () {
+		return this.right() - this.left()
+	}
+
+	anchor (space: number) {
+		let remainder = space - this.width()
+		return this.left() - remainder * this.offset
+	}
 }
 
 export class Slider extends Component<HTMLElement, Options> {
@@ -165,13 +186,7 @@ export class Slider extends Component<HTMLElement, Options> {
 			current.push(el)
 		})
 
-		return groups.map(el => {
-			return {
-				left: el[0].location.left,
-				right: el[el.length - 1].location.right,
-				offset: 0.5
-			}
-		})
+		return groups.map(items => new Screen(items))
 	}
 
 	pointerDown (event) {
@@ -228,9 +243,7 @@ export class Slider extends Component<HTMLElement, Options> {
 	}
 
 	getScreenAnchor (screen: Screen) {
-		let width = screen.right - screen.left
-		let space = this.$element.offsetWidth - width
-		return screen.left - space * screen.offset
+		return screen.anchor(this.$element.offsetWidth)
 	}
 
 	setScreen (screen: Screen, direction?: number) {
