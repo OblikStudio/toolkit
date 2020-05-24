@@ -218,28 +218,10 @@ export class Slider extends Component<HTMLElement, Options> {
 
 	getClosestScreen (offset: number) {
 		return this.screens.reduce((prev, curr) => {
-			let offsetPrev = this.getClosestScreenOffset(offset, prev)
-			let offsetCurr = this.getClosestScreenOffset(offset, curr)
+			let offsetPrev = this.getSmallestDelta(offset, this.getScreenAnchor(prev))
+			let offsetCurr = this.getSmallestDelta(offset, this.getScreenAnchor(curr))
 			return Math.abs(offsetCurr) < Math.abs(offsetPrev) ? curr : prev
 		})
-	}
-
-	getClosestScreenOffset (offset: number, screen: Screen, direction?: number) {
-		let diff = (this.getScreenAnchor(screen) - offset) % this.width
-
-		if (this.$options.infinite) {
-			let points = [diff, diff + this.width, diff - this.width]
-
-			if (typeof direction === 'number') {
-				points = points.filter(n => Math.sign(n) === direction)
-			}
-
-			return points.reduce((prev, curr) => {
-				return Math.abs(curr) < Math.abs(prev) ? curr : prev
-			})
-		} else {
-			return diff
-		}
 	}
 
 	getScreenAnchor (screen: Screen) {
@@ -248,7 +230,7 @@ export class Slider extends Component<HTMLElement, Options> {
 
 	setScreen (screen: Screen, direction?: number) {
 		if (this.$options.infinite) {
-			this.offset = this.offsetRender + this.getClosestScreenOffset(this.offsetRender, screen, direction)
+			this.offset = this.offsetRender + this.getSmallestDelta(this.offsetRender, this.getScreenAnchor(screen), direction)
 		} else {
 			this.offset = this.getScreenAnchor(screen)
 		}
@@ -352,20 +334,29 @@ export class Slider extends Component<HTMLElement, Options> {
 	}
 
 	updateOffsetLogical () {
-		this.offsetLogical += this.getOffsetLogicalDifference(this.offsetLogical)
-		this.$element.style.left = `${this.offsetLogical}px`
-	}
-
-	getOffsetLogicalDifference (offset: number) {
 		let item = this.order[0]
 		let itemOffset = item.location.left - item.marginLeft
 
-		let diff = (itemOffset - offset) % this.width
-		let points = [diff, diff + this.width, diff - this.width]
+		this.offsetLogical += this.getSmallestDelta(this.offsetLogical, itemOffset)
+		this.$element.style.left = `${this.offsetLogical}px`
+	}
 
-		return points.reduce((prev, curr) => {
-			return Math.abs(curr) < Math.abs(prev) ? curr : prev
-		})
+	getSmallestDelta (offset: number, point: number, direction?: number) {
+		let diff = (point - offset) % this.width
+
+		if (this.$options.infinite) {
+			let points = [diff, diff + this.width, diff - this.width]
+
+			if (typeof direction === 'number') {
+				points = points.filter(n => Math.sign(n) === direction)
+			}
+
+			return points.reduce((prev, curr) => {
+				return Math.abs(curr) < Math.abs(prev) ? curr : prev
+			})
+		} else {
+			return diff
+		}
 	}
 
 	update () {
