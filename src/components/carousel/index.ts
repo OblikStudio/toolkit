@@ -1,5 +1,5 @@
 import { Component } from '../..'
-import { Slider } from './slider'
+import { Rail } from './rail'
 
 export class Next extends Component {
 	$parent: Carousel
@@ -7,29 +7,29 @@ export class Next extends Component {
 	init () {
 		this.$element.addEventListener('click', () => {
 			this.action()
-			this.$parent.$slider.update()
+			this.$parent.$rail.update()
 		})
 	}
 
 	action () {
-		this.$parent.$slider.nextScreen()
+		this.$parent.$rail.nextScreen()
 	}
 }
 
 export class Prev extends Next {
 	action () {
-		this.$parent.$slider.prevScreen()
+		this.$parent.$rail.prevScreen()
 	}
 }
 
 export class Carousel extends Component<Element> {
 	static components = {
-		slider: Slider,
+		rail: Rail,
 		next: Next,
 		prev: Prev
 	}
 
-	$slider: Slider
+	$rail: Rail
 }
 
 export default Carousel

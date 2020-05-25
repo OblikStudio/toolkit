@@ -34,25 +34,18 @@
 			outline: 8px solid red;
 		}
 
-		[ob-carousel-slider] {
+		[ob-carousel-rail] {
 			display: flex;
 			flex-flow: row nowrap;
 			position: relative;
 			outline: 4px solid blue;
 		}
 
-		[ob-carousel-slider]:not(.is-dragged) {
+		[ob-carousel-rail]:not(.is-dragged) {
 			transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 		}
 
-		[ob-carousel-slider-rail] {
-			display: flex;
-			flex-flow: row nowrap;
-			position: relative;
-			outline: 2px solid red;
-		}
-
-		[ob-carousel-slider-item] {
+		[ob-carousel-rail-item] {
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -69,7 +62,7 @@
 		}
 
 		@media (max-width: 900px) {
-			[ob-carousel-slider-item] {
+			[ob-carousel-rail-item] {
 				width: 33.33%;
 			}
 		}
@@ -83,12 +76,12 @@
 		<p>Test</p>
 
 		<div ob-carousel>
-			<div ob-carousel-slider="infinite: true">
-				<div ob-carousel-slider-item style="background: #ddd">1</div>
-				<div ob-carousel-slider-item style="background: #aaa">2</div>
-				<div ob-carousel-slider-item style="background: #ddd">3</div>
-				<div ob-carousel-slider-item style="background: #aaa">4</div>
-				<div ob-carousel-slider-item style="background: #ddd">5</div>
+			<div ob-carousel-rail="infinite: true">
+				<div ob-carousel-rail-item style="background: #ddd">1</div>
+				<div ob-carousel-rail-item style="background: #aaa">2</div>
+				<div ob-carousel-rail-item style="background: #ddd">3</div>
+				<div ob-carousel-rail-item style="background: #aaa">4</div>
+				<div ob-carousel-rail-item style="background: #ddd">5</div>
 			</div>
 
 			<button ob-carousel-prev>Prev</button>
