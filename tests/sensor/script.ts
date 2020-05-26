@@ -1,14 +1,12 @@
 import '../../src/polyfill'
 
 import sensor from '../../src/components/sensor'
-import sticky from '../../src/components/sensor/sticky'
 import { PositionObserver } from '../../src/utils/position-observer'
 import { Component, Watcher } from '../../src'
 
 let w = new Watcher(document.body, {
 	components: {
 		sensor,
-		sticky,
 		test: class extends Component<HTMLElement> {
 			obs: PositionObserver
 

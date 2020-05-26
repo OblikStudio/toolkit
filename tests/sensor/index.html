@@ -14,13 +14,6 @@
 			background: gray;
 		}
 
-		div[ob-sticky] {
-			padding: 100px 20px;
-			border: 20px solid green;
-			background: gray;
-			box-sizing: border-box;
-		}
-
 		.is-active {
 			background: red;
 		}
@@ -33,12 +26,6 @@
 
 	<div ob-sensor="reference: document, observer: { type: relative, options: { edge: bottom } }, action: tag">
 		Test Document
-	</div>
-
-	<div style="height: 50vh;">
-		<div ob-sticky="measure: { bounds: @parent }">
-			<span ob-sticky>Test Document</span>
-		</div>
 	</div>
 
 	<div ob-sensor="reference: viewport, observer: { type: relative, options: { edge: bottom } }, action: tag">
