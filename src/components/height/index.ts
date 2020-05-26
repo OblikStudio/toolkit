@@ -10,7 +10,7 @@ interface Options {
 export class Height extends Component<HTMLElement, Options> {
 	varName: string
 	varElement: HTMLElement
-	poller: Poller
+	poller: Poller<HTMLElement>
 
 	create () {
 		this.varName = 'height'
@@ -28,7 +28,7 @@ export class Height extends Component<HTMLElement, Options> {
 			}
 		}
 
-		this.poller = new Poller(this.$element.firstElementChild, ['offsetHeight'])
+		this.poller = new Poller(this.$element.firstElementChild as HTMLElement, ['offsetHeight'])
 		this.poller.on('change', changes => {
 			this.update(changes.offsetHeight.newValue)
 		})

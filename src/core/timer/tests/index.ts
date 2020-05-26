@@ -1,8 +1,8 @@
-import { Ticker } from '..'
+import { Timer } from '..'
 
 describe('ticker', () => {
 	it('starts', function (done) {
-		let inst = new Ticker()
+		let inst = new Timer()
 		let spy = sinon.spy()
 
 		inst.start()
@@ -20,7 +20,7 @@ describe('ticker', () => {
 	})
 
 	it('calls measure and mutate in the correct order', function (done) {
-		let inst = new Ticker()
+		let inst = new Timer()
 		let read1 = sinon.spy()
 		let write = sinon.spy()
 		let read2 = sinon.spy()
@@ -41,7 +41,7 @@ describe('ticker', () => {
 	})
 
 	it('calls mutation after promised measure', function (done) {
-		let inst = new Ticker()
+		let inst = new Timer()
 		let mutateSpy = sinon.spy()
 		let measureSpy = sinon.spy()
 

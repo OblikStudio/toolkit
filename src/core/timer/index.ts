@@ -1,6 +1,18 @@
 import { Ticker } from '../../utils/ticker'
 
-let ticker = new Ticker()
+export class Timer extends Ticker {
+	tick (delta: number) {
+		super.tick(delta)
+		this.emit('measure')
+
+		// Timeout ensures callback mutations happen after promised measures.
+		setTimeout(() => {
+			this.emit('mutate')
+		}, 0)
+	}
+}
+
+let ticker = new Timer()
 ticker.start()
 
 function measure (callback: () => any, context?: any): void

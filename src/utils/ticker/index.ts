@@ -1,49 +1,39 @@
 import { Emitter } from '../emitter'
 
 export class Ticker extends Emitter {
-	_isTicking: boolean
-	_stamp: number
-	_tickHandler: Ticker['_tick']
+	private stamp: number = null
+	private isTicking: boolean = false
+	private handler = this.run.bind(this)
 
-	constructor () {
-		super()
-
-		this._isTicking = false
-		this._stamp = null
-		this._tickHandler = this._tick.bind(this)
+	protected schedule () {
+		window.requestAnimationFrame(this.handler)
 	}
 
-	_run () {
-		window.requestAnimationFrame(this._tickHandler)
-	}
-
-	_tick () {
-		if (!this._isTicking) {
+	protected run () {
+		if (!this.isTicking) {
 			return
 		}
 
 		let now = Date.now()
-		let diff = now - this._stamp
+		let diff = now - this.stamp
 
-		this.emit('tick', diff)
-		this.emit('measure')
+		this.tick(diff)
 
-		// Timeout ensures callback mutations happen after promised measures.
-		setTimeout(() => {
-			this.emit('mutate')
-		}, 0)
+		this.stamp = now
+		this.schedule()
+	}
 
-		this._stamp = now
-		this._run()
+	protected tick (delta: number) {
+		this.emit('tick', delta)
 	}
 
 	start () {
-		this._isTicking = true
-		this._stamp = Date.now()
-		this._run()
+		this.isTicking = true
+		this.stamp = Date.now()
+		this.schedule()
 	}
 
 	stop () {
-		this._isTicking = false
+		this.isTicking = false
 	}
 }
