@@ -21,7 +21,7 @@ export class Query {
 	/**
 	 * Attempts to add an Element to the queried elements and returns its index.
 	 */
-	_addTarget (input: Element | Node) {
+	protected addTarget (input: Element | Node) {
 		if (
 			input instanceof Element &&
 			this.elements.indexOf(input) < 0
@@ -36,10 +36,10 @@ export class Query {
 	add (input: QueryInput) {
 		if (isQueryList(input)) {
 			for (let element of input) {
-				this._addTarget(element)
+				this.addTarget(element)
 			}
 		} else {
-			this._addTarget(input)
+			this.addTarget(input)
 		}
 
 		return this

@@ -62,29 +62,25 @@ export class Sharer extends Component<Element, Options> {
 		return url
 	}
 
-	private _handleClick: () => void
+	private clickHandler = this.handleClick.bind(this)
 
-	create () {
-		this._handleClick = () => {
-			if (this.$options.media === 'url') {
-				this.copy()
-			} else {
-				let url = Sharer.getSharerUrl(this.$options as Options)
-				if (url) {
-					window.open(url, '_blank', 'width=800,height=600')
-				}
-			}
-		}
-
-		this.$element.addEventListener('click', this._handleClick)
-	}
-
-	copy () {
-		Sharer.copy(this.$options.url)
+	init () {
+		this.$element.addEventListener('click', this.clickHandler)
 	}
 
 	destroy () {
-		this.$element.removeEventListener('click', this._handleClick)
+		this.$element.removeEventListener('click', this.clickHandler)
+	}
+
+	handleClick () {
+		if (this.$options.media === 'url') {
+			Sharer.copy(this.$options.url)
+		} else {
+			let url = Sharer.getSharerUrl(this.$options as Options)
+			if (url) {
+				window.open(url, '_blank', 'width=800,height=600')
+			}
+		}
 	}
 }
 
