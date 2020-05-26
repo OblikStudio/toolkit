@@ -1,45 +1,43 @@
-import query from '../../utils/query'
 import { Poller } from '../../utils/poller'
 import { Component } from '../..'
 
 interface Options {
-	var: string
-	target: string
+	var?: string
+	varTarget?: HTMLElement
+	target?: HTMLElement
 }
 
 export class Height extends Component<HTMLElement, Options> {
 	varName: string
-	varElement: HTMLElement
+	varTarget: HTMLElement
 	poller: Poller<HTMLElement>
 
 	create () {
-		this.varName = 'height'
-		this.varElement = null
+		let target = this.$options.target ?? (this.$element.firstElementChild as HTMLElement)
+		this.poller = new Poller(target, ['offsetHeight'])
 
-		if (this.$options && this.$options.var) {
-			if (typeof this.$options.var === 'string') {
-				this.varName = this.$options.var
-			}
-
-			if (this.$options.target) {
-				this.varElement = query(this.$element, this.$options.target, HTMLElement)[0]
-			} else {
-				this.varElement = this.$element
-			}
+		if (this.$options?.var) {
+			this.varName = this.$options.var
+			this.varTarget = this.$options.varTarget ?? this.$element
 		}
+	}
 
-		this.poller = new Poller(this.$element.firstElementChild as HTMLElement, ['offsetHeight'])
+	init () {
 		this.poller.on('change', changes => {
 			this.update(changes.offsetHeight.newValue)
 		})
 	}
 
 	update (value: number) {
-		if (this.varElement) {
-			this.varElement.style.setProperty('--' + this.varName, value.toString())
+		if (this.varTarget) {
+			this.varTarget.style.setProperty('--' + this.varName, value.toString())
 		} else if (value) {
-			this.$element.style.height = value.toString()
+			this.$element.style.height = `${value.toString()}px`
 		}
+	}
+
+	destroy () {
+		this.poller.destroy()
 	}
 }
 
