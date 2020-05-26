@@ -1,7 +1,6 @@
 import { getTag } from '../../utils/dom'
 import { Gesture, Swipe } from '../../utils/gesture'
-import { Ticker } from '../../utils'
-import { Component } from '../..'
+import { Component, ticker } from '../..'
 import { Item } from './item'
 import { Screen } from './screen'
 
@@ -32,7 +31,6 @@ export class Rail extends Component<HTMLElement, Options> {
 	isDraggingLink: boolean
 	gesture: Gesture
 	swipe: Swipe
-	ticker: Ticker
 	screens: Screen[]
 	activeScreen: Screen
 	itemsPerScreen: number
@@ -50,7 +48,6 @@ export class Rail extends Component<HTMLElement, Options> {
 
 	create () {
 		this.gesture = new Gesture(this.$element)
-		this.ticker = new Ticker()
 	}
 
 	init () {
@@ -69,7 +66,7 @@ export class Rail extends Component<HTMLElement, Options> {
 				this.orderContainer = this.$element.parentElement
 			}
 
-			this.ticker.on('tick', this.updateOrder, this)
+			ticker.on('tick', this.updateOrder, this)
 		}
 
 		this.calc()
@@ -79,14 +76,13 @@ export class Rail extends Component<HTMLElement, Options> {
 		this.gesture.on('start', this.pointerDown.bind(this))
 		this.gesture.on('end', this.pointerUp.bind(this))
 
-		this.ticker.start()
 		this.$element.addEventListener('click', this.clickHandler)
 		window.addEventListener('resize', this.resizeHandler)
 	}
 
 	destroy () {
 		this.gesture.destroy()
-		this.ticker.destroy()
+		ticker.purge(this)
 
 		this.$element.removeEventListener('click', this.clickHandler)
 		window.removeEventListener('resize', this.resizeHandler)
@@ -175,7 +171,7 @@ export class Rail extends Component<HTMLElement, Options> {
 		// Stop propagating so when nesting sliders, parent sliders don't move.
 		event.stopPropagation()
 
-		this.ticker.on('tick', this.updateOffsetRender, this)
+		ticker.on('tick', this.updateOffsetRender, this)
 	}
 
 	pointerUp () {
@@ -195,7 +191,7 @@ export class Rail extends Component<HTMLElement, Options> {
 
 		this.swipe = null
 
-		this.ticker.off('tick', this.updateOffsetRender, this)
+		ticker.off('tick', this.updateOffsetRender, this)
 		this.updateOffsetRender()
 
 		this.$element.classList.remove('is-dragged')
