@@ -3,7 +3,6 @@ import { Component } from '../..'
 import { Cache, Entry } from './cache'
 import { scroll } from '../scroll-to'
 import { easeOutQuad } from '../../utils/easings'
-import { getViewportScroller } from '../../utils'
 
 interface State {
 	url: string
@@ -56,7 +55,7 @@ export class Loader extends Component {
 	updateState () {
 		let state: State = {
 			url: window.location.href,
-			scroll: getViewportScroller().scrollTop
+			scroll: document.scrollingElement.scrollTop
 		}
 
 		history.replaceState(state, '', state.url)
@@ -142,7 +141,7 @@ export class Loader extends Component {
 
 		if (typeof state.scroll === 'number') {
 			scroll({
-				target: getViewportScroller(),
+				target: document.scrollingElement,
 				offset: state.scroll,
 				duration: 900,
 				easing: easeOutQuad
@@ -202,7 +201,7 @@ export class Loader extends Component {
 
 		let fragment = href.split('#')?.[1]
 		let fragmentElement = null
-		let scrollTarget = getViewportScroller()
+		let scrollTarget = document.scrollingElement
 
 		if (fragment) {
 			fragmentElement = document.getElementById(fragment)
@@ -221,7 +220,7 @@ export class Loader extends Component {
 		return this.fetch(href).then((item: Entry) => {
 			let state: State = {
 				url: href,
-				scroll: getViewportScroller().scrollTop
+				scroll: document.scrollingElement.scrollTop
 			}
 
 			history.pushState(state, '', href)

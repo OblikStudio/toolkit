@@ -6,7 +6,7 @@
 
 import { Animation } from '../../utils/animation'
 import { offsetGlobal, getTag } from '../../utils/dom'
-import { query, getViewportScroller } from '../../utils'
+import { query } from '../../utils'
 import { linear } from '../../utils/easings'
 import { Component } from '../..'
 
@@ -15,7 +15,7 @@ export function scroll (options) {
 		throw new Error('No scroll target')
 	}
 
-	var scroller = getViewportScroller()
+	var scroller = document.scrollingElement
 	let offset = options.offset || 0
 
 	options = Object.assign({

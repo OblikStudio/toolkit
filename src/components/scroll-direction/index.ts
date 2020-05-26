@@ -1,5 +1,4 @@
 import { Component } from '../..'
-import { getViewportScroller } from '../../utils'
 
 interface Options {
 	direction: 'up' | 'down',
@@ -23,7 +22,7 @@ export class ScrollDirection extends Component<HTMLElement, Options> {
 	init () {
 		this.anchor = null
 		this.position = null
-		this.scroller = getViewportScroller()
+		this.scroller = document.scrollingElement
 
 		this.checkHandler = this.check.bind(this)
 		window.addEventListener('scroll', this.checkHandler)

@@ -1,10 +1,8 @@
-import { default as query, QueryTarget } from '../../utils/query'
+import { windowClientRect } from '../../utils/dom'
 import { Component } from '../..'
-import { RectObserver } from '../../utils/rect-observer'
 
 export interface Options {
-	target?: Window | QueryTarget
-	reference?: 'document' | 'viewport'
+	target?: Window | HTMLElement
 	measure: {
 		offset: number
 		after: boolean
@@ -19,7 +17,6 @@ export interface Options {
 export class Sensor extends Component<HTMLElement, Options> {
 	static defaults = {
 		target: window,
-		reference: 'viewport',
 		measure: {
 			offset: 0,
 			after: true,
@@ -34,28 +31,19 @@ export class Sensor extends Component<HTMLElement, Options> {
 	target: Window | HTMLElement
 	value: any
 
-	protected _elementObserver: RectObserver
-	protected _targetObserver: RectObserver
+	protected updateHandler = this.update.bind(this)
 
 	init () {
-		if (typeof this.$options.target === 'string') {
-			this.target = query(this.$element, this.$options.target, HTMLElement)[0]
-		} else {
-			this.target = this.$options.target as Window | HTMLElement
-		}
+		this.target = this.$options.target
+		this.update()
 
-		let docRelative = (this.$options.reference === 'document')
-		this._elementObserver = new RectObserver(this.$element, docRelative)
-		this._targetObserver = new RectObserver(this.target, docRelative)
+		window.addEventListener('scroll', this.updateHandler)
+		window.addEventListener('resize', this.updateHandler)
+	}
 
-		Promise.all([
-			this._elementObserver.promise('init'),
-			this._targetObserver.promise('init')
-		]).then(() => {
-			this._elementObserver.on('change', this.update, this)
-			this._targetObserver.on('change', this.update, this)
-			this.update()
-		})
+	destroy () {
+		window.removeEventListener('scroll', this.updateHandler)
+		window.removeEventListener('resize', this.updateHandler)
 	}
 
 	measure (elementRect: ClientRect, targetRect: ClientRect) {
@@ -79,17 +67,21 @@ export class Sensor extends Component<HTMLElement, Options> {
 	}
 
 	update () {
-		let value = this.measure(this._elementObserver.rect, this._targetObserver.rect)
+		let elRect = this.$element.getBoundingClientRect()
+		let targetRect = null
+
+		if (this.target === window) {
+			targetRect = windowClientRect()
+		} else {
+			targetRect = (this.target as HTMLElement).getBoundingClientRect()
+		}
+
+		let value = this.measure(elRect, targetRect)
 
 		if (value !== this.value) {
 			this.mutate(value)
 			this.value = value
 		}
-	}
-
-	destroy () {
-		this._elementObserver.destroy()
-		this._targetObserver.destroy()
 	}
 }
 

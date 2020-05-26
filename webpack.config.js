@@ -30,7 +30,6 @@ module.exports = (env, opts) => {
 	} else {
 		config.entry = {
 			components: './tests/components/script.ts',
-			sensor: './tests/sensor/script.ts',
 			ticker: './tests/ticker/script.ts'
 		}
 
