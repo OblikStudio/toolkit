@@ -34,8 +34,7 @@
 	},
 	"homepage": "https://github.com/oblikjs/oblik#readme",
 	"dependencies": {
-		"core-js": "^3.2.1",
-		"lodash-es": "^4.17.15"
+		"core-js": "^3.2.1"
 	},
 	"devDependencies": {
 		"@types/chai": "^4.2.6",

@@ -1,11 +1,9 @@
-import { debounce } from 'lodash-es'
 import { Component } from '../..'
 
 interface Options {
 	on: keyof GlobalEventHandlersEventMap
 	off: keyof GlobalEventHandlersEventMap
 	class: string
-	delay: null
 	target: Element
 }
 
@@ -13,11 +11,11 @@ export class Toggle extends Component<Element, Options> {
 	static defaults: Partial<Options> = {
 		on: 'click',
 		off: null,
-		class: 'is-active',
-		delay: null
+		class: 'is-active'
 	}
+
 	static presets = {
-		mouse: {
+		hover: {
 			on: 'mouseover',
 			off: 'mouseout'
 		}
@@ -27,19 +25,13 @@ export class Toggle extends Component<Element, Options> {
 	state = false
 	onHandler: () => void
 	offHandler: () => void
-	offHandlerDebounced: ReturnType<typeof debounce>
 
-	create () {
+	init () {
 		this.target = this.$options.target
 
 		if (this.$options.off && this.$options.off !== this.$options.on) {
 			this.onHandler = this.on.bind(this)
 			this.offHandler = this.off.bind(this)
-
-			if (typeof this.$options.delay === 'number') {
-				this.offHandlerDebounced = debounce(this.offHandler, this.$options.delay)
-				this.offHandler = this.offHandlerDebounced
-			}
 
 			this.$element.addEventListener(this.$options.off, this.offHandler)
 		} else {
@@ -50,10 +42,6 @@ export class Toggle extends Component<Element, Options> {
 	}
 
 	on () {
-		if (this.offHandlerDebounced) {
-			this.offHandlerDebounced.cancel()
-		}
-
 		if (this.state === false) {
 			this.state = true
 			this.update()
