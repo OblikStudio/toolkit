@@ -6,7 +6,6 @@
 
 import { Animation } from '../../utils/animation'
 import { offsetGlobal, getTag } from '../../utils/dom'
-import { query } from '../../utils'
 import { linear } from '../../utils/easings'
 import { Component } from '../..'
 
@@ -77,9 +76,9 @@ export function monitorLinks (options) {
 
 interface Options {
 	event: keyof GlobalEventHandlersEventMap
+	target: HTMLElement
 	duration: number
 	easing: string
-	target: string
 	offset: string
 }
 
@@ -107,7 +106,7 @@ export class ScrollTo extends Component<Element, Options> {
 			throw new Error('No scroll target specified')
 		}
 
-		this.target = query(this.$element, this.$options.target, HTMLElement)[0]
+		this.target = this.$options.target
 
 		let offset: number
 		if (typeof this.$options.offset === 'number') {

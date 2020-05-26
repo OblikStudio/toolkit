@@ -1,4 +1,3 @@
-import { query } from '../../utils'
 import { windowClientRect } from '../../utils/dom'
 import { clamp } from '../../utils/math'
 import { linear } from '../../utils/easings'
@@ -37,11 +36,11 @@ export function registerEasigns (input) {
 
 interface Options {
 	type: string
-	reference: string
 	easing: string
 	axis: string
 	name: string,
 	clamp: boolean
+	reference?: Element
 }
 
 export class Parallax extends Component<HTMLElement, Options> {
@@ -60,11 +59,7 @@ export class Parallax extends Component<HTMLElement, Options> {
 	handler: () => any
 
 	create () {
-		if (!this.$options.reference) {
-			this.reference = window
-		} else {
-			this.reference = query(this.$element, this.$options.reference)[0]
-		}
+		this.reference = this.$options.reference ?? window
 
 		this.transform = transformers[this.$options.type]
 		if (typeof this.transform !== 'function') {
