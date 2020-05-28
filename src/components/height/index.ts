@@ -29,10 +29,12 @@ export class Height extends Component<HTMLElement, Options> {
 	}
 
 	update (value: number) {
+		let height = `${value.toString()}px`
+
 		if (this.varTarget) {
-			this.varTarget.style.setProperty('--' + this.varName, value.toString())
+			this.varTarget.style.setProperty('--' + this.varName, height)
 		} else if (value) {
-			this.$element.style.height = `${value.toString()}px`
+			this.$element.style.height = height
 		}
 	}
 
