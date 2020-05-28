@@ -1,15 +1,18 @@
 import { Component } from '../..'
 
 class Toggle extends Component {
+	$parent: Item
+
 	create () {
 		this.$element.addEventListener('click', () => {
-			let accordion = this.$parent.$parent as Accordion
-			accordion.toggle(this.$parent)
+			this.$parent.$parent.toggle(this.$parent)
 		})
 	}
 }
 
-class Slide extends Component {
+class Item extends Component {
+	$parent: Accordion
+
 	static components = {
 		toggle: Toggle
 	}
@@ -21,32 +24,32 @@ interface Options {
 
 export class Accordion extends Component<Element, Options> {
 	static components = {
-		slide: Slide
+		item: Item
 	}
 
 	static defaults = {
-		active: 0
+		active: null
 	}
 
-	$slide: Slide[]
+	$item: Item[]
 
 	create () {
-		this.$slide = []
+		this.$item = []
 	}
 
 	init () {
-		let initial = this.$slide[this.$options.active]
+		let initial = this.$item[this.$options.active]
 		if (initial) {
 			this.toggle(initial)
 		}
 	}
 
-	toggle (toggledSlide: Slide) {
-		this.$slide.forEach(slide => {
-			if (slide === toggledSlide) {
-				slide.$element.classList.toggle('is-active')
+	toggle (toggledItem: Item) {
+		this.$item.forEach(item => {
+			if (item === toggledItem) {
+				item.$element.classList.toggle('is-active')
 			} else {
-				slide.$element.classList.remove('is-active')
+				item.$element.classList.remove('is-active')
 			}
 		})
 	}
