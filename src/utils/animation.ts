@@ -127,9 +127,9 @@ export class Animation<T> extends Tween {
 		if (this.elapsed < this.duration) {
 			setTimeout(() => {
 				this.isTicking = false
-				this.step()
 
 				if (this.isRunning) {
+					this.step()
 					this.run()
 				}
 			}, 0)
