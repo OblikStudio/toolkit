@@ -1,24 +1,47 @@
 import { Component } from '../..'
 import { Rail } from './rail'
+import { Screen } from './screen'
 
 export class Next extends Component {
 	$parent: Carousel
+	target: Screen
 
 	init () {
 		this.$element.addEventListener('click', () => {
-			this.action()
+			this.update()
+			this.$parent.$rail.setScreen(this.target)
 			this.$parent.$rail.update()
 		})
+
+		this.$parent.$rail.$emitter.on('slideChange', () => {
+			this.update()
+		})
+
+		this.update()
 	}
 
-	action () {
-		this.$parent.$rail.nextScreen()
+	updateTarget () {
+		let rail = this.$parent.$rail
+		let index = rail.screens.indexOf(rail.activeScreen)
+		return rail.screens[index + 1]
+	}
+
+	update () {
+		this.target = this.updateTarget()
+
+		if (this.target) {
+			this.$element.classList.remove('is-disabled')
+		} else {
+			this.$element.classList.add('is-disabled')
+		}
 	}
 }
 
 export class Prev extends Next {
-	action () {
-		this.$parent.$rail.prevScreen()
+	updateTarget () {
+		let rail = this.$parent.$rail
+		let index = rail.screens.indexOf(rail.activeScreen)
+		return rail.screens[index - 1]
 	}
 }
 
