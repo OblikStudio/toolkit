@@ -25,4 +25,7 @@ export class Screen {
 		let remainder = space - this.width()
 		return this.left() - remainder * this.offset
 	}
+
+	activate () { }
+	deactivate () { }
 }

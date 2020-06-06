@@ -1,4 +1,5 @@
 import { Component } from '../..'
+import { Rail } from './rail'
 
 interface Location {
 	left: number
@@ -6,6 +7,8 @@ interface Location {
 }
 
 export class Item extends Component<HTMLElement> {
+	$parent: Rail
+
 	location: Location = null
 	marginLeft: number = 0
 	marginRight: number = 0

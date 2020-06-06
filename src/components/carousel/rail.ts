@@ -261,7 +261,20 @@ export class Rail extends Component<HTMLElement, Options> {
 				this.offset = this.getScreenAnchor(screen)
 			}
 
+			let currentScreen = this.activeScreen
+			if (currentScreen !== screen) {
+				if (currentScreen) {
+					currentScreen.deactivate()
+				}
+
+				screen.activate()
+			}
+
 			this.activeScreen = screen
+
+			if (currentScreen !== screen) {
+				this.$emitter.emit('slideChange', this.screens.indexOf(screen), screen)
+			}
 		}
 	}
 
