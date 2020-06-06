@@ -1,67 +1,64 @@
 {
-  "name": "oblik",
-  "version": "1.0.3",
-  "description": "Toolkit with minimal, composable, and renderless UI components and uitilities.",
-  "main": "js/index.js",
-  "files": [
-    "js"
-  ],
-  "scripts": {
-    "dev": "webpack-dev-server --mode=development --watch",
-    "build": "webpack --mode=production",
-    "test": "karma start --single-run",
-    "karma": "karma start"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/oblikjs/oblik.git"
-  },
-  "keywords": [
-    "ui",
-    "dom",
-    "sticky",
-    "slide",
-    "animation",
-    "transition",
-    "front-end",
-    "utility",
-    "minimal"
-  ],
-  "author": "Hristiyan Dodov",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/oblikjs/oblik/issues"
-  },
-  "homepage": "https://github.com/oblikjs/oblik#readme",
-  "dependencies": {
-    "core-js": "^3.2.1",
-    "lodash-es": "^4.17.15",
-    "querel": "^2.1",
-    "slic": "^1.0.0"
-  },
-  "devDependencies": {
-    "@types/chai": "^4.2.6",
-    "@types/karma-chai-sinon": "^0.1.13",
-    "@types/karma-fixture": "^0.2.5",
-    "@types/lodash-es": "^4.17.3",
-    "@types/mocha": "^5.2.7",
-    "@types/sinon-chai": "^3.2.3",
-    "chai": "^4.2.0",
-    "chai-sinon": "^2.8.1",
-    "karma": "^4.4.1",
-    "karma-chai-sinon": "^0.1.5",
-    "karma-chrome-launcher": "^3.1.0",
-    "karma-fixture": "^0.2.6",
-    "karma-html2js-preprocessor": "^1.1.0",
-    "karma-mocha": "^1.3.0",
-    "karma-webpack": "^4.0.2",
-    "mocha": "^6.2.2",
-    "sinon": "^7.5.0",
-    "sinon-chai": "^3.3.0",
-    "ts-loader": "^6.2.1",
-    "typescript": "^3.7.4",
-    "webpack": "^4.35.3",
-    "webpack-cli": "^3.3.9",
-    "webpack-dev-server": "^3.8.1"
-  }
+	"name": "oblik",
+	"version": "1.0.3",
+	"description": "Toolkit with minimal, composable, and renderless UI components and uitilities.",
+	"main": "js/index.js",
+	"files": [
+		"js"
+	],
+	"scripts": {
+		"dev": "webpack-dev-server --mode=development --watch",
+		"build": "webpack --mode=production",
+		"test": "karma start --single-run",
+		"karma": "karma start"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/oblikjs/oblik.git"
+	},
+	"keywords": [
+		"ui",
+		"dom",
+		"sticky",
+		"slide",
+		"animation",
+		"transition",
+		"front-end",
+		"utility",
+		"minimal"
+	],
+	"author": "Hristiyan Dodov",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/oblikjs/oblik/issues"
+	},
+	"homepage": "https://github.com/oblikjs/oblik#readme",
+	"peerDependencies": {
+		"core-js": "^3.6.5"
+	},
+	"devDependencies": {
+		"@types/chai": "^4.2.6",
+		"@types/karma-chai-sinon": "^0.1.13",
+		"@types/karma-fixture": "^0.2.5",
+		"@types/lodash-es": "^4.17.3",
+		"@types/mocha": "^5.2.7",
+		"@types/sinon-chai": "^3.2.3",
+		"chai": "^4.2.0",
+		"chai-sinon": "^2.8.1",
+		"karma": "^4.4.1",
+		"karma-chai-sinon": "^0.1.5",
+		"karma-chrome-launcher": "^3.1.0",
+		"karma-fixture": "^0.2.6",
+		"karma-html2js-preprocessor": "^1.1.0",
+		"karma-mocha": "^1.3.0",
+		"karma-webpack": "^4.0.2",
+		"mocha": "^6.2.2",
+		"sinon": "^7.5.0",
+		"sinon-chai": "^3.3.0",
+		"ts-loader": "^6.2.1",
+		"typescript": "^3.7.4",
+		"webpack": "^4.35.3",
+		"webpack-cli": "^3.3.9",
+		"webpack-dev-server": "^3.8.1"
+	}
 }

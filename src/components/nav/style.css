@@ -1,0 +1,27 @@
+[ob-nav-drawer] {
+	position: absolute;
+	width: 100%;
+	pointer-events: none;
+}
+
+[ob-nav-drawer-wrapper] {
+	position: sticky;
+	top: 0;
+	height: 0;
+	overflow: visible;
+}
+
+[ob-nav-drawer-content] {
+	pointer-events: auto;
+}
+
+body:not(.is-active-nav) [ob-nav-drawer-content] {
+    opacity: 0;
+    transform: translateY(-100%);
+    pointer-events: none;
+}
+
+[ob-nav-bar] {
+	position: sticky;
+	top: 0;
+}

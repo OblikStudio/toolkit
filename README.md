@@ -26,8 +26,8 @@ import { Drag } from 'oblik/utils/drag'
 
 let d = new Drag(document.body)
 d.on('start', event => {}) // mousedown, touchstart
-d.on('move',  event => {}) // mousemove, touchmove
-d.on('end',   event => {}) // mouseup, mouseleave, touchend, touchcancel
+d.on('move', event => {}) // mousemove, touchmove
+d.on('end', event => {}) // mouseup, mouseleave, touchend, touchcancel
 ```
 
 ## Component
@@ -59,11 +59,11 @@ let slideEls = sliderEl.getElementsByClassName('slide')
 let slider = new Slider(sliderEl)
 
 for (let slide of slideEls) {
-  new Slide(
-    slide,  // element
-    null,   // options
-    slider  // parent
-  )
+	new Slide(
+		slide,	// element
+		null,	 // options
+		slider	// parent
+	)
 }
 
 slider.$init()
@@ -78,9 +78,9 @@ import Watcher from 'oblik/watcher'
 import Slider from 'oblik/components/interface/slider'
 
 let w = new Watcher(document.body, {
-  components: {
-    slider: Slider
-  }
+	components: {
+		slider: Slider
+	}
 })
 
 w.init()
@@ -90,12 +90,12 @@ Then, the target element (in this case, `document.body`) will be monitored with 
 
 ```html
 <body>
-  <div ob-slider>
-    <div ob-slider-slide>1</div>
-    <div ob-slider-slide>1</div>
-    <div ob-slider-slide>3</div>
-    <div ob-slider-slide>4</div>
-  </div>
+	<div ob-slider>
+		<div ob-slider-slide>1</div>
+		<div ob-slider-slide>1</div>
+		<div ob-slider-slide>3</div>
+		<div ob-slider-slide>4</div>
+	</div>
 </body>
 ```
 
@@ -108,7 +108,7 @@ Now, you'll see an example with the _toggle_ component. Based on an `on` and `of
 ```html
 <i ob-toggle="target: @sibling, class: is-shown">?</i>
 <div class="tooltip">
-  <p>Lorem Ipsum</p>
+	<p>Lorem Ipsum</p>
 </div>
 ```
 
@@ -129,16 +129,16 @@ import Watcher from 'oblik/watcher'
 import Toggle from 'oblik/components/functional/toggle'
 
 Toggle.$defaults = {
-  target: '@sibling',
-  on: 'mouseover',
-  off: 'mouseout',
-  class: 'is-shown'
+	target: '@sibling',
+	on: 'mouseover',
+	off: 'mouseout',
+	class: 'is-shown'
 }
 
 let w = new Watcher(document.body, {
-  components: {
-    toggle: Toggle
-  }
+	components: {
+		toggle: Toggle
+	}
 })
 
 w.init()
@@ -149,7 +149,7 @@ We can now change the markup to this:
 ```html
 <i ob-toggle>?</i>
 <div class="tooltip">
-  <p>Lorem Ipsum</p>
+	<p>Lorem Ipsum</p>
 </div>
 ```
 
@@ -161,18 +161,18 @@ Perhaps we have a lot of toggles that work with `click` and we want that to be t
 
 ```js
 Toggle.$defaults = {
-  on: 'click',
-  off: 'click',
-  class: 'is-active'
+	on: 'click',
+	off: 'click',
+	class: 'is-active'
 }
 
 Toggle.$presets = {
-  tooltip: {
-    target: '@sibling',
-    on: 'mouseover',
-    off: 'mouseout',
-    class: 'is-shown'
-  }
+	tooltip: {
+		target: '@sibling',
+		on: 'mouseover',
+		off: 'mouseout',
+		class: 'is-shown'
+	}
 }
 ```
 
@@ -180,19 +180,19 @@ Now we have default options and a preset that will override those defaults when 
 
 ```html
 <div class="drawer">
-  <button id="one" ob-toggle="target: @parent"></button>
+	<button id="one" ob-toggle="target: @parent"></button>
 </div>
 
 <i id="two" ob-toggle="tooltip">?</i>
 <div class="tooltip">
-  <p>Lorem Ipsum</p>
+	<p>Lorem Ipsum</p>
 </div>
 
 <div>
-  <i id="three" ob-toggle="$preset: tooltip, target: @parent.sibling">?</i>
+	<i id="three" ob-toggle="$preset: tooltip, target: @parent.sibling">?</i>
 </div>
 <div class="tooltip">
-  <p>Lorem Ipsum</p>
+	<p>Lorem Ipsum</p>
 </div>
 ```
 
@@ -211,14 +211,14 @@ Toggle.$defaults = { ... }
 Toggle.$presets = { tooltip: { ... } }
 
 new Toggle(document.getElementById('one'), {
-  target: '@parent'
+	target: '@parent'
 })
 
 new Toggle(document.getElementById('two'), 'tooltip')
 
 new Toggle(document.getElementById('three'), {
-  $preset: 'tooltip',
-  target: '@parent.sibling'
+	$preset: 'tooltip',
+	target: '@parent.sibling'
 })
 ```
 
@@ -234,11 +234,11 @@ As mentioned earlier, a component is just a simple constructor function or an [E
 import Watcher from 'oblik/watcher'
 
 let w = new Watcher(document.body, {
-  components: {
-    foo: function (element, options) {
-      element.style.backgroundColor = options.color
-    }
-  }
+	components: {
+		foo: function (element, options) {
+			element.style.backgroundColor = options.color
+		}
+	}
 })
 ```
 
@@ -257,25 +257,25 @@ import Watcher from 'oblik/watcher'
 import Component from 'oblik/components/component'
 
 let w = new Watcher(document.body, {
-  components: {
-    foo: class extends Component {
-      static $defaults = {
-        test: 42
-      }
+	components: {
+		foo: class extends Component {
+			static $defaults = {
+				test: 42
+			}
 
-      $create () {
-        console.log('created', this.$element, this.$options)
-      }
+			$create () {
+				console.log('created', this.$element, this.$options)
+			}
 
-      $init () {
-        console.log('ready')
-      }
+			$init () {
+				console.log('ready')
+			}
 
-      $destroy () {
-        console.log('removed')
-      }
-    }
-  }
+			$destroy () {
+				console.log('removed')
+			}
+		}
+	}
 })
 
 w.init()
@@ -299,25 +299,25 @@ When a component has child elements of interest, it makes sense to use a subcomp
 class Child extends Component { }
 
 class Parent extends Component {
-  static $components = {
-    bar: Child
-  }
+	static $components = {
+		bar: Child
+	}
 
-  $create () {
-    this.$emitter.on('bar:added', component => {
-      console.log('added', component)
-    })
-  }
+	$create () {
+		this.$emitter.on('bar:added', component => {
+			console.log('added', component)
+		})
+	}
 
-  $init () {
-    console.log('child', this.$bar)
-  }
+	$init () {
+		console.log('child', this.$bar)
+	}
 }
 
 let w = new Watcher(document.body, {
-  components: {
-    foo: Parent
-  }
+	components: {
+		foo: Parent
+	}
 })
 ```
 
@@ -332,7 +332,7 @@ Then, we use these components like so:
 
 ```html
 <div ob-foo>
-  <span ob-foo-bar></span>
+	<span ob-foo-bar></span>
 </div>
 ```
 
@@ -340,28 +340,28 @@ If we need multiple `bar` instances, all we have to do is set `$bar` to an empty
 
 ```js
 class Parent extends Component {
-  static $components = {
-    bar: Child
-  }
+	static $components = {
+		bar: Child
+	}
 
-  $create () {
-    this.$bar = []
-    this.$emitter.on('bar:added', component => {
-      console.log('added', component)
-    })
-  }
+	$create () {
+		this.$bar = []
+		this.$emitter.on('bar:added', component => {
+			console.log('added', component)
+		})
+	}
 
-  $init () {
-    console.log('children', this.$bar)
-  }
+	$init () {
+		console.log('children', this.$bar)
+	}
 }
 ```
 
 ```html
 <div ob-foo>
-  <span ob-foo-bar></span>
-  <span ob-foo-bar></span>
-  <span ob-foo-bar></span>
+	<span ob-foo-bar></span>
+	<span ob-foo-bar></span>
+	<span ob-foo-bar></span>
 </div>
 ```
 
@@ -377,25 +377,25 @@ import Component from 'oblik/components/component'
 import tippy from 'tippy.js'
 
 class Tooltip extends Component {
-  static $defaults = {
-    theme: 'dark',
-    trigger: 'click',
-    interactie: true
-  }
+	static $defaults = {
+		theme: 'dark',
+		trigger: 'click',
+		interactie: true
+	}
 
-  $create () {
-    this.instance = tippy(this.$element, this.$options)
-  }
+	$create () {
+		this.instance = tippy(this.$element, this.$options)
+	}
 
-  $destroy () {
-    this.instance.destroy()
-  }
+	$destroy () {
+		this.instance.destroy()
+	}
 }
 
 let w = new Watcher(document.body, {
-  components: {
-    tooltip: Tooltip
-  }
+	components: {
+		tooltip: Tooltip
+	}
 })
 ```
 

@@ -1,16 +1,16 @@
 {
-  "compilerOptions": {
-    "lib": [
-      "es2015",
-      "dom",
-      "dom.iterable"
-    ],
-    "outDir": "js",
-    "target": "es5",
-    "module": "es6",
-    "moduleResolution": "node",
-    "declaration": true,
-    "strictBindCallApply": true,
-    "downlevelIteration": true
-  }
+	"compilerOptions": {
+		"lib": [
+			"es2015",
+			"dom",
+			"dom.iterable"
+		],
+		"outDir": "js",
+		"target": "es5",
+		"module": "es6",
+		"moduleResolution": "node",
+		"declaration": true,
+		"strictBindCallApply": true,
+		"downlevelIteration": true
+	}
 }

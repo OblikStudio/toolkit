@@ -1,10 +1,9 @@
-export { default as query } from 'querel'
+export { default as query } from './query'
 
 export * from './animation'
-export * from './detect'
+export * from './browser'
 export * from './dom'
-export * from './drag'
+export * from './gesture'
 export * from './mutation-emitter'
-export * from './overflow'
 export * from './poller'
 export * from './ticker'
