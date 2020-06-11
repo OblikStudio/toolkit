@@ -5,21 +5,15 @@ import { MutationEmitter } from '../../utils/mutation-emitter'
 import { value, attribute, ComponentMeta } from './parse'
 import { resolve } from './resolve'
 
-interface ComponentConstructors {
-	[key: string]: ComponentConstructor
-}
-
-interface ComponentInstances {
-	[key: string]: Component
-}
-
 interface WatcherSettings {
 	prefix?: string
-	components: ComponentConstructors
+	components: {
+		[key: string]: ComponentConstructor
+	}
 }
 
 export class Watcher {
-	private instances: Map<Element, ComponentInstances>
+	private instances: Map<Element, { [key: string]: Component }>
 	private attrRegex: RegExp
 	private mutations: MutationEmitter
 
@@ -157,7 +151,10 @@ export class Watcher {
 
 			if (component && !movable) {
 				this.attempt(() => {
-					component.$destroy()
+					if (typeof component.$destroy === 'function') {
+						component.$destroy()
+					}
+
 					instances[meta.id] = this.createComponentInstance(element, meta)
 				})
 			}
@@ -169,7 +166,9 @@ export class Watcher {
 		if (instances) {
 			for (let name in instances) {
 				this.attempt(() => {
-					instances[name].$init()
+					if (typeof instances[name].$init === 'function') {
+						instances[name].$init()
+					}
 				})
 			}
 		}
@@ -180,7 +179,9 @@ export class Watcher {
 		if (instances) {
 			for (let name in instances) {
 				this.attempt(() => {
-					instances[name].$destroy()
+					if (typeof instances[name].$destroy === 'function') {
+						instances[name].$destroy()
+					}
 				})
 
 				delete instances[name]
@@ -194,7 +195,7 @@ export class Watcher {
 		this.mutations.search(this.target, 'add')
 	}
 
-	instance (element: Element, id: string): Component {
+	instance (element: Element, id: string) {
 		return this.instances.get(element)?.[id]
 	}
 
