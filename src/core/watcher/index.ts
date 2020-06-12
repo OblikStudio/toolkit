@@ -1,7 +1,6 @@
 import { Component, ComponentConstructor } from '../..'
 import { findAncestor } from '../../utils/dom'
 import { merge } from '../../utils/functions'
-import { MutationEmitter } from '../../utils/mutation-emitter'
 import { value, attribute, ComponentMeta } from './parse'
 import { resolve } from './resolve'
 
@@ -12,15 +11,14 @@ interface WatcherSettings {
 	}
 }
 
-export class Watcher extends MutationEmitter {
+export class Watcher {
 	private instances: Map<Element, { [key: string]: Component }>
+	private observer: MutationObserver
 
 	target: Element
 	options: WatcherSettings
 
 	constructor (element: Element, settings: WatcherSettings) {
-		super()
-
 		this.target = element
 		this.options = merge({
 			prefix: 'ob-',
@@ -28,21 +26,55 @@ export class Watcher extends MutationEmitter {
 		}, settings)
 
 		this.instances = new Map()
+		this.observer = new MutationObserver(list => this.handleMutations(list))
 	}
 
-	protected predicate (node: Node) {
+	private handleMutations (list: MutationRecord[]) {
+		let added: Node[] = []
+		let removed: Node[] = []
+		let moved: Node[] = []
+
+		list.forEach(mutation => {
+			added = added.concat(Array.from(mutation.addedNodes))
+			removed = removed.concat(Array.from(mutation.removedNodes))
+		})
+
+		moved = added.filter(entry => removed.includes(entry))
+		added = added.filter(entry => !moved.includes(entry))
+		removed = removed.filter(entry => !moved.includes(entry))
+
+		removed.forEach(node => this.iterate(node, 'remove'))
+		moved.forEach(node => this.iterate(node, 'move'))
+		added.forEach(node => this.iterate(node, 'add'))
+	}
+
+	private iterate (node: Node, event: string) {
 		if (node instanceof Element) {
-			for (let attribute of node.attributes) {
-				if (attribute.name.indexOf(this.options.prefix) === 0) {
-					return true
-				}
+			if (this.predicate(node) === true) {
+				this.nodeMatched(node, event)
+			}
+
+			// Children must be cached in an array before iteration because
+			// event listeners might alter the child list.
+			Array.from(node.childNodes).forEach(node => {
+				this.iterate(node, event)
+			})
+
+			this.nodeSearched(node, event)
+		}
+	}
+
+	private predicate (element: Element) {
+		for (let attribute of element.attributes) {
+			if (attribute.name.indexOf(this.options.prefix) === 0) {
+				return true
 			}
 		}
 
 		return false
 	}
 
-	protected nodeMatched (node: Element, type: string) {
+	private nodeMatched (node: Element, type: string) {
 		switch (type) {
 			case 'add': this.createComponents(node); break
 			case 'move': this.moveComponents(node); break
@@ -50,7 +82,7 @@ export class Watcher extends MutationEmitter {
 		}
 	}
 
-	protected nodeSearched (node: Element, type: string) {
+	private nodeSearched (node: Element, type: string) {
 		if (type === 'add' || type === 'move') {
 			this.initComponents(node)
 		}
@@ -196,7 +228,7 @@ export class Watcher extends MutationEmitter {
 	}
 
 	init () {
-		super.init(this.target, {
+		this.observer.observe(this.target, {
 			childList: true,
 			subtree: true
 		})
@@ -211,7 +243,7 @@ export class Watcher extends MutationEmitter {
 	destroy () {
 		this.target = null
 		this.instances.clear()
-		super.destroy()
+		this.observer.disconnect()
 	}
 }
 
