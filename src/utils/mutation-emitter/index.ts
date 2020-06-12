@@ -1,18 +1,12 @@
-import { Emitter } from '../emitter'
-
 /**
  * Creates a MutationObserver and emits events based on whether changed nodes
  * and their children pass through a predicate function.
  */
-export class MutationEmitter extends Emitter {
+export abstract class MutationEmitter {
 	observer: MutationObserver
-	predicate: (input: Node) => boolean
 
-	constructor (predicate: MutationEmitter['predicate']) {
-		super()
-
+	constructor () {
 		this.observer = new MutationObserver(list => this.handleMutations(list))
-		this.predicate = predicate
 	}
 
 	private handleMutations (list: MutationRecord[]) {
@@ -29,25 +23,31 @@ export class MutationEmitter extends Emitter {
 		added = added.filter(entry => !moved.includes(entry))
 		removed = removed.filter(entry => !moved.includes(entry))
 
-		removed.forEach(node => this.search(node, 'remove'))
-		moved.forEach(node => this.search(node, 'move'))
-		added.forEach(node => this.search(node, 'add'))
+		removed.forEach(node => this.iterate(node, 'remove'))
+		moved.forEach(node => this.iterate(node, 'move'))
+		added.forEach(node => this.iterate(node, 'add'))
 	}
 
-	search (node: Node, event: string) {
+	protected abstract predicate (node: Node): boolean
+
+	protected abstract nodeMatched (node: Node, type: string): void
+
+	protected abstract nodeSearched (node: Node, type: string): void
+
+	protected iterate (node: Node, event: string) {
 		if (this.predicate(node) === true) {
-			this.emit(`before:${event}`, node)
+			this.nodeMatched(node, event)
 		}
 
 		if (node instanceof Element) {
 			// Children must be cached in an array before iteration because
 			// event listeners might alter the child list.
 			Array.from(node.childNodes).forEach(node => {
-				this.search(node, event)
+				this.iterate(node, event)
 			})
 		}
 
-		this.emit(`after:${event}`, node)
+		this.nodeSearched(node, event)
 	}
 
 	init (...args: Parameters<MutationObserver['observe']>) {
@@ -56,11 +56,5 @@ export class MutationEmitter extends Emitter {
 
 	destroy () {
 		this.observer.disconnect()
-		super.destroy()
 	}
-}
-
-export interface MutationEmitter {
-	on (event: string, callback: (node: Node) => void, context?: any): any
-	emit (event: string, node: Node): any
 }

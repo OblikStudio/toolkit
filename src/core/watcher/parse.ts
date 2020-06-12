@@ -26,13 +26,12 @@ export interface ComponentMeta {
 	value: string
 }
 
-export function attribute (input: Attr, regex: RegExp): ComponentMeta {
+export function attribute (input: Attr, prefix: string): ComponentMeta {
 	let attr = input.name
 	let value = input.value
-	let matches = regex.exec(attr)
 
-	if (matches) {
-		let id = matches[1]
+	if (attr.indexOf(prefix) >= 0) {
+		let id = attr.replace(prefix, '')
 		let split = id.split('-')
 		let name = split.pop()
 		let parentId = split.join('-')

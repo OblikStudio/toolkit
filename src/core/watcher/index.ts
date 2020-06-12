@@ -12,44 +12,48 @@ interface WatcherSettings {
 	}
 }
 
-export class Watcher {
+export class Watcher extends MutationEmitter {
 	private instances: Map<Element, { [key: string]: Component }>
-	private attrRegex: RegExp
-	private mutations: MutationEmitter
 
 	target: Element
 	options: WatcherSettings
 
 	constructor (element: Element, settings: WatcherSettings) {
+		super()
+
 		this.target = element
 		this.options = merge({
-			prefix: 'ob',
+			prefix: 'ob-',
 			components: {}
 		}, settings)
 
 		this.instances = new Map()
-		this.attrRegex = new RegExp(`^${this.options.prefix}\\-(.*)`)
+	}
 
-		this.mutations = new MutationEmitter(node => {
-			if (node instanceof Element) {
-				for (let attribute of node.attributes) {
-					if (this.attrRegex.exec(attribute.name)) {
-						return true
-					}
+	protected predicate (node: Node) {
+		if (node instanceof Element) {
+			for (let attribute of node.attributes) {
+				if (attribute.name.indexOf(this.options.prefix) === 0) {
+					return true
 				}
 			}
-		})
+		}
 
-		this.mutations.on('before:add', this.createComponents, this)
-		this.mutations.on('after:add', this.initComponents, this)
-		this.mutations.on('before:move', this.moveComponents, this)
-		this.mutations.on('after:move', this.initComponents, this)
-		this.mutations.on('before:remove', this.destroyComponents, this)
+		return false
+	}
 
-		this.mutations.init(this.target, {
-			childList: true,
-			subtree: true
-		})
+	protected nodeMatched (node: Element, type: string) {
+		switch (type) {
+			case 'add': this.createComponents(node); break
+			case 'move': this.moveComponents(node); break
+			case 'remove': this.destroyComponents(node)
+		}
+	}
+
+	protected nodeSearched (node: Element, type: string) {
+		if (type === 'add' || type === 'move') {
+			this.initComponents(node)
+		}
 	}
 
 	private resolveConstructor (componentId: string) {
@@ -100,7 +104,7 @@ export class Watcher {
 		let results: ComponentMeta[] = []
 
 		for (let entry of element.attributes) {
-			let meta = attribute(entry, this.attrRegex)
+			let meta = attribute(entry, this.options.prefix)
 
 			if (meta) {
 				results.push(meta)
@@ -192,7 +196,12 @@ export class Watcher {
 	}
 
 	init () {
-		this.mutations.search(this.target, 'add')
+		super.init(this.target, {
+			childList: true,
+			subtree: true
+		})
+
+		this.iterate(this.target, 'add')
 	}
 
 	instance (element: Element, id: string) {
@@ -202,7 +211,7 @@ export class Watcher {
 	destroy () {
 		this.target = null
 		this.instances.clear()
-		this.mutations.destroy()
+		super.destroy()
 	}
 }
 
