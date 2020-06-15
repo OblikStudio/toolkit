@@ -55,4 +55,6 @@ export class Carousel extends Component<Element> {
 	$rail: Rail
 }
 
+export { Rail }
+export { Item } from './item'
 export default Carousel
