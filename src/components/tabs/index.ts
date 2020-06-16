@@ -34,7 +34,7 @@ export class Tabs extends Component<Element, Options> {
 
 	init () {
 		if (typeof this.$options.active === 'number') {
-			this.activate(this.$options.active)
+			this.activate(this.$options.active - 1)
 		}
 	}
 
