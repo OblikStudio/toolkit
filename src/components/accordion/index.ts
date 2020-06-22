@@ -1,16 +1,16 @@
 import { Component } from '../..'
 
-class Toggle extends Component {
+export class Toggle extends Component {
 	$parent: Item
 
-	create () {
+	init () {
 		this.$element.addEventListener('click', () => {
 			this.$parent.$parent.toggle(this.$parent)
 		})
 	}
 }
 
-class Item extends Component {
+export class Item extends Component {
 	$parent: Accordion
 
 	static components = {
@@ -18,8 +18,9 @@ class Item extends Component {
 	}
 }
 
-interface Options {
+export interface Options {
 	active: number
+	class: string
 }
 
 export class Accordion extends Component<Element, Options> {
@@ -28,28 +29,24 @@ export class Accordion extends Component<Element, Options> {
 	}
 
 	static defaults = {
-		active: null
+		active: null,
+		class: 'is-active'
 	}
 
-	$item: Item[]
-
-	create () {
-		this.$item = []
-	}
+	$item: Item[] = []
 
 	init () {
-		let initial = this.$item[this.$options.active]
-		if (initial) {
-			this.toggle(initial)
+		if (typeof this.$options.active === 'number') {
+			this.toggle(this.$item[this.$options.active - 1])
 		}
 	}
 
-	toggle (toggledItem: Item) {
+	toggle (target: Item) {
 		this.$item.forEach(item => {
-			if (item === toggledItem) {
-				item.$element.classList.toggle('is-active')
+			if (item === target) {
+				item.$element.classList.toggle(this.$options.class)
 			} else {
-				item.$element.classList.remove('is-active')
+				item.$element.classList.remove(this.$options.class)
 			}
 		})
 	}
