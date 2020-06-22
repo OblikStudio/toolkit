@@ -1,6 +1,6 @@
 import { Tween } from './tween'
 
-interface AnimationOptions<T> {
+export interface Options<T> {
 	onStop?: () => void
 	onUpdate?: () => void
 	easing?: Function
@@ -27,7 +27,7 @@ export class Animation<T> extends Tween {
 		[k in keyof T]: number
 	}
 
-	constructor (options: AnimationOptions<T>) {
+	constructor (options: Options<T>) {
 		super(options.onUpdate, options.duration, options.easing)
 		this.isRunning = false
 		this.isTicking = false

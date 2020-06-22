@@ -37,7 +37,9 @@ export class Tween {
 	}
 
 	update () {
-		this.callback.call(this, this.value)
+		if (typeof this.callback === 'function') {
+			this.callback.call(this, this.value)
+		}
 	}
 
 	step () {

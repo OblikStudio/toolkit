@@ -14,27 +14,26 @@ export function scroll (options) {
 		throw new Error('No scroll target')
 	}
 
-	var scroller = document.scrollingElement
+	let scroller = document.scrollingElement
 	let offset = options.offset || 0
+	let interruptible = options.interruptible || true
 
-	options = Object.assign({
-		interruptible: true,
-		duration: 650,
+	let scrollAnimation = new Animation({
+		duration: options.duration || 650,
+		easing: options.easing,
 		values: {
 			scroll: {
 				start: scroller.scrollTop,
 				end: offsetGlobal(options.target).top + offset
 			}
 		},
-		update: function () {
-			scroller.scrollTop = this.scroll
+		onUpdate () {
+			scroller.scrollTop = (this as typeof scrollAnimation).computed.scroll
 		}
-	}, options)
+	})
 
-	var scrollAnimation = new Animation(options)
-
-	if (options.interruptible) {
-		var interruptHandler = function (event) {
+	if (interruptible) {
+		let interruptHandler = function (event) {
 			scrollAnimation.stop()
 			window.removeEventListener('wheel', interruptHandler)
 			window.removeEventListener('touchstart', interruptHandler)
