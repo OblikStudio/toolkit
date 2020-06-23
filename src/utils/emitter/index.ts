@@ -1,12 +1,10 @@
-type EmitterCallback = (...args: any) => any
-
 class Listener {
-	callback: EmitterCallback
+	callback: (...args: any) => any
 	context: any
 	limit: number = Infinity
 	calls: number = 0
 
-	constructor (callback: EmitterCallback, context?: any) {
+	constructor (callback: Listener['callback'], context?: any) {
 		this.callback = callback
 		this.context = context
 	}
@@ -17,40 +15,48 @@ class Listener {
 	}
 }
 
-interface ListenersIndex {
-	[key: string]: Listener[]
+type List<T> = {
+	[K in keyof T]: Listener[]
 }
 
-export class Emitter {
-	private listeners: ListenersIndex = {}
+interface Events {
+	[key: string]: (...args: any[]) => void
+}
 
-	list (name: string) {
+export class Emitter<T extends Events> {
+	private listeners: List<T> = {} as any
+
+	list (name: keyof T) {
 		return this.listeners[name] || (this.listeners[name] = [])
 	}
 
-	on (name: string, callback: EmitterCallback, context?: any) {
+	on<K extends keyof T> (name: K, callback: T[K], context?: any) {
 		let listener = new Listener(callback, context)
 		this.list(name).push(listener)
 		return listener
 	}
 
-	few (limit: number, name: string, callback: EmitterCallback, context?: any) {
+	few<K extends keyof T> (limit: number, name: K, callback: T[K], context?: any) {
 		let listener = this.on(name, callback, context)
 		listener.limit = limit
 		return listener
 	}
 
-	once (name: string, callback: EmitterCallback, context?: any) {
+	once<K extends keyof T> (name: K, callback: T[K], context?: any) {
 		return this.few(1, name, callback, context)
 	}
 
-	promise (name: string) {
-		return new Promise<any>(resolve => {
-			this.once(name, resolve)
+	promise<K extends keyof T> (name: K) {
+		return new Promise<Parameters<T[K]>>(resolve => {
+			let handler = function (...args: Parameters<typeof handler>) {
+				resolve(args)
+			} as T[K]
+
+			this.once(name, handler)
 		})
 	}
 
-	emit (name: string, ...args: any[]) {
+	emit<K extends keyof T> (name: K, ...args: Parameters<T[K]>) {
 		let obsolete = []
 
 		this.list(name).forEach(listener => {
@@ -68,7 +74,7 @@ export class Emitter {
 		}
 	}
 
-	remove (name: string, listeners?: Listener[]) {
+	remove (name: keyof T, listeners?: Listener[]) {
 		let list = this.list(name)
 
 		if (listeners) {
@@ -84,7 +90,7 @@ export class Emitter {
 		}
 	}
 
-	off (name: string, callback?: EmitterCallback, context?: any) {
+	off<K extends keyof T> (name: K, callback?: T[K], context?: any) {
 		if (arguments.length > 1) {
 			let obsolete = this.list(name).filter(lnr => {
 				let matchesCallback = true
@@ -105,7 +111,7 @@ export class Emitter {
 		} else if (arguments.length === 1) {
 			this.remove(name)
 		} else {
-			this.listeners = {}
+			this.listeners = {} as any
 		}
 	}
 
