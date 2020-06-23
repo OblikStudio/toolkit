@@ -1,5 +1,7 @@
 // https://github.com/danro/easing-js
 
+export type Easing = (input: number) => number
+
 export function linear (pos) {
 	return pos
 }

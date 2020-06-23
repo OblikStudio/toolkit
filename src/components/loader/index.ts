@@ -1,7 +1,7 @@
 import { findAncestor } from '../../utils/dom'
 import { Component } from '../..'
 import { Cache, Entry } from './cache'
-import { scroll } from '../scroll-to'
+import { scrollTo } from '../../utils/scroll'
 import { easeOutQuad } from '../../utils/easings'
 
 interface State {
@@ -140,7 +140,7 @@ export class Loader extends Component {
 		let animation = this.removeContainers()
 
 		if (typeof state.scroll === 'number') {
-			scroll({
+			scrollTo({
 				target: document.scrollingElement,
 				offset: state.scroll,
 				duration: 900,
@@ -211,7 +211,7 @@ export class Loader extends Component {
 			}
 		}
 
-		scroll({
+		scrollTo({
 			target: scrollTarget,
 			duration: 900,
 			easing: easeOutQuad

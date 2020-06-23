@@ -1,22 +1,17 @@
-import { linear } from '../easings'
+import { Easing, linear } from '../easings'
+import { Emitter } from '../emitter'
+import { components } from '../..'
 
-export class Tween {
-	callback: Function
-	duration: number
-	easing: Function
-
+export class Tween extends Emitter<any> {
 	elapsed: number
 	progress: number
 	value: number
 	stamp: number
 	delta: number
-
 	isComplete: boolean
 
-	constructor (callback: Function, duration: number, easing: Function) {
-		this.callback = callback
-		this.duration = duration
-		this.easing = easing
+	constructor (public duration: number, public easing?: Easing) {
+		super()
 
 		if (typeof this.duration !== 'number') {
 			throw new Error('Duration must be a number')
@@ -37,22 +32,18 @@ export class Tween {
 	}
 
 	update () {
-		if (typeof this.callback === 'function') {
-			this.callback.call(this, this.value)
-		}
+		this.emit('update', this.value)
 	}
 
 	step () {
-		var newStamp = Date.now()
-		this.delta = newStamp - this.stamp
+		let oldStamp = this.stamp
+
+		this.stamp = Date.now()
+		this.delta = this.stamp - oldStamp
 		this.elapsed += this.delta
 
-		if (this.elapsed > this.duration) {
-			this.elapsed = this.duration
-		}
-
 		if (this.duration > 0) {
-			this.progress = this.elapsed / this.duration
+			this.progress = Math.min(this.elapsed / this.duration, 1)
 		} else {
 			this.progress = 1
 		}
@@ -60,7 +51,10 @@ export class Tween {
 		this.value = this.easing(this.progress)
 		this.update()
 
-		this.isComplete = this.elapsed >= this.duration
-		this.stamp = newStamp
+		let complete = this.elapsed >= this.duration
+		if (complete && !this.isComplete) {
+			this.isComplete = true
+			this.emit('end')
+		}
 	}
 }

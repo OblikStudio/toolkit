@@ -4,53 +4,12 @@
  * @todo the cliecked element should be focused as per default behavior
  */
 
-import { Animation } from '../../utils/animation'
-import { offsetGlobal, getTag } from '../../utils/dom'
+import { getTag } from '../../utils/dom'
 import { linear } from '../../utils/easings'
+import { scrollTo } from '../../utils/scroll'
 import { Component } from '../..'
 
-export function scroll (options) {
-	if (!options.target) {
-		throw new Error('No scroll target')
-	}
-
-	let scroller = document.scrollingElement
-	let offset = options.offset || 0
-	let interruptible = options.interruptible || true
-
-	let scrollAnimation = new Animation({
-		duration: options.duration || 650,
-		easing: options.easing,
-		values: {
-			scroll: {
-				start: scroller.scrollTop,
-				end: offsetGlobal(options.target).top + offset
-			}
-		},
-		onUpdate () {
-			scroller.scrollTop = (this as typeof scrollAnimation).computed.scroll
-		}
-	})
-
-	if (interruptible) {
-		let interruptHandler = function (event) {
-			scrollAnimation.stop()
-			window.removeEventListener('wheel', interruptHandler)
-			window.removeEventListener('touchstart', interruptHandler)
-		}
-
-		window.addEventListener('wheel', interruptHandler)
-		window.addEventListener('touchstart', interruptHandler)
-	}
-
-	scrollAnimation.run()
-}
-
-export function monitorLinks (options) {
-	options = Object.assign({
-		duration: 650
-	}, options)
-
+export function monitorLinks (options: Parameters<typeof scrollTo>[0]) {
 	window.addEventListener('click', (event) => {
 		var link = getTag(event.target, 'A')
 
@@ -61,7 +20,7 @@ export function monitorLinks (options) {
 				var target = document.querySelector(href)
 
 				if (target) {
-					scroll({
+					scrollTo({
 						...options,
 						target
 					})
@@ -115,7 +74,7 @@ export class ScrollTo extends Component<Element, Options> {
 		}
 
 		this.handler = (event) => {
-			scroll({
+			scrollTo({
 				duration: this.$options.duration,
 				easing: ScrollTo.easings[this.$options.easing],
 				target: this.target,
