@@ -26,7 +26,7 @@ interface Events {
 export class Emitter<T extends Events> {
 	private listeners: List<T> = {} as any
 
-	list (name: keyof T) {
+	private list (name: keyof T) {
 		return this.listeners[name] || (this.listeners[name] = [])
 	}
 
@@ -36,14 +36,14 @@ export class Emitter<T extends Events> {
 		return listener
 	}
 
-	few<K extends keyof T> (limit: number, name: K, callback: T[K], context?: any) {
+	few<K extends keyof T> (name: K, callback: T[K], limit: number, context?: any) {
 		let listener = this.on(name, callback, context)
 		listener.limit = limit
 		return listener
 	}
 
 	once<K extends keyof T> (name: K, callback: T[K], context?: any) {
-		return this.few(1, name, callback, context)
+		return this.few(name, callback, 1, context)
 	}
 
 	promise<K extends keyof T> (name: K) {

@@ -20,7 +20,7 @@ describe('emitter', () => {
 		let fn2 = sinon.spy()
 
 		e.once('test', fn)
-		e.few(2, 'test', fn2)
+		e.few('test', fn2, 2)
 		e.emit('test')
 		e.emit('test')
 		e.emit('test')
