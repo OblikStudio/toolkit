@@ -2,7 +2,7 @@ import { findAncestor } from '../../utils/dom'
 import { Component } from '../..'
 import { Cache, Entry } from './cache'
 import { scrollTo } from '../../utils/scroll'
-import { easeOutQuad } from '../../utils/easings'
+import { easeOutQuint } from '../../utils/easings'
 
 interface State {
 	url: string
@@ -10,12 +10,30 @@ interface State {
 }
 
 export class Container extends Component {
-	animateOut () {
-		return Promise.resolve()
+	promiseTransition (className: string) {
+		return new Promise((resolve, reject) => {
+			let handler = () => {
+				this.$parent.$emitter.off('navigation')
+				this.$element.removeEventListener('animationend', handler)
+				resolve()
+			}
+
+			this.$element.addEventListener('animationend', handler)
+			this.$element.classList.add(className)
+
+			this.$parent.$emitter.once('navigation', () => {
+				this.$element.removeEventListener('animationend', handler)
+				reject(new Error('Animation interruped'))
+			}, this)
+		})
 	}
 
 	animateIn () {
-		return Promise.resolve()
+		return this.promiseTransition('is-animate-in')
+	}
+
+	animateOut () {
+		return this.promiseTransition('is-animate-out')
 	}
 }
 
@@ -62,7 +80,7 @@ export class Loader extends Component {
 	}
 
 	request (url: string, timeout: number = 3e3) {
-		return new Promise((resolve, reject) => {
+		return new Promise<XMLHttpRequest>((resolve, reject) => {
 			const xhr = new XMLHttpRequest()
 
 			xhr.addEventListener('readystatechange', () => {
@@ -90,7 +108,7 @@ export class Loader extends Component {
 		let entry = this.cache.get(url)
 
 		if (!entry) {
-			return this.request(url).then((xhr: XMLHttpRequest) => {
+			return this.request(url).then(xhr => {
 				let markup = xhr.responseText
 				let entry = this.cache.set(url, {
 					markup
@@ -103,7 +121,7 @@ export class Loader extends Component {
 		}
 	}
 
-	async load (item: Entry) {
+	async addContainers (item: Entry) {
 		let doc = this.parser.parseFromString(item.markup, 'text/html')
 		let title = doc.querySelector('head title')?.textContent
 		let container = doc.querySelector('[ob-loader-container]')
@@ -112,47 +130,83 @@ export class Loader extends Component {
 
 		this.$element.appendChild(container)
 
-		return new Promise((resolve, reject) => {
-			this.$emitter.once('add:container', (container: Container) => {
-				container.animateIn().then(resolve).catch(reject)
+		return new Promise(resolve => {
+			this.$emitter.once('add:container', () => {
+				resolve()
 			})
 		})
 	}
 
-	removeContainers () {
-		let promises = this.$container.map(container => {
-			return container.animateOut().then(() => {
-				let parent = container.$element.parentElement
+	showContainers () {
+		return Promise.all(this.$container.map(container => {
+			return container.animateIn()
+		}))
+	}
 
-				if (parent) {
-					parent.removeChild(container.$element)
-				}
-			})
+	hideContainers () {
+		return Promise.all(this.$container.map(container => {
+			return container.animateOut()
+		}))
+	}
+
+	removeContainers () {
+		this.$container.forEach(container => {
+			let parent = container.$element.parentElement
+
+			if (parent) {
+				parent.removeChild(container.$element)
+			}
+		})
+	}
+
+	animationOut: Promise<any>
+
+	transition () {
+		let state = history.state as State
+		let nextItem = null
+
+		let promiseAnimation = this.hideContainers()
+		let promiseFetch = this.fetch(state.url).then(item => {
+			nextItem = item
 		})
 
-		return Promise.all(promises)
+		this.animationOut = Promise.all([
+			promiseAnimation,
+			promiseFetch
+		]).then(() => {
+			this.removeContainers()
+			return this.addContainers(nextItem)
+		}).then(() => {
+			if (typeof state.scroll === 'number') {
+				scrollTo({
+					target: document.scrollingElement,
+					offset: state.scroll,
+					duration: 900,
+					easing: easeOutQuint
+				})
+			}
+
+			return this.showContainers()
+		}).catch(() => {
+			this.removeContainers()
+			return this.addContainers(nextItem)
+		}).then(() => {
+			this.animationOut = null
+		})
 	}
 
 	handlePopState (event: PopStateEvent) {
 		event.preventDefault()
 
-		let state = history.state as State
-		let animation = this.removeContainers()
+		this.$emitter.emit('navigation')
 
-		if (typeof state.scroll === 'number') {
-			scrollTo({
-				target: document.scrollingElement,
-				offset: state.scroll,
-				duration: 900,
-				easing: easeOutQuad
+		if (this.animationOut) {
+			return this.animationOut.then(() => {
+				return this.transition()
 			})
+		} else {
+			return this.transition()
 		}
-
-		return this.fetch(state.url).then((item) => {
-			return animation.then(() => {
-				return this.load(item)
-			})
-		})
 	}
 
 	handleClick (event: MouseEvent) {
@@ -193,40 +247,46 @@ export class Loader extends Component {
 		}
 	}
 
-	handleLink (link: HTMLAnchorElement) {
-		let href = link.getAttribute('href')
-		let animation = this.removeContainers()
-
-		this.updateState()
-
+	getScrollElement (href: string) {
 		let fragment = href.split('#')?.[1]
-		let fragmentElement = null
-		let scrollTarget = document.scrollingElement
+		let element = document.scrollingElement
 
 		if (fragment) {
-			fragmentElement = document.getElementById(fragment)
+			let fragmentElement = document.getElementById(fragment)
 
 			if (fragmentElement) {
-				scrollTarget = fragmentElement
+				element = fragmentElement
 			}
 		}
 
-		scrollTo({
-			target: scrollTarget,
-			duration: 900,
-			easing: easeOutQuad
-		})
+		return element
+	}
+
+	handleLink (link: HTMLAnchorElement) {
+		let href = link.getAttribute('href')
+		let animation = this.hideContainers()
+		let element = this.getScrollElement(href)
+
+		this.updateState()
 
 		return this.fetch(href).then((item: Entry) => {
-			let state: State = {
-				url: href,
-				scroll: document.scrollingElement.scrollTop
-			}
-
-			history.pushState(state, '', href)
-
 			return animation.then(() => {
-				return this.load(item)
+				let state: State = {
+					url: href,
+					scroll: document.scrollingElement.scrollTop
+				}
+
+				history.pushState(state, '', href)
+
+				this.removeContainers()
+
+				return this.addContainers(item).then(() => {
+					scrollTo({
+						target: element,
+						duration: 900,
+						easing: easeOutQuint
+					})
+				})
 			})
 		})
 	}
