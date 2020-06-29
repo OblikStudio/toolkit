@@ -11,20 +11,14 @@ interface State {
 
 export class Container extends Component {
 	promiseTransition (className: string) {
-		return new Promise((resolve, reject) => {
+		return new Promise(resolve => {
 			let handler = () => {
-				this.$parent.$emitter.off('navigation')
 				this.$element.removeEventListener('animationend', handler)
 				resolve()
 			}
 
 			this.$element.addEventListener('animationend', handler)
 			this.$element.classList.add(className)
-
-			this.$parent.$emitter.once('navigation', () => {
-				this.$element.removeEventListener('animationend', handler)
-				reject(new Error('Animation interruped'))
-			}, this)
 		})
 	}
 
@@ -161,38 +155,67 @@ export class Loader extends Component {
 
 	animationOut: Promise<any>
 
+	interruptify (action: Promise<any>) {
+		return new Promise((resolve, reject) => {
+			let ready = false
+
+			action
+				.then(() => {
+					ready = true
+					resolve()
+				})
+				.catch(reject)
+
+			this.$emitter.once('navigation', () => {
+				if (!ready) {
+					reject()
+				}
+			})
+		})
+	}
+
 	transition () {
 		let state = history.state as State
-		let nextItem = null
+		let item = null
 
-		let promiseAnimation = this.hideContainers()
-		let promiseFetch = this.fetch(state.url).then(item => {
-			nextItem = item
-		})
+		// handle interruption when fetch is not finished
+		// handle interruptions on link click
+
+		let promiseAnimation = this.interruptify(this.hideContainers())
+		let promiseFetch = this.fetch(state.url).then(v => item = v)
 
 		this.animationOut = Promise.all([
 			promiseAnimation,
 			promiseFetch
-		]).then(() => {
-			this.removeContainers()
-			return this.addContainers(nextItem)
-		}).then(() => {
-			if (typeof state.scroll === 'number') {
-				scrollTo({
-					target: document.scrollingElement,
-					offset: state.scroll,
-					duration: 900,
-					easing: easeOutQuint
-				})
-			}
+		])
+			.then(() => {
+				this.removeContainers()
+				return this.addContainers(item)
+					.then(() => {
+						if (typeof state.scroll === 'number') {
+							scrollTo({
+								target: document.scrollingElement,
+								offset: state.scroll,
+								duration: 900,
+								easing: easeOutQuint
+							})
+						}
 
-			return this.showContainers()
-		}).catch(() => {
-			this.removeContainers()
-			return this.addContainers(nextItem)
-		}).then(() => {
-			this.animationOut = null
-		})
+						return this.interruptify(this.showContainers())
+					})
+			})
+			.catch(() => {
+				this.removeContainers()
+
+				if (item) {
+					return this.addContainers(item)
+				} else {
+					return Promise.resolve()
+				}
+			})
+			.finally(() => {
+				this.animationOut = null
+			})
 	}
 
 	handlePopState (event: PopStateEvent) {
