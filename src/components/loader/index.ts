@@ -3,6 +3,7 @@ import { Component } from '../..'
 import { Cache, Entry } from './cache'
 import { scrollTo } from '../../utils/scroll'
 import { easeOutQuint } from '../../utils/easings'
+import { debounce } from '../../utils/functions'
 
 interface State {
 	url: string
@@ -61,7 +62,11 @@ export class Loader extends Component {
 			markup: document.documentElement.outerHTML
 		})
 
-		this.updateState()
+		let handle = debounce(() => {
+			this.updateState()
+		}, 100)
+
+		document.addEventListener('scroll', handle)
 	}
 
 	updateState () {
@@ -174,32 +179,36 @@ export class Loader extends Component {
 		})
 	}
 
-	transition () {
-		let state = history.state as State
+	transition (state: State, push: boolean) {
 		let item = null
 
-		// handle interruption when fetch is not finished
-		// handle interruptions on link click
-
-		let promiseAnimation = this.interruptify(this.hideContainers())
-		let promiseFetch = this.fetch(state.url).then(v => item = v)
-
-		this.animationOut = Promise.all([
-			promiseAnimation,
-			promiseFetch
+		return Promise.all([
+			this.interruptify(this.hideContainers()),
+			this.fetch(state.url).then(v => item = v)
 		])
 			.then(() => {
 				this.removeContainers()
 				return this.addContainers(item)
 					.then(() => {
-						if (typeof state.scroll === 'number') {
-							scrollTo({
-								target: document.scrollingElement,
-								offset: state.scroll,
-								duration: 900,
-								easing: easeOutQuint
-							})
+						if (push) {
+							history.pushState(state, '', state.url)
 						}
+
+						let element = this.getFragmentElement(new URL(state.url))
+						let options = {
+							target: document.scrollingElement,
+							offset: 0,
+							duration: 900,
+							easing: easeOutQuint
+						}
+
+						if (element) {
+							options.target = element
+						} else if (typeof state.scroll === 'number') {
+							options.offset = state.scroll
+						}
+
+						scrollTo(options)
 
 						return this.interruptify(this.showContainers())
 					})
@@ -209,6 +218,9 @@ export class Loader extends Component {
 
 				if (item) {
 					return this.addContainers(item)
+						.then(() => {
+							document.scrollingElement.scrollTop = state.scroll
+						})
 				} else {
 					return Promise.resolve()
 				}
@@ -218,17 +230,47 @@ export class Loader extends Component {
 			})
 	}
 
-	handlePopState (event: PopStateEvent) {
-		event.preventDefault()
-
+	performTransition (state: State, push = false) {
 		this.$emitter.emit('navigation')
 
 		if (this.animationOut) {
 			return this.animationOut.then(() => {
-				return this.transition()
+				this.animationOut = this.transition(state, push)
 			})
 		} else {
-			return this.transition()
+			this.animationOut = this.transition(state, push)
+		}
+	}
+
+	handlePopState (event: PopStateEvent) {
+		event.preventDefault()
+		this.performTransition(history.state)
+	}
+
+	handleNavigation (href: string, target?: string) {
+		let url = new URL(href, window.location.href)
+		let sameOrigin = (url.host === window.location.host)
+		let samePath = (url.pathname === window.location.pathname)
+		let shouldLink = (sameOrigin && target !== '_blank')
+		let shouldScrollOnly = (shouldLink && samePath && url.hash)
+
+		if (shouldLink) {
+			if (shouldScrollOnly) {
+				scrollTo({
+					target: this.getFragmentElement(url),
+					duration: 900,
+					easing: easeOutQuint
+				})
+
+				history.replaceState(history.state, null, url.href)
+			} else {
+				this.performTransition({
+					url: url.href,
+					scroll: 0
+				}, true)
+			}
+
+			return true
 		}
 	}
 
@@ -244,74 +286,21 @@ export class Loader extends Component {
 
 			if (link) {
 				let href = link.getAttribute('href')
+				let target = link.getAttribute('target')
 
-				if (href) {
-					let sameOrigin = true
-					let url = null
-
-					try {
-						url = new URL(href)
-					} catch (e) {
-						// A relative/absolute URL starting with `/`
-					}
-
-					if (url) {
-						sameOrigin = (url.host === window.location.host)
-					}
-
-					let target = link.getAttribute('target')
-
-					if (sameOrigin && target !== '_blank') {
-						this.handleLink(link)
-						event.preventDefault()
-					}
+				if (href && this.handleNavigation(href, target)) {
+					event.preventDefault()
 				}
 			}
 		}
 	}
 
-	getScrollElement (href: string) {
-		let fragment = href.split('#')?.[1]
-		let element = document.scrollingElement
-
-		if (fragment) {
-			let fragmentElement = document.getElementById(fragment)
-
-			if (fragmentElement) {
-				element = fragmentElement
-			}
+	getFragmentElement (url: URL) {
+		if (url.hash) {
+			return document.querySelector(url.hash)
+		} else {
+			return null
 		}
-
-		return element
-	}
-
-	handleLink (link: HTMLAnchorElement) {
-		let href = link.getAttribute('href')
-		let animation = this.hideContainers()
-		let element = this.getScrollElement(href)
-
-		this.updateState()
-
-		return this.fetch(href).then((item: Entry) => {
-			return animation.then(() => {
-				let state: State = {
-					url: href,
-					scroll: document.scrollingElement.scrollTop
-				}
-
-				history.pushState(state, '', href)
-
-				this.removeContainers()
-
-				return this.addContainers(item).then(() => {
-					scrollTo({
-						target: element,
-						duration: 900,
-						easing: easeOutQuint
-					})
-				})
-			})
-		})
 	}
 
 	destroy () {
