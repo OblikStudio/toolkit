@@ -19,3 +19,15 @@ export function merge (target: object, ...sources: object[]): any {
 
 	return target
 }
+
+export function debounce<T extends (...args: any) => any> (callback: T, time: number) {
+	let timer: number
+
+	return function (...args: Parameters<T>) {
+		clearTimeout(timer)
+
+		timer = window.setTimeout(() => {
+			callback.apply(null, args)
+		}, time)
+	}
+}
