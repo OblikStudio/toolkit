@@ -6,7 +6,6 @@ import { easeOutQuint } from '../../utils/easings'
 import { debounce } from '../../utils/functions'
 
 interface State {
-	url: string
 	scroll: number
 }
 
@@ -39,22 +38,18 @@ export class Loader extends Component {
 
 	cache: Cache
 	parser: DOMParser
-	$container: Container[]
+	animationOut: Promise<any>
+	$container: Container
 
-	protected popStateHandler: Loader['handlePopState']
-	protected clickHandler: Loader['handleClick']
+	protected popStateHandler = this.handlePopState.bind(this)
+	protected clickHandler = this.handleClick.bind(this)
+	protected scrollHandler = debounce(() => {
+		this.updateState()
+	}, 100)
 
 	create () {
 		this.cache = new Cache()
 		this.parser = new DOMParser()
-		this.$container = []
-
-		this.popStateHandler = this.handlePopState.bind(this)
-		this.clickHandler = this.handleClick.bind(this)
-
-		window.addEventListener('popstate', this.popStateHandler)
-		document.addEventListener('click', this.clickHandler)
-		history.scrollRestoration = 'manual'
 	}
 
 	init () {
@@ -62,62 +57,30 @@ export class Loader extends Component {
 			markup: document.documentElement.outerHTML
 		})
 
-		let handle = debounce(() => {
-			this.updateState()
-		}, 100)
-
-		document.addEventListener('scroll', handle)
+		history.scrollRestoration = 'manual'
+		window.addEventListener('popstate', this.popStateHandler)
+		document.addEventListener('click', this.clickHandler)
+		document.addEventListener('scroll', this.scrollHandler)
 	}
 
 	updateState () {
 		let state: State = {
-			url: window.location.href,
 			scroll: document.scrollingElement.scrollTop
 		}
 
-		history.replaceState(state, '', state.url)
-	}
-
-	request (url: string, timeout: number = 3e3) {
-		return new Promise<XMLHttpRequest>((resolve, reject) => {
-			const xhr = new XMLHttpRequest()
-
-			xhr.addEventListener('readystatechange', () => {
-				if (xhr.readyState === XMLHttpRequest.DONE) {
-					// Don't check xhr.status because 404 pages should also be rendered.
-					resolve(xhr)
-				}
-			})
-
-			xhr.addEventListener('timeout', () => {
-				reject(new Error('Request timed out'))
-			})
-
-			xhr.addEventListener('error', () => {
-				reject(new Error('Network error'))
-			})
-
-			xhr.open('GET', url)
-			xhr.timeout = timeout
-			xhr.send()
-		})
+		history.replaceState(state, '')
 	}
 
 	async fetch (url: string): Promise<Entry> {
 		let entry = this.cache.get(url)
 
 		if (!entry) {
-			return this.request(url).then(xhr => {
-				let markup = xhr.responseText
-				let entry = this.cache.set(url, {
-					markup
-				})
-
-				return Promise.resolve(entry)
+			entry = this.cache.set(url, {
+				markup: await fetch(url).then(response => response.text())
 			})
-		} else {
-			return Promise.resolve(entry)
 		}
+
+		return entry
 	}
 
 	async addContainers (item: Entry) {
@@ -128,37 +91,24 @@ export class Loader extends Component {
 		document.title = title
 
 		this.$element.appendChild(container)
-
-		return new Promise(resolve => {
-			this.$emitter.once('add:container', () => {
-				resolve()
-			})
-		})
+		await this.$emitter.promise('add:container')
 	}
 
 	showContainers () {
-		return Promise.all(this.$container.map(container => {
-			return container.animateIn()
-		}))
+		return this.$container.animateIn()
 	}
 
 	hideContainers () {
-		return Promise.all(this.$container.map(container => {
-			return container.animateOut()
-		}))
+		return this.$container.animateOut()
 	}
 
 	removeContainers () {
-		this.$container.forEach(container => {
-			let parent = container.$element.parentElement
+		let parent = this.$container.$element.parentElement
 
-			if (parent) {
-				parent.removeChild(container.$element)
-			}
-		})
+		if (parent) {
+			parent.removeChild(this.$container.$element)
+		}
 	}
-
-	animationOut: Promise<any>
 
 	interruptify (action: Promise<any>) {
 		return new Promise((resolve, reject) => {
@@ -179,22 +129,22 @@ export class Loader extends Component {
 		})
 	}
 
-	transition (state: State, push: boolean) {
+	transition (state: State, url: string, push: boolean) {
 		let item = null
 
 		return Promise.all([
 			this.interruptify(this.hideContainers()),
-			this.fetch(state.url).then(v => item = v)
+			this.fetch(url).then(v => item = v)
 		])
 			.then(() => {
 				this.removeContainers()
 				return this.addContainers(item)
 					.then(() => {
 						if (push) {
-							history.pushState(state, '', state.url)
+							history.pushState(state, '', url)
 						}
 
-						let element = this.getFragmentElement(new URL(state.url))
+						let element = this.getFragmentElement(new URL(url))
 						let options = {
 							target: document.scrollingElement,
 							offset: 0,
@@ -230,21 +180,21 @@ export class Loader extends Component {
 			})
 	}
 
-	performTransition (state: State, push = false) {
+	performTransition (state: State, url: string, push = false) {
 		this.$emitter.emit('navigation')
 
 		if (this.animationOut) {
 			return this.animationOut.then(() => {
-				this.animationOut = this.transition(state, push)
+				this.animationOut = this.transition(state, url, push)
 			})
 		} else {
-			this.animationOut = this.transition(state, push)
+			this.animationOut = this.transition(state, url, push)
 		}
 	}
 
 	handlePopState (event: PopStateEvent) {
 		event.preventDefault()
-		this.performTransition(history.state)
+		this.performTransition(history.state, window.location.href)
 	}
 
 	handleNavigation (href: string, target?: string) {
@@ -264,10 +214,7 @@ export class Loader extends Component {
 
 				history.replaceState(history.state, null, url.href)
 			} else {
-				this.performTransition({
-					url: url.href,
-					scroll: 0
-				}, true)
+				this.performTransition({ scroll: 0 }, url.href, true)
 			}
 
 			return true
