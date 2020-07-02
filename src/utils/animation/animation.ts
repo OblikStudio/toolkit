@@ -15,6 +15,10 @@ export class Animation extends Tween {
 			this.emit('start')
 		}
 
+		if (this.duration === 0) {
+			this.step()
+		}
+
 		if (!this.isComplete) {
 			window.requestAnimationFrame(() => {
 				this.isTicking = false
