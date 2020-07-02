@@ -1,43 +1,28 @@
 import { findAncestor } from '../../utils/dom'
-import { easeOutQuint } from '../../utils/easings'
+import { Easing, easeOutQuint } from '../../utils/easings'
 import { debounce } from '../../utils/functions'
 import { scrollTo } from '../../utils/scroll'
 import { Component } from '../..'
 import { Cache } from './cache'
+import { Container } from './container'
 
 interface State {
 	scroll: number
 }
 
-export class Container extends Component {
-	promiseTransition () {
-		return new Promise(resolve => {
-			let handler = () => {
-				this.$element.removeEventListener('animationend', handler)
-				resolve()
-			}
-
-			this.$element.addEventListener('animationend', handler)
-		})
-	}
-
-	animateIn () {
-		this.$element.classList.add('is-animate-in')
-		return this.promiseTransition()
-	}
-
-	animateOut () {
-		this.$element.classList.add('is-animate-out')
-		return this.promiseTransition()
+export interface Options {
+	scroll: {
+		duration: number,
+		easing: Easing
 	}
 }
 
-export class Loader extends Component {
+export class Loader extends Component<Element, Options> {
 	static components = {
 		container: Container
 	}
 
-	static defaults = {
+	static defaults: Options = {
 		scroll: {
 			duration: 1000,
 			easing: easeOutQuint
@@ -76,7 +61,7 @@ export class Loader extends Component {
 		}
 	}
 
-	scroll (options: { target?: Element, offset?: number }) {
+	scrollTo (options: { target?: Element, offset?: number }) {
 		let defaults = (this.constructor as typeof Loader).defaults
 		let config: Parameters<typeof scrollTo>[0] = Object.assign({}, defaults.scroll, options)
 
@@ -87,7 +72,15 @@ export class Loader extends Component {
 		this.scrollAnimation = scrollTo(config)
 	}
 
-	containers () {
+	getFragmentElement (url: URL) {
+		if (url.hash) {
+			return document.querySelector(url.hash)
+		} else {
+			return null
+		}
+	}
+
+	getContainers () {
 		let result: Container[] = []
 
 		for (let name in this.constructor.components) {
@@ -101,7 +94,7 @@ export class Loader extends Component {
 	}
 
 	addContainers (doc: Document) {
-		let promises = this.containers().map(container => {
+		let promises = this.getContainers().map(container => {
 			let element = doc.querySelector(`[ob-loader-${container.$name}]`)
 			let parent = container.$element.parentElement
 
@@ -116,7 +109,7 @@ export class Loader extends Component {
 
 	showContainers () {
 		return Promise.all(
-			this.containers().map(container => {
+			this.getContainers().map(container => {
 				return this.interruptify(container.animateIn())
 			})
 		)
@@ -124,14 +117,14 @@ export class Loader extends Component {
 
 	hideContainers () {
 		return Promise.all(
-			this.containers().map(container => {
+			this.getContainers().map(container => {
 				return this.interruptify(container.animateOut())
 			})
 		)
 	}
 
 	removeContainers () {
-		let containers = this.containers()
+		let containers = this.getContainers()
 
 		this.$children.forEach(child => {
 			if (containers.indexOf(child as Container) < 0) {
@@ -181,7 +174,7 @@ export class Loader extends Component {
 			}
 
 			let element = this.getFragmentElement(new URL(url))
-			let options: Parameters<Loader['scroll']>[0] = {}
+			let options: Parameters<Loader['scrollTo']>[0] = {}
 
 			if (element) {
 				options.target = element
@@ -189,7 +182,7 @@ export class Loader extends Component {
 				options.offset = state.scroll
 			}
 
-			this.scroll(options)
+			this.scrollTo(options)
 
 			await this.showContainers()
 		} catch (e) {
@@ -220,33 +213,6 @@ export class Loader extends Component {
 		this.promiseTransition = this.transition(state, url, push)
 	}
 
-	handleNavigation (href: string, target?: string) {
-		let url = new URL(href, window.location.href)
-		let sameOrigin = (url.host === window.location.host)
-		let samePath = (url.pathname === window.location.pathname)
-		let shouldLink = (sameOrigin && target !== '_blank')
-		let shouldScrollOnly = (shouldLink && samePath && url.hash)
-
-		if (shouldLink) {
-			if (shouldScrollOnly) {
-				// When the hash is changed, a popstate event is fired. Ignore
-				// it to avoid changing the page.
-				this.isIgnoreNextPop = true
-
-				this.scroll({
-					target: this.getFragmentElement(url)
-				})
-
-				// Do not preventDefault() to fire the window hashchange event.
-				return false
-			} else {
-				this.performTransition({ scroll: 0 }, url.href, true)
-
-				return true
-			}
-		}
-	}
-
 	handleClick (event: MouseEvent) {
 		if (event.target instanceof Element) {
 			let link: HTMLAnchorElement = null
@@ -264,6 +230,33 @@ export class Loader extends Component {
 				if (href && this.handleNavigation(href, target) === true) {
 					event.preventDefault()
 				}
+			}
+		}
+	}
+
+	handleNavigation (href: string, target?: string) {
+		let url = new URL(href, window.location.href)
+		let sameOrigin = (url.host === window.location.host)
+		let samePath = (url.pathname === window.location.pathname)
+		let shouldLink = (sameOrigin && target !== '_blank')
+		let shouldScrollOnly = (shouldLink && samePath && url.hash)
+
+		if (shouldLink) {
+			if (shouldScrollOnly) {
+				// When the hash is changed, a popstate event is fired. Ignore
+				// it to avoid changing the page.
+				this.isIgnoreNextPop = true
+
+				this.scrollTo({
+					target: this.getFragmentElement(url)
+				})
+
+				// Do not preventDefault() to fire the window hashchange event.
+				return false
+			} else {
+				this.performTransition({ scroll: 0 }, url.href, true)
+
+				return true
 			}
 		}
 	}
@@ -290,18 +283,12 @@ export class Loader extends Component {
 		})
 	}
 
-	getFragmentElement (url: URL) {
-		if (url.hash) {
-			return document.querySelector(url.hash)
-		} else {
-			return null
-		}
-	}
-
 	destroy () {
 		window.removeEventListener('popstate', this.popStateHandler)
 		document.removeEventListener('click', this.clickHandler)
+		document.removeEventListener('scroll', this.scrollHandler)
 	}
 }
 
+export { Container }
 export default Loader
