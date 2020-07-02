@@ -41,6 +41,8 @@ export class Loader extends Component {
 	animationOut: Promise<any>
 	$container: Container
 
+	protected names: string[]
+
 	protected popStateHandler = this.handlePopState.bind(this)
 	protected clickHandler = this.handleClick.bind(this)
 	protected scrollHandler = debounce(() => {
@@ -50,6 +52,7 @@ export class Loader extends Component {
 	create () {
 		this.cache = new Cache()
 		this.parser = new DOMParser()
+		this.names = Object.keys(this.constructor.components)
 	}
 
 	init () {
@@ -83,31 +86,52 @@ export class Loader extends Component {
 		return entry
 	}
 
-	async addContainers (item: Entry) {
+	addContainers (item: Entry) {
 		let doc = this.parser.parseFromString(item.markup, 'text/html')
-		let title = doc.querySelector('head title')?.textContent
-		let container = doc.querySelector('[ob-loader-container]')
+		document.title = doc.querySelector('head title')?.textContent
 
-		document.title = title
+		let promises = this.names.map(name => {
+			let container = doc.querySelector(`[ob-loader-${name}]`)
+			this.$element.appendChild(container)
+			return this.$emitter.promise(`add:${name}`)
+		})
 
-		this.$element.appendChild(container)
-		await this.$emitter.promise('add:container')
+		return Promise.all(promises)
 	}
 
 	showContainers () {
-		return this.$container.animateIn()
+		let animationPromises = this.names.map(name => {
+			let comp = this['$' + name] as Container
+			if (comp) {
+				return this.interruptify(comp.animateIn())
+			}
+		})
+
+		return Promise.all(animationPromises)
 	}
 
 	hideContainers () {
-		return this.$container.animateOut()
+		let proms = this.names.map(name => {
+			let comp = this['$' + name] as Container
+			if (comp) {
+				return this.interruptify(comp.animateOut())
+			}
+		})
+
+		return Promise.all(proms)
 	}
 
 	removeContainers () {
-		let parent = this.$container.$element.parentElement
+		this.names.forEach(name => {
+			let comp = this['$' + name] as Container
+			if (comp) {
+				let parent = comp.$element.parentElement
 
-		if (parent) {
-			parent.removeChild(this.$container.$element)
-		}
+				if (parent) {
+					parent.removeChild(comp.$element)
+				}
+			}
+		})
 	}
 
 	interruptify (action: Promise<any>) {
@@ -133,7 +157,7 @@ export class Loader extends Component {
 		let item = null
 
 		return Promise.all([
-			this.interruptify(this.hideContainers()),
+			this.hideContainers(),
 			this.fetch(url).then(v => item = v)
 		])
 			.then(() => {
@@ -160,7 +184,7 @@ export class Loader extends Component {
 
 						scrollTo(options)
 
-						return this.interruptify(this.showContainers())
+						return this.showContainers()
 					})
 			})
 			.catch(() => {
