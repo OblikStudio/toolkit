@@ -153,67 +153,57 @@ export class Loader extends Component {
 		})
 	}
 
-	transition (state: State, url: string, push: boolean) {
+	async transition (state: State, url: string, push: boolean) {
 		let item = null
 
-		return Promise.all([
-			this.hideContainers(),
-			this.fetch(url).then(v => item = v)
-		])
-			.then(() => {
-				this.removeContainers()
-				return this.addContainers(item)
-					.then(() => {
-						if (push) {
-							history.pushState(state, '', url)
-						}
+		try {
+			await Promise.all([
+				this.hideContainers(),
+				this.fetch(url).then(v => item = v)
+			])
 
-						let element = this.getFragmentElement(new URL(url))
-						let options = {
-							target: document.scrollingElement,
-							offset: 0,
-							duration: 900,
-							easing: easeOutQuint
-						}
+			this.removeContainers()
+			await this.addContainers(item)
 
-						if (element) {
-							options.target = element
-						} else if (typeof state.scroll === 'number') {
-							options.offset = state.scroll
-						}
+			if (push) {
+				history.pushState(state, '', url)
+			}
 
-						scrollTo(options)
+			let element = this.getFragmentElement(new URL(url))
+			let options = {
+				target: document.scrollingElement,
+				offset: 0,
+				duration: 900,
+				easing: easeOutQuint
+			}
 
-						return this.showContainers()
-					})
-			})
-			.catch(() => {
-				this.removeContainers()
+			if (element) {
+				options.target = element
+			} else if (typeof state.scroll === 'number') {
+				options.offset = state.scroll
+			}
 
-				if (item) {
-					return this.addContainers(item)
-						.then(() => {
-							document.scrollingElement.scrollTop = state.scroll
-						})
-				} else {
-					return Promise.resolve()
-				}
-			})
-			.finally(() => {
-				this.animationOut = null
-			})
+			scrollTo(options)
+
+			await this.showContainers()
+		} catch (e) {
+			this.removeContainers()
+
+			if (item) {
+				await this.addContainers(item)
+				document.scrollingElement.scrollTop = state.scroll
+			}
+		}
 	}
 
-	performTransition (state: State, url: string, push = false) {
+	async performTransition (state: State, url: string, push = false) {
 		this.$emitter.emit('navigation')
 
 		if (this.animationOut) {
-			return this.animationOut.then(() => {
-				this.animationOut = this.transition(state, url, push)
-			})
-		} else {
-			this.animationOut = this.transition(state, url, push)
+			await this.animationOut
 		}
+
+		this.animationOut = this.transition(state, url, push)
 	}
 
 	handlePopState (event: PopStateEvent) {
