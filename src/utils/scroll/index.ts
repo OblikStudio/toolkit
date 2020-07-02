@@ -2,28 +2,26 @@ import { Animation } from '../animation'
 import { offsetGlobal } from '../dom'
 
 export interface Options {
-	target: Element
 	duration: Animation['duration']
-	offset?: number
-	interruptible?: boolean
 	easing?: Animation['easing']
+	offset?: number
+	target?: Element
+	interruptible?: boolean
 }
 
 export class ScrollAnimation extends Animation {
-	target: Element
 	start: number
 	end: number
 
 	constructor (options: Options) {
-		if (!options.target) {
-			throw new Error('No scroll target')
-		}
-
 		super(options.duration, options.easing)
 
-		this.target = options.target
 		this.start = document.scrollingElement.scrollTop
-		this.end = offsetGlobal(this.target).top + (options.offset || 0)
+		this.end = options.offset ?? 0
+
+		if (options.target) {
+			this.end += offsetGlobal(options.target).top
+		}
 
 		if (options.interruptible || true) {
 			let interruptHandler = (event) => {
