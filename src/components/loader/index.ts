@@ -48,17 +48,25 @@ export class Loader extends Component {
 	cache: Cache
 	parser: DOMParser
 	promiseTransition: Promise<any>
+	isIgnoreNextPop: boolean
 
 	protected names: string[]
 
-	protected popStateHandler = (event: PopStateEvent) => {
-		event.preventDefault()
+	protected popStateHandler = () => {
+		if (this.isIgnoreNextPop) {
+			this.isIgnoreNextPop = false
+			return
+		}
+
 		this.performTransition(history.state, window.location.href)
 	}
 
 	protected clickHandler = this.handleClick.bind(this)
 	protected updateDebounced = debounce(() => {
-		this.updateState()
+		this.changeState({
+			...history.state,
+			scroll: document.scrollingElement.scrollTop
+		})
 	}, 100)
 
 	protected scrollHandler = () => {
@@ -80,12 +88,12 @@ export class Loader extends Component {
 		document.addEventListener('scroll', this.scrollHandler)
 	}
 
-	updateState () {
-		let state: State = {
-			scroll: document.scrollingElement.scrollTop
+	changeState (state: State, url?: string) {
+		if (url) {
+			history.pushState(state, '', url)
+		} else {
+			history.replaceState(state, '')
 		}
-
-		history.replaceState(state, '')
 	}
 
 	scroll (options: { target: Element, offset?: number }) {
@@ -180,7 +188,7 @@ export class Loader extends Component {
 			this.removeContainers()
 
 			if (push) {
-				history.pushState(state, '', url)
+				this.changeState(state, url)
 				document.title = doc.querySelector('head title')?.textContent
 			}
 
@@ -231,16 +239,21 @@ export class Loader extends Component {
 
 		if (shouldLink) {
 			if (shouldScrollOnly) {
+				// When the hash is changed, a popstate event is fired. Ignore
+				// it to avoid changing the page.
+				this.isIgnoreNextPop = true
+
 				this.scroll({
 					target: this.getFragmentElement(url)
 				})
 
-				history.replaceState(history.state, null, url.href)
+				// Do not preventDefault() to fire the window hashchange event.
+				return false
 			} else {
 				this.performTransition({ scroll: 0 }, url.href, true)
-			}
 
-			return true
+				return true
+			}
 		}
 	}
 
@@ -258,7 +271,7 @@ export class Loader extends Component {
 				let href = link.getAttribute('href')
 				let target = link.getAttribute('target')
 
-				if (href && this.handleNavigation(href, target)) {
+				if (href && this.handleNavigation(href, target) === true) {
 					event.preventDefault()
 				}
 			}
