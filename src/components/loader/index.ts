@@ -44,48 +44,27 @@ export class Loader extends Component {
 		}
 	}
 
-	$container: Container
 	cache: Cache
 	parser: DOMParser
 	promiseTransition: Promise<any>
 	isIgnoreNextPop: boolean
 
-	protected names: string[]
-
-	protected popStateHandler = () => {
-		if (this.isIgnoreNextPop) {
-			this.isIgnoreNextPop = false
-			return
-		}
-
-		this.performTransition(history.state, window.location.href)
-	}
-
+	protected popStateHandler = this.handlePopState.bind(this)
 	protected clickHandler = this.handleClick.bind(this)
-	protected updateDebounced = debounce(() => {
-		this.changeState({
-			...history.state,
-			scroll: document.scrollingElement.scrollTop
-		})
-	}, 100)
-
-	protected scrollHandler = () => {
-		if (!this.promiseTransition) {
-			this.updateDebounced()
-		}
-	}
+	protected scrollHandler = this.handleScroll.bind(this)
+	protected scrollUpdateDebounced = debounce(this.scrollUpdate.bind(this), 100)
 
 	create () {
 		this.cache = new Cache()
 		this.parser = new DOMParser()
-		this.names = Object.keys(this.constructor.components)
 	}
 
 	init () {
-		history.scrollRestoration = 'manual'
 		window.addEventListener('popstate', this.popStateHandler)
 		document.addEventListener('click', this.clickHandler)
 		document.addEventListener('scroll', this.scrollHandler)
+
+		history.scrollRestoration = 'manual'
 	}
 
 	changeState (state: State, url?: string) {
@@ -276,6 +255,28 @@ export class Loader extends Component {
 				}
 			}
 		}
+	}
+
+	handlePopState () {
+		if (this.isIgnoreNextPop) {
+			this.isIgnoreNextPop = false
+			return
+		}
+
+		this.performTransition(history.state, window.location.href)
+	}
+
+	handleScroll () {
+		if (!this.promiseTransition) {
+			this.scrollUpdateDebounced()
+		}
+	}
+
+	scrollUpdate () {
+		this.changeState({
+			...history.state,
+			scroll: document.scrollingElement.scrollTop
+		})
 	}
 
 	getFragmentElement (url: URL) {
