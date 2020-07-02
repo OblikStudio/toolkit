@@ -107,8 +107,7 @@ export class Loader extends Component {
 		return result
 	}
 
-	addContainers (markup: string) {
-		let doc = this.parser.parseFromString(markup, 'text/html')
+	addContainers (doc: Document) {
 		let promises = this.containers().map(container => {
 			let element = doc.querySelector(`[ob-loader-${container.$name}]`)
 			let parent = container.$element.parentElement
@@ -168,19 +167,21 @@ export class Loader extends Component {
 	}
 
 	async transition (state: State, url: string, push: boolean) {
-		let item = null
+		let markup: string = null
 
 		try {
 			await Promise.all([
 				this.hideContainers(),
-				this.cache.fetch(url).then(v => item = v)
+				this.cache.fetch(url).then(v => markup = v)
 			])
 
-			await this.addContainers(item)
+			let doc = this.parser.parseFromString(markup, 'text/html')
+			await this.addContainers(doc)
 			this.removeContainers()
 
 			if (push) {
 				history.pushState(state, '', url)
+				document.title = doc.querySelector('head title')?.textContent
 			}
 
 			let element = this.getFragmentElement(new URL(url))
@@ -199,8 +200,9 @@ export class Loader extends Component {
 
 			await this.showContainers()
 		} catch (e) {
-			if (item) {
-				await this.addContainers(item)
+			if (markup) {
+				let doc = this.parser.parseFromString(markup, 'text/html')
+				await this.addContainers(doc)
 				document.scrollingElement.scrollTop = state.scroll
 			}
 
