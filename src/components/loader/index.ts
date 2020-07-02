@@ -37,15 +37,16 @@ export class Loader extends Component {
 		container: Container
 	}
 
-	static scrollDefaults () {
-		return {
-			duration: 900,
+	static defaults = {
+		scroll: {
+			duration: 1000,
 			easing: easeOutQuint
 		}
 	}
 
 	cache: Cache
 	parser: DOMParser
+	scrollAnimation: ReturnType<typeof scrollTo>
 	promiseTransition: Promise<any>
 	isIgnoreNextPop: boolean
 
@@ -75,10 +76,15 @@ export class Loader extends Component {
 		}
 	}
 
-	scroll (options: { target: Element, offset?: number }) {
-		let defaults = (this.constructor as typeof Loader).scrollDefaults
-		let config: Parameters<typeof scrollTo>[0] = Object.assign(defaults(), options)
-		return scrollTo(config)
+	scroll (options: { target?: Element, offset?: number }) {
+		let defaults = (this.constructor as typeof Loader).defaults
+		let config: Parameters<typeof scrollTo>[0] = Object.assign({}, defaults.scroll, options)
+
+		if (this.scrollAnimation) {
+			this.scrollAnimation.stop()
+		}
+
+		this.scrollAnimation = scrollTo(config)
 	}
 
 	containers () {
@@ -155,6 +161,7 @@ export class Loader extends Component {
 
 	async transition (state: State, url: string, push: boolean) {
 		let markup: string = null
+		let added = false
 
 		try {
 			await Promise.all([
@@ -164,6 +171,8 @@ export class Loader extends Component {
 
 			let doc = this.parser.parseFromString(markup, 'text/html')
 			await this.addContainers(doc)
+			added = true
+
 			this.removeContainers()
 
 			if (push) {
@@ -172,10 +181,7 @@ export class Loader extends Component {
 			}
 
 			let element = this.getFragmentElement(new URL(url))
-			let options = {
-				target: document.scrollingElement,
-				offset: 0
-			}
+			let options: Parameters<Loader['scroll']>[0] = {}
 
 			if (element) {
 				options.target = element
@@ -187,13 +193,18 @@ export class Loader extends Component {
 
 			await this.showContainers()
 		} catch (e) {
-			if (markup) {
+			// New navigation interrupted the transition. If the containers were
+			// not added, the out animation was interruped. In that case,
+			// immediately remove the old containers and add the new ones so
+			// that the new transition can play *their* out animation.
+
+			if (markup && !added) {
 				let doc = this.parser.parseFromString(markup, 'text/html')
 				await this.addContainers(doc)
 				document.scrollingElement.scrollTop = state.scroll
-			}
 
-			this.removeContainers()
+				this.removeContainers()
+			}
 		}
 
 		this.promiseTransition = null
