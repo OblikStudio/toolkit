@@ -23,13 +23,13 @@ export class Component<E extends Element = Element, O = object> {
 
 	private _isInit = false
 	private _isDestroyed = false
-	private _name: string = null
-	private _children: Component[] = []
 
+	$name: string = null
 	$element: E
 	$options: Options<O>
 	$parent: Component
-	$emitter: Emitter
+	$emitter: Emitter<any>
+	$children: Component[] = []
 
 	static isMovable = true
 
@@ -42,12 +42,12 @@ export class Component<E extends Element = Element, O = object> {
 			if (names.length === 1) {
 				return names[0]
 			} else if (names.length < 1) {
-				throw new Error(`${parent.name} has no child: ${ctor.name}`)
+				throw new Error(`${this.name} has no child: ${ctor.name}`)
 			} else if (names.length > 1) {
 				throw new Error(`Subcomponent has multiple names: ${names}`)
 			}
 		} else {
-			throw new Error(`Component has no children: ${parent.name}`)
+			throw new Error(`Component has no children: ${this.name}`)
 		}
 	}
 
@@ -86,14 +86,14 @@ export class Component<E extends Element = Element, O = object> {
 		this.create()
 
 		if (this.$parent) {
-			this._name = this.$parent.constructor.$name(this.constructor)
+			this.$name = this.$parent.constructor.$name(this.constructor)
 			this.$parent._addChild(this)
 		}
 	}
 
 	$init () {
 		if (!this._isInit) {
-			this._children.forEach(child => child.$init())
+			this.$children.forEach(child => child.$init())
 
 			this.init()
 			this.$emitter.emit('init')
@@ -102,7 +102,7 @@ export class Component<E extends Element = Element, O = object> {
 	}
 
 	private _ref (component: Component, remove = false) {
-		let prop = '$' + component._name
+		let prop = '$' + component.$name
 		let value = this[prop]
 
 		if (Array.isArray(value)) {
@@ -128,19 +128,19 @@ export class Component<E extends Element = Element, O = object> {
 	}
 
 	private _addChild (component: Component) {
-		if (this._children.indexOf(component) < 0) {
-			this._children.push(component)
+		if (this.$children.indexOf(component) < 0) {
+			this.$children.push(component)
 			this._ref(component)
-			this.$emitter.emit('add:' + component._name, component)
+			this.$emitter.emit('add:' + component.$name, component)
 		}
 	}
 
 	private _removeChild (component: Component) {
-		let index = this._children.indexOf(component)
+		let index = this.$children.indexOf(component)
 		if (index >= 0) {
-			this._children.splice(index, 1)
+			this.$children.splice(index, 1)
 			this._ref(component, true)
-			this.$emitter.emit('remove:' + component._name, component)
+			this.$emitter.emit('remove:' + component.$name, component)
 		}
 	}
 
@@ -148,7 +148,7 @@ export class Component<E extends Element = Element, O = object> {
 		if (!this._isDestroyed) {
 			this.destroy()
 
-			Array.from(this._children).forEach(child => {
+			Array.from(this.$children).forEach(child => {
 				child.$destroy()
 			})
 

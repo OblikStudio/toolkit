@@ -1,16 +1,16 @@
 import { findAncestor } from '../../utils/dom'
-import { Component } from '../..'
-import { Cache, Entry } from './cache'
-import { scrollTo } from '../../utils/scroll'
 import { easeOutQuint } from '../../utils/easings'
 import { debounce } from '../../utils/functions'
+import { scrollTo } from '../../utils/scroll'
+import { Component } from '../..'
+import { Cache } from './cache'
 
 interface State {
 	scroll: number
 }
 
 export class Container extends Component {
-	promiseTransition (className: string) {
+	promiseTransition () {
 		return new Promise(resolve => {
 			let handler = () => {
 				this.$element.removeEventListener('animationend', handler)
@@ -18,16 +18,17 @@ export class Container extends Component {
 			}
 
 			this.$element.addEventListener('animationend', handler)
-			this.$element.classList.add(className)
 		})
 	}
 
 	animateIn () {
-		return this.promiseTransition('is-animate-in')
+		this.$element.classList.add('is-animate-in')
+		return this.promiseTransition()
 	}
 
 	animateOut () {
-		return this.promiseTransition('is-animate-out')
+		this.$element.classList.add('is-animate-out')
+		return this.promiseTransition()
 	}
 }
 
@@ -36,18 +37,35 @@ export class Loader extends Component {
 		container: Container
 	}
 
+	static scrollDefaults () {
+		return {
+			duration: 900,
+			easing: easeOutQuint
+		}
+	}
+
+	$container: Container
 	cache: Cache
 	parser: DOMParser
-	animationOut: Promise<any>
-	$container: Container
+	promiseTransition: Promise<any>
 
 	protected names: string[]
 
-	protected popStateHandler = this.handlePopState.bind(this)
+	protected popStateHandler = (event: PopStateEvent) => {
+		event.preventDefault()
+		this.performTransition(history.state, window.location.href)
+	}
+
 	protected clickHandler = this.handleClick.bind(this)
-	protected scrollHandler = debounce(() => {
+	protected updateDebounced = debounce(() => {
 		this.updateState()
 	}, 100)
+
+	protected scrollHandler = () => {
+		if (!this.promiseTransition) {
+			this.updateDebounced()
+		}
+	}
 
 	create () {
 		this.cache = new Cache()
@@ -56,10 +74,6 @@ export class Loader extends Component {
 	}
 
 	init () {
-		this.cache.set(window.location.href, {
-			markup: document.documentElement.outerHTML
-		})
-
 		history.scrollRestoration = 'manual'
 		window.addEventListener('popstate', this.popStateHandler)
 		document.addEventListener('click', this.clickHandler)
@@ -74,62 +88,62 @@ export class Loader extends Component {
 		history.replaceState(state, '')
 	}
 
-	async fetch (url: string): Promise<Entry> {
-		let entry = this.cache.get(url)
-
-		if (!entry) {
-			entry = this.cache.set(url, {
-				markup: await fetch(url).then(response => response.text())
-			})
-		}
-
-		return entry
+	scroll (options: { target: Element, offset?: number }) {
+		let defaults = (this.constructor as typeof Loader).scrollDefaults
+		let config: Parameters<typeof scrollTo>[0] = Object.assign(defaults(), options)
+		return scrollTo(config)
 	}
 
-	addContainers (item: Entry) {
-		let doc = this.parser.parseFromString(item.markup, 'text/html')
-		document.title = doc.querySelector('head title')?.textContent
+	containers () {
+		let result: Container[] = []
 
-		let promises = this.names.map(name => {
-			let container = doc.querySelector(`[ob-loader-${name}]`)
-			this.$element.appendChild(container)
-			return this.$emitter.promise(`add:${name}`)
+		for (let name in this.constructor.components) {
+			let comp = this['$' + name] as Container
+			if (comp) {
+				result.push(comp)
+			}
+		}
+
+		return result
+	}
+
+	addContainers (markup: string) {
+		let doc = this.parser.parseFromString(markup, 'text/html')
+		let promises = this.containers().map(container => {
+			let element = doc.querySelector(`[ob-loader-${container.$name}]`)
+			let parent = container.$element.parentElement
+
+			if (element && container) {
+				parent.insertBefore(element, container.$element)
+				return this.$emitter.promise(`add:${container.$name}`)
+			}
 		})
 
 		return Promise.all(promises)
 	}
 
 	showContainers () {
-		let animationPromises = this.names.map(name => {
-			let comp = this['$' + name] as Container
-			if (comp) {
-				return this.interruptify(comp.animateIn())
-			}
-		})
-
-		return Promise.all(animationPromises)
+		return Promise.all(
+			this.containers().map(container => {
+				return this.interruptify(container.animateIn())
+			})
+		)
 	}
 
 	hideContainers () {
-		let proms = this.names.map(name => {
-			let comp = this['$' + name] as Container
-			if (comp) {
-				return this.interruptify(comp.animateOut())
-			}
-		})
-
-		return Promise.all(proms)
+		return Promise.all(
+			this.containers().map(container => {
+				return this.interruptify(container.animateOut())
+			})
+		)
 	}
 
 	removeContainers () {
-		this.names.forEach(name => {
-			let comp = this['$' + name] as Container
-			if (comp) {
-				let parent = comp.$element.parentElement
+		let containers = this.containers()
 
-				if (parent) {
-					parent.removeChild(comp.$element)
-				}
+		this.$children.forEach(child => {
+			if (containers.indexOf(child as Container) < 0) {
+				child.$element.parentElement.removeChild(child.$element)
 			}
 		})
 	}
@@ -147,7 +161,7 @@ export class Loader extends Component {
 
 			this.$emitter.once('navigation', () => {
 				if (!ready) {
-					reject()
+					reject(new Error('Interrupted'))
 				}
 			})
 		})
@@ -159,11 +173,11 @@ export class Loader extends Component {
 		try {
 			await Promise.all([
 				this.hideContainers(),
-				this.fetch(url).then(v => item = v)
+				this.cache.fetch(url).then(v => item = v)
 			])
 
-			this.removeContainers()
 			await this.addContainers(item)
+			this.removeContainers()
 
 			if (push) {
 				history.pushState(state, '', url)
@@ -172,9 +186,7 @@ export class Loader extends Component {
 			let element = this.getFragmentElement(new URL(url))
 			let options = {
 				target: document.scrollingElement,
-				offset: 0,
-				duration: 900,
-				easing: easeOutQuint
+				offset: 0
 			}
 
 			if (element) {
@@ -183,32 +195,29 @@ export class Loader extends Component {
 				options.offset = state.scroll
 			}
 
-			scrollTo(options)
+			this.scroll(options)
 
 			await this.showContainers()
 		} catch (e) {
-			this.removeContainers()
-
 			if (item) {
 				await this.addContainers(item)
 				document.scrollingElement.scrollTop = state.scroll
 			}
+
+			this.removeContainers()
 		}
+
+		this.promiseTransition = null
 	}
 
 	async performTransition (state: State, url: string, push = false) {
 		this.$emitter.emit('navigation')
 
-		if (this.animationOut) {
-			await this.animationOut
+		if (this.promiseTransition) {
+			await this.promiseTransition
 		}
 
-		this.animationOut = this.transition(state, url, push)
-	}
-
-	handlePopState (event: PopStateEvent) {
-		event.preventDefault()
-		this.performTransition(history.state, window.location.href)
+		this.promiseTransition = this.transition(state, url, push)
 	}
 
 	handleNavigation (href: string, target?: string) {
@@ -220,10 +229,8 @@ export class Loader extends Component {
 
 		if (shouldLink) {
 			if (shouldScrollOnly) {
-				scrollTo({
-					target: this.getFragmentElement(url),
-					duration: 900,
-					easing: easeOutQuint
+				this.scroll({
+					target: this.getFragmentElement(url)
 				})
 
 				history.replaceState(history.state, null, url.href)
