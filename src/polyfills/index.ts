@@ -6,3 +6,8 @@ import 'core-js/features/math/sign'
 import 'core-js/features/object/assign'
 import 'core-js/features/object/entries'
 import 'core-js/features/promise'
+
+import '@webcomponents/url'
+import 'whatwg-fetch'
+
+import './scrolling-element'

@@ -1,4 +1,4 @@
-import '../../src/polyfill'
+import '../../src/polyfills'
 import { Watcher, components } from '../../src'
 
 let comps = {}
