@@ -1,6 +1,11 @@
 import { Emitter } from '../emitter'
 
-export class Ticker extends Emitter {
+interface Events {
+	tick: (delta: number) => void,
+	[key: string]: any
+}
+
+export class Ticker extends Emitter<Events> {
 	private stamp: number = null
 	private isTicking: boolean = false
 	private handler = this.run.bind(this)

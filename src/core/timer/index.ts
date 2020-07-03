@@ -16,7 +16,7 @@ let ticker = new Timer()
 ticker.start()
 
 function measure (callback: () => any, context?: any): void
-function measure (): Promise<void>
+function measure (): Promise<any>
 function measure (callback?: () => any, context?: any) {
 	if (arguments.length > 0) {
 		ticker.once('measure', callback, context)
@@ -26,7 +26,7 @@ function measure (callback?: () => any, context?: any) {
 }
 
 function mutate (callback: () => any, context?: any): void
-function mutate (): Promise<void>
+function mutate (): Promise<any>
 function mutate (callback?: () => any, context?: any) {
 	if (arguments.length > 0) {
 		ticker.once('mutate', callback, context)
