@@ -1,20 +1,25 @@
 import { ticker } from '../..'
 import { Emitter } from '../emitter'
 
-type Change = {
-	newValue: any,
-	oldValue?: any,
+type Change<T> = {
+	newValue: T,
+	oldValue?: T,
 	initial?: boolean
 }
 
-export class Poller<T = object> extends Emitter {
-	private memo: Partial<{ [k in keyof T]: any }> = {}
+type Events<T extends { [K in P[number]]: any }, P extends string[]> = {
+	init: (state: { [K in P[number]]: T[K] }) => void
+	change: (changes: Partial<{ [K in P[number]]: Change<T[K]> }>, initial: boolean) => void
+}
+
+export class Poller<T, P extends (keyof T & string)[]> extends Emitter<Events<T, P>> {
+	private memo: { [K in P[number]]: any } = {} as any
 	private polls: number = 0
 
 	target: T
-	props: (keyof T)[]
+	props: P
 
-	constructor (target: T, props: (keyof T)[]) {
+	constructor (target: T, ...props: P) {
 		super()
 
 		this.target = target
@@ -24,7 +29,7 @@ export class Poller<T = object> extends Emitter {
 	}
 
 	update () {
-		let changes: Partial<{ [k in keyof T]: Change }> = {}
+		let changes: Partial<{ [K in P[number]]: Change<T[K]> }> = {}
 		let isChanged = false
 		let isInitial = this.polls === 0
 
@@ -32,7 +37,7 @@ export class Poller<T = object> extends Emitter {
 			if (prop in this.target) {
 				let memo = this.memo[prop]
 				let value = this.target[prop]
-				let change: Change
+				let change: Change<T[typeof prop]>
 
 				if (prop in this.memo) {
 					if (value !== memo) {
@@ -67,7 +72,7 @@ export class Poller<T = object> extends Emitter {
 		this.polls++
 	}
 
-	get (prop: keyof T) {
+	get (prop: P[number]) {
 		return this.memo[prop]
 	}
 

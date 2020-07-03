@@ -10,11 +10,11 @@ interface Options {
 export class Height extends Component<HTMLElement, Options> {
 	varName: string
 	varTarget: HTMLElement
-	poller: Poller<HTMLElement>
+	poller: Poller<HTMLElement, ['offsetHeight']>
 
 	create () {
 		let target = this.$options.target ?? (this.$element.firstElementChild as HTMLElement)
-		this.poller = new Poller(target, ['offsetHeight'])
+		this.poller = new Poller(target, 'offsetHeight')
 
 		if (this.$options?.var) {
 			this.varName = this.$options.var

@@ -18,11 +18,11 @@ function nodesIntersect (a, b) {
 }
 
 export class Item extends Component<HTMLElement> {
-	observer: Poller
+	observer: Poller<HTMLElement, ['offsetTop', 'offsetHeight']>
 	$parent: Masonry
 
 	create () {
-		this.observer = new Poller(this.$element, ['offsetTop', 'offsetHeight'])
+		this.observer = new Poller(this.$element, 'offsetTop', 'offsetHeight')
 		this.observer.on('change', () => {
 			this.$parent.updateItems()
 		})
