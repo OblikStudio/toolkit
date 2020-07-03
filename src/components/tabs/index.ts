@@ -1,6 +1,6 @@
 import { Component } from '../..'
 
-class Toggle extends Component {
+export class Toggle extends Component {
 	$parent: Tabs
 
 	init () {
@@ -10,9 +10,9 @@ class Toggle extends Component {
 	}
 }
 
-class Item extends Component { }
+export class Item extends Component { }
 
-interface Options {
+export interface Options {
 	active: number
 	class: string
 }
