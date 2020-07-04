@@ -14,13 +14,6 @@ export class Toggle extends Component<Element, Options> {
 		class: 'is-active'
 	}
 
-	static presets = {
-		hover: {
-			on: 'mouseover',
-			off: 'mouseout'
-		}
-	}
-
 	target: Element
 	state = false
 	onHandler: () => void

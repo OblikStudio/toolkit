@@ -14,7 +14,7 @@ export function resolve (options: object, context: Element) {
 	for (let name in options) {
 		let value = options[name]
 
-		if (typeof value === 'string' && name.indexOf('$') === 0 && name !== '$preset') {
+		if (typeof value === 'string' && name.indexOf('$') === 0) {
 			let newName = name.substr(1)
 
 			options[newName] = query(value, context)

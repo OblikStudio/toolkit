@@ -1,21 +1,14 @@
 import { Emitter } from '../../utils/emitter'
 import { merge } from '../../utils/functions'
 
-type Options<O> = Partial<O> & { $preset?: string }
-type Input<O> = string | Partial<Options<O>>
-
-export interface ComponentConstructor<O = object> {
-	new(element: Element, options?: Input<O>, parent?: Component): Component
+export interface ComponentConstructor<O> {
+	new(element: Element, options?: Partial<O>, parent?: Component): Component
 	readonly components?: {
-		[key: string]: ComponentConstructor
+		[key: string]: ComponentConstructor<any>
 	}
 	defaults?: Partial<O>
-	presets?: {
-		[key: string]: Partial<O>
-	}
 	isMovable?: boolean
-	$name (ctor: ComponentConstructor): string
-	$options (input: Input<O>): Options<O>
+	$name (ctor: ComponentConstructor<any>): string
 }
 
 export class Component<E extends Element = Element, O = object> {
@@ -26,14 +19,14 @@ export class Component<E extends Element = Element, O = object> {
 
 	$name: string = null
 	$element: E
-	$options: Options<O>
+	$options: O
 	$parent: Component
 	$emitter: Emitter<any>
 	$children: Component[] = []
 
 	static isMovable = true
 
-	static $name (this: ComponentConstructor, ctor: ComponentConstructor) {
+	static $name (this: ComponentConstructor<any>, ctor: ComponentConstructor<any>) {
 		if (this.components) {
 			let names = Object.entries(this.components)
 				.filter(entry => entry[1] === ctor)
@@ -51,35 +44,9 @@ export class Component<E extends Element = Element, O = object> {
 		}
 	}
 
-	static $options (this: ComponentConstructor, input: Input<object>): Options<object> {
-		let options: Options<object>
-		let preset: Options<object>
-		let presetName: string
-
-		if (input) {
-			if (typeof input === 'string') {
-				presetName = input
-			} else if (typeof input === 'object') {
-				presetName = input.$preset
-				delete input.$preset
-				options = input
-			}
-
-			if (presetName) {
-				preset = this.presets?.[presetName]
-
-				if (!preset) {
-					throw new Error(`Invalid preset: ${presetName}`)
-				}
-			}
-		}
-
-		return merge({}, this.defaults, preset, options)
-	}
-
-	constructor (element: E, options?: Input<O>, parent?: Component) {
+	constructor (element: E, options?: Partial<O>, parent?: Component) {
 		this.$element = element
-		this.$options = this.constructor.$options(options)
+		this.$options = merge({}, this.constructor.defaults, options)
 		this.$parent = parent
 		this.$emitter = new Emitter()
 
@@ -127,7 +94,7 @@ export class Component<E extends Element = Element, O = object> {
 		}
 	}
 
-	private _addChild (component: Component) {
+	private _addChild (component: Component<Element, any>) {
 		if (this.$children.indexOf(component) < 0) {
 			this.$children.push(component)
 			this._ref(component)
@@ -135,7 +102,7 @@ export class Component<E extends Element = Element, O = object> {
 		}
 	}
 
-	private _removeChild (component: Component) {
+	private _removeChild (component: Component<Element, any>) {
 		let index = this.$children.indexOf(component)
 		if (index >= 0) {
 			this.$children.splice(index, 1)
