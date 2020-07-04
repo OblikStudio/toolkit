@@ -1,132 +1,88 @@
 import { windowClientRect } from '../../utils/dom'
 import { clamp } from '../../utils/math'
-import { linear } from '../../utils/easings'
 import { Component } from '../..'
 
-const transformers = {
-	ratio: function (value) {
-		return value
-	},
-	signed: function (value) {
-		var signed = (value - 0.5) * 2
-		var eased = (1 - this.easing(1 - Math.abs(signed)))
-		return Math.sign(signed) * eased
-	},
-	trigonometric: function (value) {
-		var rad = Math.PI * (transformers.signed(value))
-
-		return {
-			sin: Math.sin(rad),
-			cos: Math.cos(rad)
-		}
-	}
-}
-
-const easings = {
-	linear
-}
-
-export function registerTransformers (input) {
-	Object.assign(transformers, input)
-}
-
-export function registerEasigns (input) {
-	Object.assign(easings, input)
-}
-
-interface Options {
-	type: string
-	easing: string
-	axis: string
-	name: string,
+export interface Options {
+	var: string
+	axis: 'x' | 'y'
 	clamp: boolean
-	reference?: Element
+	reference?: Window | Element
 }
 
 export class Parallax extends Component<HTMLElement, Options> {
-	static defaults = {
-		type: 'signed',
-		easing: 'linear',
-		name: 'parallax',
+	static defaults: Options = {
+		var: 'parallax',
 		axis: 'y',
-		reference: null,
-		clamp: true
+		clamp: true,
+		reference: window
 	}
 
 	reference: Window | Element
-	transform: (value: number) => any
-	easing: () => any
-	handler: () => any
+	scrollHandler = this.update.bind(this)
 
-	create () {
-		this.reference = this.$options.reference ?? window
-
-		this.transform = transformers[this.$options.type]
-		if (typeof this.transform !== 'function') {
-			throw new Error(`Invalid transformer ${this.$options.type}`)
-		}
-
-		this.easing = easings[this.$options.easing]
-		if (typeof this.easing !== 'function') {
-			throw new Error(`Invalid easing ${this.$options.easing}`)
-		}
-
-		this.handler = this.update.bind(this)
-		this.reference.addEventListener('scroll', this.handler)
+	init () {
+		this.reference = this.$options.reference
+		this.reference.addEventListener('scroll', this.scrollHandler)
 		this.update()
 	}
 
-	calculate (elementRect, referenceRect, axis) {
-		var offset, edge, edgeEnd
-
-		if (axis === 'x') {
-			offset = referenceRect.width
-			edge = elementRect.left - referenceRect.left
-			edgeEnd = elementRect.width
-		} else {
-			offset = referenceRect.height
-			edge = elementRect.top - referenceRect.top
-			edgeEnd = elementRect.height
-		}
-
-		var positionCurrent = offset - edge
-		var positionEnd = edgeEnd + offset
-
-		return positionCurrent / positionEnd
-	}
-
 	update () {
-		var rect = this.$element.getBoundingClientRect()
-		var refRect
-		var value
-
-		if (this.reference instanceof Element) {
-			refRect = this.reference.getBoundingClientRect()
-		} else {
-			refRect = windowClientRect()
-		}
-
-		value = this.calculate(rect, refRect, this.$options.axis)
+		let value = this.getValue()
 
 		if (this.$options.clamp) {
 			value = clamp(value, 0, 1)
 		}
 
-		this.setProperty(this.transform.call(this, value))
+		value = this.transform(value)
+
+		this.apply(value)
 	}
 
-	setProperty (property) {
-		if (typeof property === 'object') {
-			for (var k in property) {
-				this.$element.style.setProperty(`--${this.$options.name}-${k}`, property[k])
-			}
+	getValue () {
+		let rect = this.$element.getBoundingClientRect()
+		let refRect = this.getRefRect()
+		return this.calculate(rect, refRect, this.$options.axis)
+	}
+
+	getRefRect (): ClientRect {
+		if (this.reference instanceof Element) {
+			return this.reference.getBoundingClientRect()
 		} else {
-			this.$element.style.setProperty(`--${this.$options.name}`, property)
+			return windowClientRect()
 		}
 	}
 
+	calculate (elRect: ClientRect, refRect: ClientRect, axis: Options['axis']) {
+		let offset: number
+		let edge: number
+		let edgeEnd: number
+
+		if (axis === 'x') {
+			offset = refRect.width
+			edge = elRect.left - refRect.left
+			edgeEnd = elRect.width
+		} else {
+			offset = refRect.height
+			edge = elRect.top - refRect.top
+			edgeEnd = elRect.height
+		}
+
+		let positionCurrent = offset - edge
+		let positionEnd = edgeEnd + offset
+
+		return positionCurrent / positionEnd
+	}
+
+	transform (value: number) {
+		return (0.5 - value) * 2
+	}
+
+	apply (value: number) {
+		this.$element.style.setProperty(`--${this.$options.var}`, value.toString())
+	}
+
 	destroy () {
-		this.reference.removeEventListener('scroll', this.handler)
+		this.reference.removeEventListener('scroll', this.scrollHandler)
 	}
 }
 
