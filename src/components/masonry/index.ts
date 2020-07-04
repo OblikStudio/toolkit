@@ -1,35 +1,32 @@
-/**
- * @todo avoid reflow after each element
- */
-
-import { Component } from '../..'
 import { Poller } from '../../utils/poller'
+import { Component } from '../..'
 
-function getNodeBottom (node) {
-	return node.offsetTop + node.offsetHeight + parseInt(window.getComputedStyle(node).marginBottom)
+function getElementBottom (el: HTMLElement) {
+	return el.offsetTop + el.offsetHeight + parseInt(window.getComputedStyle(el).marginBottom)
 }
 
-function nodesIntersect (a, b) {
-	var halfA = (a.offsetWidth / 2)
-	var halfB = (b.offsetWidth / 2)
-	var centerA = a.offsetLeft + halfA
-	var centerB = b.offsetLeft + halfB
+function elementsIntersect (a: HTMLElement, b: HTMLElement) {
+	let halfA = (a.offsetWidth / 2)
+	let halfB = (b.offsetWidth / 2)
+	let centerA = a.offsetLeft + halfA
+	let centerB = b.offsetLeft + halfB
 	return Math.abs(centerA - centerB) < (halfA + halfB - 1) // -1 for threshold because widths are rounded
 }
 
 export class Item extends Component<HTMLElement> {
-	observer: Poller<HTMLElement, ['offsetTop', 'offsetHeight']>
 	$parent: Masonry
 
-	create () {
-		this.observer = new Poller(this.$element, 'offsetTop', 'offsetHeight')
-		this.observer.on('change', () => {
-			this.$parent.updateItems()
+	poller: Poller<HTMLElement, ['offsetTop', 'offsetHeight']>
+
+	init () {
+		this.poller = new Poller(this.$element, 'offsetTop', 'offsetHeight')
+		this.poller.on('change', () => {
+			this.$parent.update()
 		})
 	}
 
 	destroy () {
-		this.observer.destroy()
+		this.poller.destroy()
 	}
 }
 
@@ -41,35 +38,32 @@ export class Masonry extends Component<HTMLElement> {
 	$item: Item[] = []
 
 	init () {
-		this.updateItems()
+		this.update()
 	}
 
-	updateItems () {
+	update () {
 		this.$item.forEach(item => {
-			// Reset previous marginTop settings because they affect elements'
-			// position.
+			// Reset previous marginTop settings because they affect positions.
 			item.$element.style.marginTop = ''
 		})
 
-		var previousNodes = []
-		this.$item.forEach(item => {
-			var node = item.$element
+		let prevElements: HTMLElement[] = []
 
-			var aboveNodes = previousNodes.filter(previousNode => {
-				if (previousNode.offsetTop < node.offsetTop) {
-					if (nodesIntersect(node, previousNode)) {
-						return true
-					}
-				}
+		this.$item.forEach(item => {
+			let el = item.$element
+
+			let aboveElements = prevElements.filter(prev => {
+				return (prev.offsetTop < el.offsetTop) && elementsIntersect(el, prev)
 			})
 
-			var lowestNode = aboveNodes.reduce((memo, node) => {
+			let lowestElement = aboveElements.reduce((memo, node) => {
 				if (!memo) {
 					return node
 				}
 
-				var bottom = getNodeBottom(node)
-				var memoBottom = getNodeBottom(memo)
+				let bottom = getElementBottom(node)
+				let memoBottom = getElementBottom(memo)
+
 				if (bottom > memoBottom) {
 					return node
 				} else {
@@ -77,14 +71,16 @@ export class Masonry extends Component<HTMLElement> {
 				}
 			}, null)
 
-			if (lowestNode) {
-				var currentMarginTop = parseInt(window.getComputedStyle(node).marginTop)
-				var marginTop = getNodeBottom(lowestNode) - node.offsetTop + (currentMarginTop * 2)
+			if (lowestElement) {
+				let currentMarginTop = parseInt(window.getComputedStyle(el).marginTop)
+				let marginTop = getElementBottom(lowestElement) - el.offsetTop + (currentMarginTop * 2)
 
-				node.style.marginTop = `${marginTop}px`
+				if (marginTop !== currentMarginTop) {
+					el.style.marginTop = `${marginTop}px`
+				}
 			}
 
-			previousNodes.push(node)
+			prevElements.push(el)
 		})
 	}
 }
