@@ -31,3 +31,16 @@ export function debounce<T extends (...args: any) => any> (callback: T, time: nu
 		}, time)
 	}
 }
+
+export function throttle<T extends (...args: any) => any> (callback: T, time: number) {
+	let stamp = Date.now()
+
+	return function (...args: Parameters<T>) {
+		let now = Date.now()
+
+		if (now - stamp >= time) {
+			stamp = now
+			callback.apply(null, args)
+		}
+	}
+}
