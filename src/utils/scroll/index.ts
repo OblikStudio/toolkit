@@ -23,6 +23,8 @@ export class ScrollAnimation extends Animation {
 			this.end += offsetGlobal(options.target).top
 		}
 
+		this.end = Math.min(this.end, document.scrollingElement.scrollHeight - window.innerHeight)
+
 		if (options.interruptible !== false) {
 			let interruptHandler = (event) => {
 				this.stop()
