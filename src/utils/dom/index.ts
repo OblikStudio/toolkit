@@ -38,7 +38,7 @@ export function getTag (element, tagName) {
 	if (value) {
 		return element
 	} else {
-		return false
+		return null
 	}
 }
 

@@ -23,7 +23,7 @@ export class ScrollAnimation extends Animation {
 			this.end += offsetGlobal(options.target).top
 		}
 
-		if (options.interruptible || true) {
+		if (options.interruptible !== false) {
 			let interruptHandler = (event) => {
 				this.stop()
 				window.removeEventListener('wheel', interruptHandler)

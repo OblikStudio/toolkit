@@ -1,93 +1,53 @@
-/**
- * @todo when clicking on a link, the document fragment is not added to the
- * address bar (due to preventDefault)
- * @todo the cliecked element should be focused as per default behavior
- */
-
 import { getTag } from '../../utils/dom'
-import { linear } from '../../utils/easings'
-import { scrollTo } from '../../utils/scroll'
+import { easeOutQuint } from '../../utils/easings'
+import { merge } from '../../utils/functions'
+import { scrollTo, Options } from '../../utils/scroll'
 import { Component } from '../..'
 
-export function monitorLinks (options: Parameters<typeof scrollTo>[0]) {
-	window.addEventListener('click', (event) => {
-		var link = getTag(event.target, 'A')
+export class ScrollTo extends Component<Element, Options> {
+	static defaults: Options = {
+		duration: 1000,
+		easing: easeOutQuint
+	}
 
-		if (link) {
-			var href = link.getAttribute('href')
+	static clickHandler (options?: Partial<Options>) {
+		return (event: MouseEvent) => {
+			let el = getTag(event.target, 'A') as HTMLAnchorElement
+			let href = el?.getAttribute('href')
 
-			if (typeof href === 'string' && href[0] === '#') {
-				var target = document.querySelector(href)
+			if (href) {
+				let url = new URL(href, window.location.href)
 
-				if (target) {
-					scrollTo({
-						...options,
+				if (
+					url.hash &&
+					url.origin === window.location.origin &&
+					url.pathname === window.location.pathname
+				) {
+					let target = document.querySelector(href)
+					let config = merge({}, this.defaults, options, {
 						target
 					})
 
-					event.preventDefault()
+					scrollTo(config)
 				}
 			}
 		}
-	})
-}
-
-interface Options {
-	event: keyof GlobalEventHandlersEventMap
-	target: HTMLElement
-	duration: number
-	easing: string
-	offset: string
-}
-
-interface Easings {
-	[key: string]: (pos: number) => number
-}
-
-export class ScrollTo extends Component<Element, Options> {
-	static easings: Easings = {
-		linear
 	}
 
-	static defaults = {
-		event: 'click',
-		duration: 650,
-		easing: 'linear',
-		offset: 0
+	clickHandler = this.handleClick.bind(this)
+
+	init () {
+		this.$element.addEventListener('click', this.clickHandler)
 	}
 
-	target: HTMLElement
-	handler: any
-
-	create () {
-		if (!this.$options.target) {
-			throw new Error('No scroll target specified')
-		}
-
-		this.target = this.$options.target
-
-		let offset: number
-		if (typeof this.$options.offset === 'number') {
-			offset = this.$options.offset
-		} else if (typeof this.$options.offset === 'string') {
-			offset = parseInt(this.$options.offset)
-		}
-
-		this.handler = (event) => {
-			scrollTo({
-				duration: this.$options.duration,
-				easing: ScrollTo.easings[this.$options.easing],
-				target: this.target,
-				offset
-			})
-		}
-
-		this.$element.addEventListener(this.$options.event, this.handler)
+	handleClick () {
+		scrollTo(this.$options)
 	}
 
 	destroy () {
-		this.$element.removeEventListener(this.$options.event, this.handler)
+		this.$element.removeEventListener('click', this.clickHandler)
 	}
 }
 
+export { Options }
 export default ScrollTo
