@@ -1,44 +1,34 @@
-import { windowClientRect } from '../../utils/dom'
+import { getClientRect } from '../../utils/dom'
+import { throttle } from '../../utils/functions'
 import { Component } from '../..'
 
+export type Edge = 'top' | 'right' | 'bottom' | 'left'
+
 export interface Options {
-	target?: Window | HTMLElement
-	measure: {
-		offset: number
-		after: boolean
-		edge: string
-		targetEdge: string
-	}
-	mutate: {
-		class: string
-	}
+	class?: string
+	offset?: number
+	container?: Window | HTMLElement
+	edge?: Edge
+	containerEdge?: Edge
 }
 
 export class Sensor extends Component<HTMLElement, Options> {
-	static defaults = {
-		target: window,
-		measure: {
-			offset: 0,
-			after: true,
-			edge: 'top',
-			targetEdge: 'bottom'
-		},
-		mutate: {
-			class: 'is-active'
-		}
+	static defaults: Options = {
+		class: 'is-active',
+		offset: 0,
+		container: window,
+		edge: 'top',
+		containerEdge: 'bottom'
 	}
 
-	target: Window | HTMLElement
-	value: any
+	value: boolean
 
-	protected updateHandler = this.update.bind(this)
+	protected updateHandler = throttle(this.update.bind(this), 80)
 
 	init () {
-		this.target = this.$options.target
-		this.update()
-
 		window.addEventListener('scroll', this.updateHandler)
 		window.addEventListener('resize', this.updateHandler)
+		this.update()
 	}
 
 	destroy () {
@@ -46,41 +36,28 @@ export class Sensor extends Component<HTMLElement, Options> {
 		window.removeEventListener('resize', this.updateHandler)
 	}
 
-	measure (elementRect: ClientRect, targetRect: ClientRect) {
-		let val = elementRect[this.$options.measure.edge]
-		let targetVal = targetRect[this.$options.measure.targetEdge] + this.$options.measure.offset
-		let diff = targetVal - val
-
-		if (this.$options.measure.after) {
-			return diff > 0
-		} else {
-			return diff < 0
-		}
-	}
-
-	mutate (input: any) {
-		if (input) {
-			this.$element.classList.add(this.$options.mutate.class)
-		} else {
-			this.$element.classList.remove(this.$options.mutate.class)
-		}
-	}
-
 	update () {
 		let elRect = this.$element.getBoundingClientRect()
-		let targetRect = null
-
-		if (this.target === window) {
-			targetRect = windowClientRect()
-		} else {
-			targetRect = (this.target as HTMLElement).getBoundingClientRect()
-		}
-
+		let targetRect = getClientRect(this.$options.container)
 		let value = this.measure(elRect, targetRect)
 
 		if (value !== this.value) {
 			this.mutate(value)
 			this.value = value
+		}
+	}
+
+	measure (elRect: ClientRect, ctrRect: ClientRect) {
+		let v1 = elRect[this.$options.edge] + this.$options.offset
+		let v2 = ctrRect[this.$options.containerEdge]
+		return (v2 - v1) > 0
+	}
+
+	mutate (input: boolean) {
+		if (input) {
+			this.$element.classList.add(this.$options.class)
+		} else {
+			this.$element.classList.remove(this.$options.class)
 		}
 	}
 }

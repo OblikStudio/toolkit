@@ -71,6 +71,14 @@ export function windowClientRect () {
 	}
 }
 
+export function getClientRect (input: Window | HTMLElement): ClientRect {
+	if (input instanceof HTMLElement) {
+		return input.getBoundingClientRect()
+	} else if (input === window) {
+		return windowClientRect()
+	}
+}
+
 export function awaitAnimation (element) {
 	return new Promise((resolve, reject) => {
 		var pendingEvents = []
