@@ -1,68 +1,30 @@
+import { copyText } from '../../utils'
 import { Component } from '../..'
+import * as Sharers from './urls'
 
-interface Options {
-	media: string
-	url: string,
-	text?: string,
-	image?: string
+interface Options extends Sharers.SharerOptions {
+	type: 'copy' | keyof typeof Sharers
+	width?: number
+	height?: number
 }
 
 export class Sharer extends Component<Element, Options> {
-	static copy (text: string) {
-		let selection = window.getSelection()
-		let node = document.createTextNode(text)
-		let range = document.createRange()
-
-		selection.removeAllRanges()
-		document.body.appendChild(node)
-		range.selectNodeContents(node)
-		selection.addRange(range)
-
-		document.execCommand('copy')
-		document.body.removeChild(node)
+	static defaults: Partial<Options> = {
+		width: 600,
+		height: 400,
+		url: window.location.href,
+		text: document.title
 	}
 
-	static getSharerUrl (data: Options) {
-		let url = null
-		let media = data.media
+	static getUrl (data: Options) {
+		let sharer = Sharers[data.type] as Sharers.Sharer
 
-		if (media === 'twitter') {
-			// https://developer.twitter.com/en/docs/twitter-for-websites/web-intents/overview
-			url = `https://twitter.com/intent/tweet?url=${encodeURIComponent(data.url)}`
-
-			if (data.text) {
-				url += `&text=${encodeURIComponent(data.text)}`
-			}
-		} else if (media === 'facebook') {
-			// @see https://developers.facebook.com/docs/plugins/share-button
-			url = `https://facebook.com/sharer.php?display=popup&u=${encodeURIComponent(data.url)}`
-		} else if (media === 'linkedin') {
-			// @see https://stackoverflow.com/a/33746543/3130281
-			url = `https://www.linkedin.com/shareArticle?url=${encodeURIComponent(data.url)}`
-		} else if (media === 'pinterest') {
-			// @see https://stackoverflow.com/a/11212220/3130281
-			url = `http://pinterest.com/pin/create/button/?url=${encodeURIComponent(data.url)}`
-
-			if (data.image) {
-				url += `&media=${encodeURIComponent(data.image)}`
-			}
-
-			if (data.text) {
-				url += `&description=${encodeURIComponent(data.text)}`
-			}
-		} else if (media === 'reddit') {
-			// @see https://stackoverflow.com/a/24851347/3130281
-			url = `http://www.reddit.com/submit?url=${encodeURIComponent(data.url)}`
-
-			if (data.text) {
-				url += `&title=${data.text}`
-			}
+		if (sharer) {
+			return sharer(data)
 		}
-
-		return url
 	}
 
-	private clickHandler = this.handleClick.bind(this)
+	protected clickHandler = this.action.bind(this)
 
 	init () {
 		this.$element.addEventListener('click', this.clickHandler)
@@ -72,14 +34,22 @@ export class Sharer extends Component<Element, Options> {
 		this.$element.removeEventListener('click', this.clickHandler)
 	}
 
-	handleClick () {
-		if (this.$options.media === 'url') {
-			Sharer.copy(this.$options.url)
+	action () {
+		if (this.$options.type === 'copy') {
+			this.copied(copyText(this.$options.url))
 		} else {
-			let url = Sharer.getSharerUrl(this.$options as Options)
+			let ctor = this.constructor as typeof Sharer
+			let url = ctor.getUrl(this.$options)
+
 			if (url) {
-				window.open(url, '_blank', 'width=800,height=600')
+				window.open(url, '_blank', `width=${this.$options.width},height=${this.$options.height}`)
 			}
+		}
+	}
+
+	copied (success: boolean) {
+		if (success) {
+			alert('URL copied!')
 		}
 	}
 }

@@ -79,6 +79,22 @@ export function getClientRect (input: Window | HTMLElement): ClientRect {
 	}
 }
 
+export function copyText (text: string) {
+	let selection = window.getSelection()
+	let node = document.createTextNode(text)
+	let range = document.createRange()
+
+	selection.removeAllRanges()
+	document.body.appendChild(node)
+	range.selectNodeContents(node)
+	selection.addRange(range)
+
+	document.execCommand('copy')
+	document.body.removeChild(node)
+
+	return true
+}
+
 export function awaitAnimation (element) {
 	return new Promise((resolve, reject) => {
 		var pendingEvents = []
