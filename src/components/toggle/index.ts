@@ -1,28 +1,30 @@
 import { Component } from '../..'
 
 interface Options {
-	on: keyof GlobalEventHandlersEventMap
-	off: keyof GlobalEventHandlersEventMap
-	class: string
 	target: Element
+	on?: keyof GlobalEventHandlersEventMap
+	off?: keyof GlobalEventHandlersEventMap
+	active?: boolean
+	class?: string
 }
 
 export class Toggle extends Component<Element, Options> {
 	static defaults: Partial<Options> = {
 		on: 'click',
-		off: null,
+		active: false,
 		class: 'is-active'
 	}
 
-	target: Element
-	state = false
+	active: boolean
 	onHandler: () => void
 	offHandler: () => void
 
 	init () {
-		this.target = this.$options.target
+		if (!this.$options.target) {
+			throw new Error('No target set')
+		}
 
-		if (this.$options.off && this.$options.off !== this.$options.on) {
+		if (this.$options.off) {
 			this.onHandler = this.on.bind(this)
 			this.offHandler = this.off.bind(this)
 
@@ -32,35 +34,29 @@ export class Toggle extends Component<Element, Options> {
 		}
 
 		this.$element.addEventListener(this.$options.on, this.onHandler)
+		this.change(this.$options.active)
 	}
 
 	on () {
-		if (this.state === false) {
-			this.state = true
-			this.update()
-		}
+		this.change(true)
 	}
 
 	off () {
-		if (this.state === true) {
-			this.state = false
-			this.update()
-		}
+		this.change(false)
 	}
 
 	toggle () {
-		this.state = !this.state
-		this.update()
+		this.change(!this.active)
 	}
 
-	update () {
-		if (this.state === true) {
-			this.target.classList.add(this.$options.class)
+	change (active: boolean) {
+		if (active === true) {
+			this.$options.target.classList.add(this.$options.class)
 		} else {
-			this.target.classList.remove(this.$options.class)
+			this.$options.target.classList.remove(this.$options.class)
 		}
 
-		this.$emitter.emit('change', this.state)
+		this.active = active
 	}
 
 	destroy () {
