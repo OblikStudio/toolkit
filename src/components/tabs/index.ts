@@ -5,7 +5,7 @@ export class Toggle extends Component {
 
 	init () {
 		this.$element.addEventListener('click', () => {
-			this.$parent.handleClick(this)
+			this.$parent.toggle(this.$parent.$toggle.indexOf(this))
 		})
 	}
 }
@@ -13,8 +13,8 @@ export class Toggle extends Component {
 export class Item extends Component { }
 
 export interface Options {
-	active: number
-	class: string
+	active?: number
+	class?: string
 }
 
 export class Tabs extends Component<Element, Options> {
@@ -23,44 +23,29 @@ export class Tabs extends Component<Element, Options> {
 		item: Item
 	}
 
-	static defaults = {
-		active: 0,
+	static defaults: Options = {
+		active: 1,
 		class: 'is-active'
 	}
 
 	$item: Item[] = []
 	$toggle: Toggle[] = []
-	activeIndex: number
+	index: number
 
 	init () {
 		if (typeof this.$options.active === 'number') {
-			this.activate(this.$options.active - 1)
+			this.toggle(this.$options.active - 1)
 		}
 	}
 
-	activate (index: number) {
-		if (typeof this.activeIndex === 'number') {
-			let activeToggle = this.$toggle[this.activeIndex]
-			let activeItem = this.$item[this.activeIndex]
+	toggle (index: number) {
+		this.$toggle[this.index]?.$element.classList.remove(this.$options.class)
+		this.$item[this.index]?.$element.classList.remove(this.$options.class)
 
-			activeToggle?.$element.classList.remove(this.$options.class)
-			activeItem?.$element.classList.remove(this.$options.class)
-		}
+		this.$toggle[index]?.$element.classList.add(this.$options.class)
+		this.$item[index]?.$element.classList.add(this.$options.class)
 
-		let toggle = this.$toggle[index]
-		let item = this.$item[index]
-
-		toggle?.$element.classList.add(this.$options.class)
-		item?.$element.classList.add(this.$options.class)
-
-		this.activeIndex = index
-	}
-
-	handleClick (target: Toggle) {
-		let index = this.$toggle.indexOf(target)
-		if (index >= 0) {
-			this.activate(index)
-		}
+		this.index = index
 	}
 }
 
