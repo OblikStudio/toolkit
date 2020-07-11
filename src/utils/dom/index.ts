@@ -95,6 +95,19 @@ export function copyText (text: string) {
 	return true
 }
 
+export function injectScript (src: string, async = true) {
+	return new Promise<Event>((resolve, reject) => {
+		let script = document.createElement('script')
+		script.addEventListener('load', resolve)
+		script.addEventListener('error', reject)
+		script.type = 'text/javascript'
+		script.async = async
+		script.src = src
+
+		document.head.appendChild(script)
+	})
+}
+
 export function awaitAnimation (element) {
 	return new Promise((resolve, reject) => {
 		var pendingEvents = []

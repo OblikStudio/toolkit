@@ -1,16 +1,5 @@
+import { injectScript } from '../../utils'
 import { Component } from '../..'
-
-function appendScript ({ src, async = true }) {
-	return new Promise((resolve, reject) => {
-		var script = document.createElement('script')
-		script.type = 'text/javascript'
-		script.async = async
-		script.onload = resolve
-		script.onerror = reject
-		script.src = src
-		document.getElementsByTagName('head')[0].appendChild(script)
-	})
-}
 
 interface Options {
 	url: string,
@@ -19,11 +8,12 @@ interface Options {
 
 export class Tweet extends Component<HTMLElement, Options> {
 	static injected = ('twttr' in window)
-	static defaults = {
+
+	static defaults: Partial<Options> = {
 		lang: 'en'
 	}
 
-	create () {
+	init () {
 		// Twitter uses this class to look for tweets.
 		this.$element.classList.add('twitter-tweet')
 		this.$element.setAttribute('data-lang', this.$options.lang)
@@ -31,12 +21,15 @@ export class Tweet extends Component<HTMLElement, Options> {
 		// The tweet URL is inferred from this anchor element.
 		this.$element.innerHTML = `<a href="${this.$options.url}"></a>`
 
-		if (!Tweet.injected) {
-			Tweet.injected = true
+		this.load()
+	}
 
-			appendScript({
-				src: 'https://platform.twitter.com/widgets.js'
-			})
+	load () {
+		let ctor = this.constructor as typeof Tweet
+
+		if (!ctor.injected) {
+			injectScript('https://platform.twitter.com/widgets.js')
+			ctor.injected = true
 		}
 	}
 }
