@@ -3,8 +3,8 @@
 
 const ua = navigator.userAgent.toLowerCase()
 
-var name = 'unknown'
-var isMobile = ua.match(/android|webos|iphone|ipad|ipod|blackberry|windows phone/i)
+let name = null
+let isMobile = !!ua.match(/android|webos|iphone|ipad|ipod|blackberry|windows phone/i)
 
 if (ua.indexOf('firefox') >= 0) {
 	name = 'firefox'
@@ -18,10 +18,10 @@ if (ua.indexOf('firefox') >= 0) {
 	name = 'ie'
 }
 
-export function browser () {
+export function browser (): string {
 	return name
 }
 
-export function mobile () {
+export function mobile (): boolean {
 	return isMobile
 }
