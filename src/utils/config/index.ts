@@ -1,4 +1,4 @@
-const RE_NUMBER = /^\-?\d*\.?\d+(?:e\d+)?$/
+const RE_NUMBER = /^\-?\d*\.?\d+(?:e-?\d+)?$/
 
 export function parseValue (value: any) {
 	if (typeof value === 'string') {
@@ -21,7 +21,7 @@ export class Parser {
 	index: number
 	buffer: string
 
-	key: null | string
+	key: string
 	context: any[] | object
 	lastContext: object
 	contextStack: object[]
@@ -31,7 +31,7 @@ export class Parser {
 	isEscapeNext: boolean
 	isQuotedToken: boolean
 
-	init (input) {
+	init (input: string) {
 		this.input = input
 		this.index = 0
 		this.buffer = ''
@@ -55,12 +55,8 @@ export class Parser {
 		return Object.keys(this.context).length === 0
 	}
 
-	isInArray () {
-		return Array.isArray(this.context)
-	}
-
 	isExpectingKey () {
-		return !this.key && !this.isInArray()
+		return !this.key && !Array.isArray(this.context)
 	}
 
 	setContext (value: object) {
@@ -118,9 +114,8 @@ export class Parser {
 			value = parseValue(value)
 		}
 
-		if (this.isInArray()) {
-			let ctx = this.context as any[]
-			ctx.push(value)
+		if (Array.isArray(this.context)) {
+			this.context.push(value)
 		} else if (this.key) {
 			this.context[this.key] = value
 		} else {
@@ -131,7 +126,8 @@ export class Parser {
 	}
 
 	flush () {
-		var content = this.buffer.trim()
+		let content = this.buffer.trim()
+
 		if (content.length) {
 			if (this.isExpectingKey()) {
 				this.key = content
