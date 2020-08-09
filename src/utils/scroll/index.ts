@@ -5,7 +5,7 @@ export interface Options {
 	duration: Animation['duration']
 	easing?: Animation['easing']
 	offset?: number
-	target?: Element
+	target?: HTMLElement
 	interruptible?: boolean
 }
 
@@ -26,7 +26,7 @@ export class ScrollAnimation extends Animation {
 		this.end = Math.min(this.end, document.scrollingElement.scrollHeight - window.innerHeight)
 
 		if (options.interruptible !== false) {
-			let interruptHandler = (event) => {
+			let interruptHandler = () => {
 				this.stop()
 				window.removeEventListener('wheel', interruptHandler)
 				window.removeEventListener('touchstart', interruptHandler)

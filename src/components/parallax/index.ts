@@ -1,4 +1,4 @@
-import { windowClientRect } from '../../utils/dom'
+import { getClientRect } from '../../utils/dom'
 import { clamp } from '../../utils/math'
 import { Component } from '../..'
 
@@ -40,16 +40,8 @@ export class Parallax extends Component<HTMLElement, Options> {
 
 	getValue () {
 		let rect = this.$element.getBoundingClientRect()
-		let refRect = this.getRefRect()
+		let refRect = getClientRect(this.reference)
 		return this.calculate(rect, refRect, this.$options.axis)
-	}
-
-	getRefRect (): ClientRect {
-		if (this.reference instanceof Element) {
-			return this.reference.getBoundingClientRect()
-		} else {
-			return windowClientRect()
-		}
 	}
 
 	calculate (elRect: ClientRect, refRect: ClientRect, axis: Options['axis']) {

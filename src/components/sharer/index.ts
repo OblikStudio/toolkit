@@ -1,4 +1,4 @@
-import { copyText } from '../../utils'
+import { copy } from '../../utils'
 import { Component } from '../..'
 import * as Sharers from './urls'
 
@@ -36,7 +36,7 @@ export class Sharer extends Component<Element, Options> {
 
 	action () {
 		if (this.$options.type === 'copy') {
-			this.copied(copyText(this.$options.url))
+			this.copied(copy(this.$options.url))
 		} else {
 			let ctor = this.constructor as typeof Sharer
 			let url = ctor.getUrl(this.$options)

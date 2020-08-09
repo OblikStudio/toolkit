@@ -25,7 +25,7 @@ export class Swipe {
 	}
 }
 
-export class Gesture extends Emitter {
+export class Gesture extends Emitter<any> {
 	element: Element
 	swipes: Swipe[]
 
