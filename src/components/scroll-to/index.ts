@@ -49,5 +49,5 @@ export class ScrollTo extends Component<Element, Options> {
 	}
 }
 
-export { Options }
+export type { Options }
 export default ScrollTo

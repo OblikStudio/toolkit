@@ -55,9 +55,7 @@ export function parse (target: QueryTarget, query?: string, type?: any) {
 	return elements
 }
 
-export {
-	Query,
-	QueryInput
-}
+export { Query }
+export type { QueryInput }
 
 export default parse

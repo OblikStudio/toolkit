@@ -7,7 +7,7 @@ import { resolve } from './resolve'
 interface WatcherSettings {
 	prefix?: string
 	components: {
-		[key: string]: ComponentConstructor
+		[key: string]: ComponentConstructor<object>
 	}
 }
 
