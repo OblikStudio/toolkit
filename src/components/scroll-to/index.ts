@@ -1,4 +1,4 @@
-import { findAncestor } from '../../utils/dom'
+import { findAnchor } from '../../utils/dom'
 import { easeOutQuint } from '../../utils/easings'
 import { merge } from '../../utils/functions'
 import { scrollTo, Options } from '../../utils/scroll'
@@ -12,7 +12,7 @@ export class ScrollTo extends Component<Element, Options> {
 
 	static clickHandler (options?: Partial<Options>) {
 		return (event: MouseEvent) => {
-			let el = findAncestor(event.target as Element, e => e.tagName === 'A') as HTMLAnchorElement
+			let el = findAnchor(event.target as Element)
 			let href = el?.getAttribute('href')
 
 			if (href) {

@@ -12,6 +12,18 @@ export function findAncestor (element: Element, predicate: (element: Element) =>
 }
 
 /**
+ * Returns the first element in the parent tree that has an <a> tag, or the
+ * input element itself.
+ */
+export function findAnchor (element: Element): HTMLAnchorElement {
+	if (element.tagName === 'A') {
+		return element as HTMLAnchorElement
+	} else {
+		return findAncestor(element, e => e.tagName === 'A') as HTMLAnchorElement
+	}
+}
+
+/**
  * Returns the page offset of an element according to the sum of its ancestors'
  * offsets.
  */

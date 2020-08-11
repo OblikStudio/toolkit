@@ -1,4 +1,4 @@
-import { findAncestor } from '../../utils/dom'
+import { findAnchor } from '../../utils/dom'
 import { Easing, easeOutQuint } from '../../utils/easings'
 import { debounce } from '../../utils/functions'
 import { scrollTo } from '../../utils/scroll'
@@ -215,13 +215,7 @@ export class Loader extends Component<Element, Options> {
 
 	handleClick (event: MouseEvent) {
 		if (event.target instanceof Element) {
-			let link: HTMLAnchorElement = null
-
-			if (event.target.tagName === 'A') {
-				link = event.target as HTMLAnchorElement
-			} else {
-				link = findAncestor(event.target, el => el.tagName === 'A') as HTMLAnchorElement
-			}
+			let link = findAnchor(event.target)
 
 			if (link) {
 				let href = link.getAttribute('href')

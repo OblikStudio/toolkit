@@ -1,4 +1,4 @@
-import { findAncestor } from '../../utils/dom'
+import { findAnchor } from '../../utils/dom'
 import { Gesture, Swipe } from '../../utils/gesture'
 import { Component, ticker } from '../..'
 import { Item } from './item'
@@ -158,7 +158,7 @@ export class Rail extends Component<HTMLElement, Options> {
 
 		this.isDrag = false
 		this.isDragging = false
-		this.isDraggingLink = !!findAncestor(event.target, e => e.tagName === 'A')
+		this.isDraggingLink = !!findAnchor(event.target)
 		this.$element.classList.add('is-dragged')
 
 		// Don't prevent default for touchstart because if the slide is a link,
