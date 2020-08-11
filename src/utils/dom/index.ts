@@ -12,7 +12,7 @@ export function findAncestor (element: Element, predicate: (element: Element) =>
 }
 
 /**
- * Returns the first element in the parent tree that has an <a> tag, or the
+ * Returns the first element in the parent tree that has an `<a>` tag, or the
  * input element itself.
  */
 export function findAnchor (element: Element): HTMLAnchorElement {
@@ -76,7 +76,7 @@ export function copyToClipboard (input: string) {
 }
 
 /**
- * Injects a <script> tag in the <head> and returns a Promise.
+ * Injects a `<script>` tag in the `<head>` and returns a Promise.
  */
 export function injectScript (src: string, async = true) {
 	return new Promise<Event>((resolve, reject) => {
