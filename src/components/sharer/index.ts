@@ -1,4 +1,4 @@
-import { copy } from '../../utils'
+import { copyToClipboard } from '../../utils'
 import { Component } from '../..'
 import * as Sharers from './urls'
 
@@ -36,7 +36,8 @@ export class Sharer extends Component<Element, Options> {
 
 	action () {
 		if (this.$options.type === 'copy') {
-			this.copied(copy(this.$options.url))
+			copyToClipboard(this.$options.url)
+			this.handleCopy()
 		} else {
 			let ctor = this.constructor as typeof Sharer
 			let url = ctor.getUrl(this.$options)
@@ -47,10 +48,8 @@ export class Sharer extends Component<Element, Options> {
 		}
 	}
 
-	copied (success: boolean) {
-		if (success) {
-			alert('URL copied!')
-		}
+	handleCopy () {
+		alert('URL copied!')
 	}
 }
 

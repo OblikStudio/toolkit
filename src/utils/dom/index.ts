@@ -46,9 +46,12 @@ export function getClientRect (input: Window | Element): ClientRect {
 	}
 }
 
-export function copy (text: string) {
+/**
+ * Uses the Selection API to put a string in the user's clipboard.
+ */
+export function copyToClipboard (input: string) {
 	let selection = window.getSelection()
-	let node = document.createTextNode(text)
+	let node = document.createTextNode(input)
 	let range = document.createRange()
 
 	selection.removeAllRanges()
@@ -58,10 +61,11 @@ export function copy (text: string) {
 
 	document.execCommand('copy')
 	document.body.removeChild(node)
-
-	return true
 }
 
+/**
+ * Injects a <script> tag in the <head> and returns a Promise.
+ */
 export function injectScript (src: string, async = true) {
 	return new Promise<Event>((resolve, reject) => {
 		let script = document.createElement('script')
