@@ -61,7 +61,7 @@ export class Loader extends Component<Element, Options> {
 		}
 	}
 
-	scrollTo (options: { target?: Element, offset?: number }) {
+	scrollTo (options: { target?: HTMLElement, offset?: number }) {
 		let defaults = (this.constructor as typeof Loader).defaults
 		let config: Parameters<typeof scrollTo>[0] = Object.assign({}, defaults.scroll, options)
 
@@ -72,7 +72,7 @@ export class Loader extends Component<Element, Options> {
 		this.scrollAnimation = scrollTo(config)
 	}
 
-	getFragmentElement (url: URL) {
+	getFragmentElement (url: URL): HTMLElement {
 		if (url.hash) {
 			return document.querySelector(url.hash)
 		} else {
@@ -176,7 +176,7 @@ export class Loader extends Component<Element, Options> {
 			let element = this.getFragmentElement(new URL(url))
 			let options: Parameters<Loader['scrollTo']>[0] = {}
 
-			if (element) {
+			if (element && element) {
 				options.target = element
 			} else if (typeof state.scroll === 'number') {
 				options.offset = state.scroll
