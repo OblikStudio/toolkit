@@ -1,155 +1,157 @@
-// https://github.com/danro/easing-js
+export type Easing = (x: number) => number
 
-export type Easing = (input: number) => number
-
-export function linear (pos) {
-	return pos
+export function linear (x: number) {
+	return x
 }
 
-export function easeInQuad (pos) {
-	return Math.pow(pos, 2)
+export function easeInQuad (x: number) {
+	return Math.pow(x, 2)
 }
 
-export function easeOutQuad (pos) {
-	return -(Math.pow((pos - 1), 2) - 1)
+export function easeOutQuad (x: number) {
+	return -(Math.pow(x - 1, 2) - 1)
 }
 
-export function easeInOutQuad (pos) {
-	if ((pos /= 0.5) < 1) return 0.5 * Math.pow(pos, 2)
-	return -0.5 * ((pos -= 2) * pos - 2)
-}
-
-export function easeInCubic (pos) {
-	return Math.pow(pos, 3)
-}
-
-export function easeOutCubic (pos) {
-	return (Math.pow((pos - 1), 3) + 1)
-}
-
-export function easeInOutCubic (pos) {
-	if ((pos /= 0.5) < 1) return 0.5 * Math.pow(pos, 3)
-	return 0.5 * (Math.pow((pos - 2), 3) + 2)
-}
-
-export function easeInQuart (pos) {
-	return Math.pow(pos, 4)
-}
-
-export function easeOutQuart (pos) {
-	return -(Math.pow((pos - 1), 4) - 1)
-}
-
-export function easeInOutQuart (pos) {
-	if ((pos /= 0.5) < 1) return 0.5 * Math.pow(pos, 4)
-	return -0.5 * ((pos -= 2) * Math.pow(pos, 3) - 2)
-}
-
-export function easeInQuint (pos) {
-	return Math.pow(pos, 5)
-}
-
-export function easeOutQuint (pos) {
-	return (Math.pow((pos - 1), 5) + 1)
-}
-
-export function easeInOutQuint (pos) {
-	if ((pos /= 0.5) < 1) return 0.5 * Math.pow(pos, 5)
-	return 0.5 * (Math.pow((pos - 2), 5) + 2)
-}
-
-export function easeInSine (pos) {
-	return -Math.cos(pos * (Math.PI / 2)) + 1
-}
-
-export function easeOutSine (pos) {
-	return Math.sin(pos * (Math.PI / 2))
-}
-
-export function easeInOutSine (pos) {
-	return (-0.5 * (Math.cos(Math.PI * pos) - 1))
-}
-
-export function easeInExpo (pos) {
-	return (pos === 0) ? 0 : Math.pow(2, 10 * (pos - 1))
-}
-
-export function easeOutExpo (pos) {
-	return (pos === 1) ? 1 : -Math.pow(2, -10 * pos) + 1
-}
-
-export function easeInOutExpo (pos) {
-	if (pos === 0) return 0
-	if (pos === 1) return 1
-	if ((pos /= 0.5) < 1) return 0.5 * Math.pow(2, 10 * (pos - 1))
-	return 0.5 * (-Math.pow(2, -10 * --pos) + 2)
-}
-
-export function easeInCirc (pos) {
-	return -(Math.sqrt(1 - (pos * pos)) - 1)
-}
-
-export function easeOutCirc (pos) {
-	return Math.sqrt(1 - Math.pow((pos - 1), 2))
-}
-
-export function easeInOutCirc (pos) {
-	if ((pos /= 0.5) < 1) return -0.5 * (Math.sqrt(1 - pos * pos) - 1)
-	return 0.5 * (Math.sqrt(1 - (pos -= 2) * pos) + 1)
-}
-
-export function easeOutBounce (pos) {
-	if ((pos) < (1 / 2.75)) {
-		return (7.5625 * pos * pos)
-	} else if (pos < (2 / 2.75)) {
-		return (7.5625 * (pos -= (1.5 / 2.75)) * pos + 0.75)
-	} else if (pos < (2.5 / 2.75)) {
-		return (7.5625 * (pos -= (2.25 / 2.75)) * pos + 0.9375)
-	} else {
-		return (7.5625 * (pos -= (2.625 / 2.75)) * pos + 0.984375)
+export function easeInOutQuad (x: number) {
+	if ((x /= 0.5) < 1) {
+		return 0.5 * Math.pow(x, 2)
 	}
+
+	return -0.5 * ((x -= 2) * x - 2)
 }
 
-export function easeInBack (pos) {
-	var s = 1.70158
-	return (pos) * pos * ((s + 1) * pos - s)
+export function easeInCubic (x: number) {
+	return Math.pow(x, 3)
 }
 
-export function easeOutBack (pos) {
-	var s = 1.70158
-	return (pos = pos - 1) * pos * ((s + 1) * pos + s) + 1
+export function easeOutCubic (x: number) {
+	return Math.pow(x - 1, 3) + 1
 }
 
-export function easeInOutBack (pos) {
-	var s = 1.70158
-	if ((pos /= 0.5) < 1) return 0.5 * (pos * pos * (((s *= (1.525)) + 1) * pos - s))
-	return 0.5 * ((pos -= 2) * pos * (((s *= (1.525)) + 1) * pos + s) + 2)
-}
-
-export function elastic (pos) {
-	return -1 * Math.pow(4, -8 * pos) * Math.sin((pos * 6 - 1) * (2 * Math.PI) / 2) + 1
-}
-
-export function bounce (pos) {
-	if (pos < (1 / 2.75)) {
-		return (7.5625 * pos * pos)
-	} else if (pos < (2 / 2.75)) {
-		return (7.5625 * (pos -= (1.5 / 2.75)) * pos + 0.75)
-	} else if (pos < (2.5 / 2.75)) {
-		return (7.5625 * (pos -= (2.25 / 2.75)) * pos + 0.9375)
-	} else {
-		return (7.5625 * (pos -= (2.625 / 2.75)) * pos + 0.984375)
+export function easeInOutCubic (x: number) {
+	if ((x /= 0.5) < 1) {
+		return 0.5 * Math.pow(x, 3)
 	}
+
+	return 0.5 * (Math.pow(x - 2, 3) + 2)
 }
 
-export function bouncePast (pos) {
-	if (pos < (1 / 2.75)) {
-		return (7.5625 * pos * pos)
-	} else if (pos < (2 / 2.75)) {
-		return 2 - (7.5625 * (pos -= (1.5 / 2.75)) * pos + 0.75)
-	} else if (pos < (2.5 / 2.75)) {
-		return 2 - (7.5625 * (pos -= (2.25 / 2.75)) * pos + 0.9375)
+export function easeInQuart (x: number) {
+	return Math.pow(x, 4)
+}
+
+export function easeOutQuart (x: number) {
+	return -(Math.pow(x - 1, 4) - 1)
+}
+
+export function easeInOutQuart (x: number) {
+	if ((x /= 0.5) < 1) {
+		return 0.5 * Math.pow(x, 4)
+	}
+
+	return -0.5 * ((x -= 2) * Math.pow(x, 3) - 2)
+}
+
+export function easeInQuint (x: number) {
+	return Math.pow(x, 5)
+}
+
+export function easeOutQuint (x: number) {
+	return Math.pow(x - 1, 5) + 1
+}
+
+export function easeInOutQuint (x: number) {
+	if ((x /= 0.5) < 1) {
+		return 0.5 * Math.pow(x, 5)
+	}
+
+	return 0.5 * (Math.pow(x - 2, 5) + 2)
+}
+
+export function easeInSine (x: number) {
+	return -Math.cos(x * Math.PI / 2) + 1
+}
+
+export function easeOutSine (x: number) {
+	return Math.sin(x * Math.PI / 2)
+}
+
+export function easeInOutSine (x: number) {
+	return -0.5 * (Math.cos(Math.PI * x) - 1)
+}
+
+export function easeInExpo (x: number) {
+	return x === 0 ? 0 : Math.pow(2, 10 * (x - 1))
+}
+
+export function easeOutExpo (x: number) {
+	return x === 1 ? 1 : -Math.pow(2, -10 * x) + 1
+}
+
+export function easeInOutExpo (x: number) {
+	if (x === 0) {
+		return 0
+	} else if (x === 1) {
+		return 1
+	}
+
+	if ((x /= 0.5) < 1) {
+		return 0.5 * Math.pow(2, 10 * (x - 1))
+	}
+
+	return 0.5 * (-Math.pow(2, -10 * (x - 1)) + 2)
+}
+
+export function easeInCirc (x: number) {
+	return -(Math.sqrt(1 - Math.pow(x, 2)) - 1)
+}
+
+export function easeOutCirc (x: number) {
+	return Math.sqrt(1 - Math.pow(x - 1, 2))
+}
+
+export function easeInOutCirc (x: number) {
+	if ((x /= 0.5) < 1) {
+		return -0.5 * (Math.sqrt(1 - Math.pow(x, 2)) - 1)
+	}
+
+	return 0.5 * (Math.sqrt(1 - (x -= 2) * x) + 1)
+}
+
+export function easeInBack (x: number) {
+	let s = 1.70158
+
+	return Math.pow(x, 2) * ((s + 1) * x - s)
+}
+
+export function easeOutBack (x: number) {
+	let s = 1.70158
+
+	return Math.pow(--x, 2) * ((s + 1) * x + s) + 1
+}
+
+export function easeInOutBack (x: number) {
+	let s = 1.70158 * 1.525
+
+	if ((x /= 0.5) < 1) {
+		return 0.5 * Math.pow(x, 2) * ((s + 1) * x - s)
+	}
+
+	return 0.5 * ((x -= 2) * x * ((s + 1) * x + s) + 2)
+}
+
+export function easeOutElastic (x: number) {
+	return -Math.pow(4, -8 * x) * Math.sin((x * 6 - 1) * Math.PI) + 1
+}
+
+export function easeOutBounce (x: number) {
+	if (x < (1 / 2.75)) {
+		return 7.5625 * Math.pow(x, 2)
+	} else if (x < (2 / 2.75)) {
+		return 7.5625 * (x -= (1.5 / 2.75)) * x + 0.75
+	} else if (x < (2.5 / 2.75)) {
+		return 7.5625 * (x -= (2.25 / 2.75)) * x + 0.9375
 	} else {
-		return 2 - (7.5625 * (pos -= (2.625 / 2.75)) * pos + 0.984375)
+		return 7.5625 * (x -= (2.625 / 2.75)) * x + 0.984375
 	}
 }
