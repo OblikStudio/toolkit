@@ -11,6 +11,7 @@ export class Animation extends Tween {
 		}
 
 		if (!this.isRunning) {
+			this.stamp = Date.now()
 			this.isRunning = true
 			this.emit('start')
 		}
