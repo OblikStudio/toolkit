@@ -33,7 +33,7 @@ export function debounce<T extends (...args: any) => any> (callback: T, time: nu
 }
 
 export function throttle<T extends (...args: any) => any> (callback: T, time: number) {
-	let stamp = Date.now()
+	let stamp = null
 
 	return function (...args: Parameters<T>) {
 		let now = Date.now()
