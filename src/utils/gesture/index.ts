@@ -2,6 +2,15 @@ import { ticker } from '../../core/timer'
 import { Emitter } from '../emitter'
 import { Point, Vector } from '../math'
 
+export type GestureEvent = MouseEvent | TouchEvent
+export type Events = {
+	start: (event: GestureEvent) => void
+	down: (event: GestureEvent) => void
+	move: (event: GestureEvent) => void
+	up: (event: GestureEvent) => void
+	end: (event: GestureEvent) => void
+}
+
 export class Swipe {
 	id: number | string
 	origin: Point
@@ -25,7 +34,7 @@ export class Swipe {
 	}
 }
 
-export class Gesture extends Emitter<any> {
+export class Gesture extends Emitter<Events> {
 	element: Element
 	swipes: Swipe[]
 
@@ -114,7 +123,7 @@ export class Gesture extends Emitter<any> {
 		this.emitEnd(event)
 	}
 
-	protected emitStart (event: Event) {
+	protected emitStart (event: GestureEvent) {
 		if (this.swipes.length === 1) {
 			this.emit('start', event)
 			ticker.on('tick', this.handleTick, this)
@@ -123,11 +132,11 @@ export class Gesture extends Emitter<any> {
 		this.emit('down', event)
 	}
 
-	protected emitMove (event: Event) {
+	protected emitMove (event: GestureEvent) {
 		this.emit('move', event)
 	}
 
-	protected emitEnd (event: Event) {
+	protected emitEnd (event: GestureEvent) {
 		if (this.swipes.length === 0) {
 			this.emit('end', event)
 			ticker.purge(this)
