@@ -36,6 +36,7 @@ export class Tween extends Emitter<any> {
 
 	step () {
 		let oldStamp = this.stamp
+		let wasComplete = this.isComplete
 
 		this.stamp = Date.now()
 		this.delta = this.stamp - oldStamp
@@ -47,12 +48,11 @@ export class Tween extends Emitter<any> {
 			this.progress = 1
 		}
 
+		this.isComplete = this.progress === 1
 		this.value = this.easing(this.progress)
 		this.update()
 
-		let complete = this.progress === 1
-		if (complete && !this.isComplete) {
-			this.isComplete = true
+		if (!wasComplete && this.isComplete) {
 			this.emit('end')
 		}
 	}
