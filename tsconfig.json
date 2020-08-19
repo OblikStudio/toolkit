@@ -1,17 +1,21 @@
 {
 	"compilerOptions": {
-		"lib": [
-			"ES2015",
-			"ES2017",
-			"dom",
-			"dom.iterable"
-		],
-		"outDir": "js",
 		"target": "es5",
 		"module": "es6",
 		"moduleResolution": "node",
 		"declaration": true,
 		"strictBindCallApply": true,
-		"downlevelIteration": true
-	}
+		"downlevelIteration": true,
+		"outDir": "build",
+		"lib": [
+			"ES2015",
+			"ES2017",
+			"dom",
+			"dom.iterable"
+		]
+	},
+	"exclude": [
+		"tests",
+		"src/**/tests"
+	]
 }

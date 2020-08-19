@@ -25,7 +25,7 @@ module.exports = (env, opts) => {
 
 		config.output = {
 			library: 'oblik',
-			path: path.resolve(__dirname, 'js')
+			path: path.resolve(__dirname, 'build/dist')
 		}
 	} else {
 		config.entry = {
