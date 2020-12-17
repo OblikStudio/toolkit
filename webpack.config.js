@@ -20,7 +20,7 @@ module.exports = (env, opts) => {
 
 	if (opts.mode === 'production') {
 		config.entry = {
-			oblik: './src/index.ts'
+			oblik: './index.ts'
 		}
 
 		config.output = {
