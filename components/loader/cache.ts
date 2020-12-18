@@ -1,29 +1,32 @@
 export class Cache {
 	entries: {
-		[key: string]: string
-	}
+		[key: string]: string;
+	};
 
-	constructor () {
+	constructor() {
 		this.entries = {
-			[window.location.href]: document.documentElement.outerHTML
-		}
+			[window.location.href]: document.documentElement.outerHTML,
+		};
 	}
 
-	get (url: string) {
-		return this.entries[url]
+	get(url: string) {
+		return this.entries[url];
 	}
 
-	set (url: string, markup: string) {
-		return this.entries[url] = markup
+	set(url: string, markup: string) {
+		return (this.entries[url] = markup);
 	}
 
-	async fetch (url: string): Promise<string> {
-		let entry = this.get(url)
+	async fetch(url: string): Promise<string> {
+		let entry = this.get(url);
 
 		if (!entry) {
-			entry = this.set(url, await fetch(url).then(response => response.text()))
+			entry = this.set(
+				url,
+				await fetch(url).then((response) => response.text())
+			);
 		}
 
-		return entry
+		return entry;
 	}
 }

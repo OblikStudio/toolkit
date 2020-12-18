@@ -1,83 +1,88 @@
-import { ticker } from '../..'
-import { Emitter } from '../emitter'
+import { ticker } from "../..";
+import { Emitter } from "../emitter";
 
 type Change<T> = {
-	newValue: T,
-	oldValue?: T,
-	initial?: boolean
-}
+	newValue: T;
+	oldValue?: T;
+	initial?: boolean;
+};
 
 type Events<T extends { [K in P[number]]: any }, P extends string[]> = {
-	init: (state: { [K in P[number]]: T[K] }) => void
-	change: (changes: Partial<{ [K in P[number]]: Change<T[K]> }>, initial: boolean) => void
-}
+	init: (state: { [K in P[number]]: T[K] }) => void;
+	change: (
+		changes: Partial<{ [K in P[number]]: Change<T[K]> }>,
+		initial: boolean
+	) => void;
+};
 
-export class Poller<T, P extends (keyof T & string)[]> extends Emitter<Events<T, P>> {
-	private memo: { [K in P[number]]: any } = {} as any
-	private polls: number = 0
+export class Poller<T, P extends (keyof T & string)[]> extends Emitter<
+	Events<T, P>
+> {
+	private memo: { [K in P[number]]: any } = {} as any;
+	private polls: number = 0;
 
-	target: T
-	props: P
+	target: T;
+	props: P;
 
-	constructor (target: T, ...props: P) {
-		super()
+	constructor(target: T, ...props: P) {
+		super();
 
-		this.target = target
-		this.props = props
+		this.target = target;
+		this.props = props;
 
-		ticker.on('measure', this.update, this)
+		ticker.on("measure", this.update, this);
 	}
 
-	update () {
-		let changes: Partial<{ [K in P[number]]: Change<T[K]> }> = {}
-		let isChanged = false
-		let isInitial = this.polls === 0
+	update() {
+		let changes: Partial<{ [K in P[number]]: Change<T[K]> }> = {};
+		let isChanged = false;
+		let isInitial = this.polls === 0;
 
 		for (let prop of this.props) {
 			if (prop in this.target) {
-				let memo = this.memo[prop]
-				let value = this.target[prop]
-				let change: Change<T[typeof prop]>
+				let memo = this.memo[prop];
+				let value = this.target[prop];
+				let change: Change<T[typeof prop]>;
 
 				if (prop in this.memo) {
 					if (value !== memo) {
 						change = {
 							newValue: value,
-							oldValue: memo
-						}
+							oldValue: memo,
+						};
 					}
 				} else {
 					change = {
 						newValue: value,
-						initial: true
-					}
+						initial: true,
+					};
 				}
 
 				if (change) {
-					this.memo[prop] = change.newValue
-					changes[prop] = change
-					isChanged = true
+					this.memo[prop] = change.newValue;
+					changes[prop] = change;
+					isChanged = true;
 				}
 			}
 		}
 
 		if (isInitial) {
-			this.emit('init', this.memo)
+			this.emit("init", this.memo);
 		}
 
 		if (isChanged) {
-			this.emit('change', changes, isInitial)
+			this.emit("change", changes, isInitial);
 		}
 
-		this.polls++
+		this.polls++;
 	}
 
-	get (prop: P[number]) {
-		return this.memo[prop]
+	get(prop: P[number]) {
+		return this.memo[prop];
 	}
 
-	destroy () {
-		ticker.purge(this)
-		super.destroy()
+	destroy() {
+		ticker.purge(this);
+		super.destroy();
 	}
 }

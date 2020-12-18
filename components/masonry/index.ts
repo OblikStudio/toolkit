@@ -1,88 +1,93 @@
-import { Poller } from '../../utils/poller'
-import { Component } from '../..'
+import { Poller } from "../../utils/poller";
+import { Component } from "../..";
 
-function getElementBottom (el: HTMLElement) {
-	return el.offsetTop + el.offsetHeight + parseInt(window.getComputedStyle(el).marginBottom)
+function getElementBottom(el: HTMLElement) {
+	return (
+		el.offsetTop +
+		el.offsetHeight +
+		parseInt(window.getComputedStyle(el).marginBottom)
+	);
 }
 
-function elementsIntersect (a: HTMLElement, b: HTMLElement) {
-	let halfA = (a.offsetWidth / 2)
-	let halfB = (b.offsetWidth / 2)
-	let centerA = a.offsetLeft + halfA
-	let centerB = b.offsetLeft + halfB
-	return Math.abs(centerA - centerB) < (halfA + halfB - 1) // -1 for threshold because widths are rounded
+function elementsIntersect(a: HTMLElement, b: HTMLElement) {
+	let halfA = a.offsetWidth / 2;
+	let halfB = b.offsetWidth / 2;
+	let centerA = a.offsetLeft + halfA;
+	let centerB = b.offsetLeft + halfB;
+	return Math.abs(centerA - centerB) < halfA + halfB - 1; // -1 for threshold because widths are rounded
 }
 
 export class Item extends Component<HTMLElement> {
-	$parent: Masonry
+	$parent: Masonry;
 
-	poller: Poller<HTMLElement, ['offsetTop', 'offsetHeight']>
+	poller: Poller<HTMLElement, ["offsetTop", "offsetHeight"]>;
 
-	init () {
-		this.poller = new Poller(this.$element, 'offsetTop', 'offsetHeight')
-		this.poller.on('change', () => {
-			this.$parent.update()
-		})
+	init() {
+		this.poller = new Poller(this.$element, "offsetTop", "offsetHeight");
+		this.poller.on("change", () => {
+			this.$parent.update();
+		});
 	}
 
-	destroy () {
-		this.poller.destroy()
+	destroy() {
+		this.poller.destroy();
 	}
 }
 
 export class Masonry extends Component<HTMLElement> {
 	static components = {
-		item: Item
+		item: Item,
+	};
+
+	$item: Item[] = [];
+
+	init() {
+		this.update();
 	}
 
-	$item: Item[] = []
-
-	init () {
-		this.update()
-	}
-
-	update () {
-		this.$item.forEach(item => {
+	update() {
+		this.$item.forEach((item) => {
 			// Reset previous marginTop settings because they affect positions.
-			item.$element.style.marginTop = ''
-		})
+			item.$element.style.marginTop = "";
+		});
 
-		let prevElements: HTMLElement[] = []
+		let prevElements: HTMLElement[] = [];
 
-		this.$item.forEach(item => {
-			let el = item.$element
+		this.$item.forEach((item) => {
+			let el = item.$element;
 
-			let aboveElements = prevElements.filter(prev => {
-				return (prev.offsetTop < el.offsetTop) && elementsIntersect(el, prev)
-			})
+			let aboveElements = prevElements.filter((prev) => {
+				return prev.offsetTop < el.offsetTop && elementsIntersect(el, prev);
+			});
 
 			let lowestElement = aboveElements.reduce((memo, node) => {
 				if (!memo) {
-					return node
+					return node;
 				}
 
-				let bottom = getElementBottom(node)
-				let memoBottom = getElementBottom(memo)
+				let bottom = getElementBottom(node);
+				let memoBottom = getElementBottom(memo);
 
 				if (bottom > memoBottom) {
-					return node
+					return node;
 				} else {
-					return memo
+					return memo;
 				}
-			}, null)
+			}, null);
 
 			if (lowestElement) {
-				let currentMarginTop = parseInt(window.getComputedStyle(el).marginTop)
-				let marginTop = getElementBottom(lowestElement) - el.offsetTop + (currentMarginTop * 2)
+				let currentMarginTop = parseInt(window.getComputedStyle(el).marginTop);
+				let marginTop =
+					getElementBottom(lowestElement) - el.offsetTop + currentMarginTop * 2;
 
 				if (marginTop !== currentMarginTop) {
-					el.style.marginTop = `${marginTop}px`
+					el.style.marginTop = `${marginTop}px`;
 				}
 			}
 
-			prevElements.push(el)
-		})
+			prevElements.push(el);
+		});
 	}
 }
 
-export default Masonry
+export default Masonry;

@@ -1,80 +1,80 @@
 interface Instruction {
-	name: string
-	arg: string
+	name: string;
+	arg: string;
 }
 
 export default class {
-	name: string
-	arg: string
-	brackets: number
-	data: Instruction[]
+	name: string;
+	arg: string;
+	brackets: number;
+	data: Instruction[];
 
-	init () {
-		this.clear()
-		this.brackets = 0
-		this.data = []
+	init() {
+		this.clear();
+		this.brackets = 0;
+		this.data = [];
 	}
 
-	clear () {
-		this.name = ''
-		this.arg = ''
+	clear() {
+		this.name = "";
+		this.arg = "";
 	}
 
-	commit () {
+	commit() {
 		if (this.name) {
 			this.data.push({
 				name: this.name,
-				arg: this.arg || null
-			})
+				arg: this.arg || null,
+			});
 
-			this.clear()
+			this.clear();
 		}
 	}
 
-	read (char: string) {
-		if (char === '(') {
-			this.brackets++
+	read(char: string) {
+		if (char === "(") {
+			this.brackets++;
 
 			if (this.brackets === 1) {
 				if (!this.name) {
-					throw new Error('Method name expected')
+					throw new Error("Method name expected");
 				}
 
-				return
+				return;
 			}
-		} else if (char === ')') {
-			this.brackets--
+		} else if (char === ")") {
+			this.brackets--;
 
 			if (this.brackets === 0) {
-				this.commit()
-				return
+				this.commit();
+				return;
 			}
 		}
 
 		if (this.brackets) {
-			this.arg += char
-		} else if (char === '.') {
-			this.commit()
+			this.arg += char;
+		} else if (char === ".") {
+			this.commit();
 		} else {
-			this.name += char
+			this.name += char;
 		}
 	}
 
-	parse (input: string) {
-		this.init()
+	parse(input: string) {
+		this.init();
 
-		if (typeof input === 'string' && input.length) {
+		if (typeof input === "string" && input.length) {
 			for (let i = 0; i < input.length; i++) {
-				this.read(input[i])
+				this.read(input[i]);
 			}
 
-			this.commit()
+			this.commit();
 		}
 
 		if (this.brackets) {
-			throw new Error('Unclosed brackets')
+			throw new Error("Unclosed brackets");
 		}
 
-		return this.data
+		return this.data;
 	}
 }

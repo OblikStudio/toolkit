@@ -1,37 +1,37 @@
-import { injectScript } from '../../utils'
-import { Component } from '../..'
+import { injectScript } from "../../utils";
+import { Component } from "../..";
 
 interface Options {
-	url: string,
-	lang?: string
+	url: string;
+	lang?: string;
 }
 
 export class Tweet extends Component<HTMLElement, Options> {
-	static injected = ('twttr' in window)
+	static injected = "twttr" in window;
 
 	static defaults: Partial<Options> = {
-		lang: 'en'
-	}
+		lang: "en",
+	};
 
-	init () {
+	init() {
 		// Twitter uses this class to look for tweets.
-		this.$element.classList.add('twitter-tweet')
-		this.$element.setAttribute('data-lang', this.$options.lang)
+		this.$element.classList.add("twitter-tweet");
+		this.$element.setAttribute("data-lang", this.$options.lang);
 
 		// The tweet URL is inferred from this anchor element.
-		this.$element.innerHTML = `<a href="${this.$options.url}"></a>`
+		this.$element.innerHTML = `<a href="${this.$options.url}"></a>`;
 
-		this.load()
+		this.load();
 	}
 
-	load () {
-		let ctor = this.constructor as typeof Tweet
+	load() {
+		let ctor = this.constructor as typeof Tweet;
 
 		if (!ctor.injected) {
-			injectScript('https://platform.twitter.com/widgets.js')
-			ctor.injected = true
+			injectScript("https://platform.twitter.com/widgets.js");
+			ctor.injected = true;
 		}
 	}
 }
 
-export default Tweet
+export default Tweet;

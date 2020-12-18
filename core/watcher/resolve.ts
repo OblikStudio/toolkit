@@ -1,26 +1,26 @@
-import { parse } from '../../utils/query'
+import { parse } from "../../utils/query";
 
-function query (input: string, element: Element) {
-	let elements = parse(element, input)
+function query(input: string, element: Element) {
+	let elements = parse(element, input);
 
 	if (elements.length === 1) {
-		return elements[0]
+		return elements[0];
 	} else {
-		return elements
+		return elements;
 	}
 }
 
-export function resolve (options: object, context: Element) {
+export function resolve(options: object, context: Element) {
 	for (let name in options) {
-		let value = options[name]
+		let value = options[name];
 
-		if (typeof value === 'string' && name.indexOf('$') === 0) {
-			let newName = name.substr(1)
+		if (typeof value === "string" && name.indexOf("$") === 0) {
+			let newName = name.substr(1);
 
-			options[newName] = query(value, context)
-			delete options[name]
-		} else if (value && typeof value === 'object') {
-			resolve(value, context)
+			options[newName] = query(value, context);
+			delete options[name];
+		} else if (value && typeof value === "object") {
+			resolve(value, context);
 		}
 	}
 }

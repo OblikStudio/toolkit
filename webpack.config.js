@@ -1,43 +1,43 @@
-let path = require('path')
+let path = require("path");
 
 module.exports = (env, opts) => {
 	let config = {
 		resolve: {
-			extensions: ['.ts', '.js']
+			extensions: [".ts", ".js"],
 		},
 		module: {
 			rules: [
 				{
 					test: /\.ts$/,
-					loader: 'ts-loader',
+					loader: "ts-loader",
 					options: {
-						transpileOnly: true
-					}
-				}
-			]
-		}
-	}
+						transpileOnly: true,
+					},
+				},
+			],
+		},
+	};
 
-	if (opts.mode === 'production') {
+	if (opts.mode === "production") {
 		config.entry = {
-			oblik: './index.ts'
-		}
+			oblik: "./index.ts",
+		};
 
 		config.output = {
-			library: 'oblik',
-			path: path.resolve(__dirname, 'build/dist')
-		}
+			library: "oblik",
+			path: path.resolve(__dirname, "build/dist"),
+		};
 	} else {
 		config.entry = {
-			components: './tests/components/script.ts',
-			ticker: './tests/ticker/script.ts'
-		}
+			components: "./tests/components/script.ts",
+			ticker: "./tests/ticker/script.ts",
+		};
 
 		config.devServer = {
-			contentBase: './tests',
-			port: 5000
-		}
+			contentBase: "./tests",
+			port: 5000,
+		};
 	}
 
-	return config
-}
+	return config;
+};

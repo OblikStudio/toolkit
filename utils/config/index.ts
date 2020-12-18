@@ -1,224 +1,224 @@
-const RE_NUMBER = /^\-?\d*\.?\d+(?:e-?\d+)?$/
+const RE_NUMBER = /^\-?\d*\.?\d+(?:e-?\d+)?$/;
 
-export function parseValue (value: any) {
-	if (typeof value === 'string') {
+export function parseValue(value: any) {
+	if (typeof value === "string") {
 		if (value.match(RE_NUMBER)) {
-			return parseFloat(value)
-		} else if (value === 'true') {
-			return true
-		} else if (value === 'false') {
-			return false
-		} else if (value === 'null') {
-			return null
+			return parseFloat(value);
+		} else if (value === "true") {
+			return true;
+		} else if (value === "false") {
+			return false;
+		} else if (value === "null") {
+			return null;
 		}
 	}
 
-	return value
+	return value;
 }
 
 export class Parser {
-	input: string
-	index: number
-	buffer: string
+	input: string;
+	index: number;
+	buffer: string;
 
-	key: string
-	context: any[] | object
-	lastContext: object
-	contextStack: object[]
+	key: string;
+	context: any[] | object;
+	lastContext: object;
+	contextStack: object[];
 
-	isImplicitContext: boolean
-	isInQuote: boolean | string
-	isEscapeNext: boolean
-	isQuotedToken: boolean
+	isImplicitContext: boolean;
+	isInQuote: boolean | string;
+	isEscapeNext: boolean;
+	isQuotedToken: boolean;
 
-	init (input: string) {
-		this.input = input
-		this.index = 0
-		this.buffer = ''
+	init(input: string) {
+		this.input = input;
+		this.index = 0;
+		this.buffer = "";
 
-		this.key = null
-		this.context = null
-		this.lastContext = null
-		this.contextStack = []
+		this.key = null;
+		this.context = null;
+		this.lastContext = null;
+		this.contextStack = [];
 
-		this.isImplicitContext = null
-		this.isInQuote = false
-		this.isEscapeNext = false
-		this.isQuotedToken = false
+		this.isImplicitContext = null;
+		this.isInQuote = false;
+		this.isEscapeNext = false;
+		this.isQuotedToken = false;
 	}
 
-	error (message: string) {
-		throw new Error(`${message} at index ${this.index}`)
+	error(message: string) {
+		throw new Error(`${message} at index ${this.index}`);
 	}
 
-	isEmpty () {
-		return Object.keys(this.context).length === 0
+	isEmpty() {
+		return Object.keys(this.context).length === 0;
 	}
 
-	isExpectingKey () {
-		return !this.key && !Array.isArray(this.context)
+	isExpectingKey() {
+		return !this.key && !Array.isArray(this.context);
 	}
 
-	setContext (value: object) {
-		this.context = value
-		this.contextStack = [this.context]
-		this.isImplicitContext = true
+	setContext(value: object) {
+		this.context = value;
+		this.contextStack = [this.context];
+		this.isImplicitContext = true;
 	}
 
-	pushContext (value: object) {
-		this.flush()
+	pushContext(value: object) {
+		this.flush();
 
 		if (this.lastContext && !this.contextStack.length) {
 			// If there was a root context, it has been popped off, and a new one
 			// begins, assume an implicit array context with the previous root as the
 			// first entry inside.
-			this.setContext([this.lastContext])
+			this.setContext([this.lastContext]);
 		}
 
 		if (this.context || this.key) {
-			this.commit(value)
+			this.commit(value);
 		}
 
 		if (!this.context) {
 			// The root context is explicitly defined by the input, i.e. the input
 			// string begins with `{` or `[`.
-			this.isImplicitContext = false
+			this.isImplicitContext = false;
 		}
 
-		this.context = value
-		this.contextStack.push(this.context)
+		this.context = value;
+		this.contextStack.push(this.context);
 	}
 
-	popContext () {
-		this.clear()
+	popContext() {
+		this.clear();
 
 		if (this.contextStack.length > 0) {
-			this.contextStack.pop()
-			this.lastContext = this.context
-			this.context = this.contextStack[this.contextStack.length - 1]
+			this.contextStack.pop();
+			this.lastContext = this.context;
+			this.context = this.contextStack[this.contextStack.length - 1];
 		} else {
-			this.error('Can not pop context')
+			this.error("Can not pop context");
 		}
 	}
 
-	commit (value) {
+	commit(value) {
 		if (!this.context) {
 			// The first value is being commited and there's no explicit context;
 			// assume an object context.
-			this.setContext({})
+			this.setContext({});
 		}
 
 		if (this.isQuotedToken) {
-			this.isQuotedToken = false
+			this.isQuotedToken = false;
 		} else {
-			value = parseValue(value)
+			value = parseValue(value);
 		}
 
 		if (Array.isArray(this.context)) {
-			this.context.push(value)
+			this.context.push(value);
 		} else if (this.key) {
-			this.context[this.key] = value
+			this.context[this.key] = value;
 		} else {
-			this.error('Missing value key')
+			this.error("Missing value key");
 		}
 
-		this.key = null
+		this.key = null;
 	}
 
-	flush () {
-		let content = this.buffer.trim()
+	flush() {
+		let content = this.buffer.trim();
 
 		if (content.length) {
 			if (this.isExpectingKey()) {
-				this.key = content
+				this.key = content;
 			} else {
-				this.commit(content)
+				this.commit(content);
 			}
 		}
 
-		this.buffer = ''
+		this.buffer = "";
 	}
 
-	clear () {
-		this.flush()
+	clear() {
+		this.flush();
 
 		if (this.key) {
-			if (this.key[0] === '!') {
-				this.key = this.key.substr(1)
-				this.commit(false)
+			if (this.key[0] === "!") {
+				this.key = this.key.substr(1);
+				this.commit(false);
 			} else {
-				this.commit(true)
+				this.commit(true);
 			}
 		}
 	}
 
-	read (char: string) {
+	read(char: string) {
 		if (this.isEscapeNext) {
-			this.isEscapeNext = false
+			this.isEscapeNext = false;
 		} else if (this.isInQuote) {
-			if (char === '`') {
-				this.isQuotedToken = true
-				return this.isInQuote = false
-			} else if (char === '\\') {
-				return this.isEscapeNext = true
+			if (char === "`") {
+				this.isQuotedToken = true;
+				return (this.isInQuote = false);
+			} else if (char === "\\") {
+				return (this.isEscapeNext = true);
 			}
 		} else {
-			if (char === ':') {
+			if (char === ":") {
 				if (this.isExpectingKey()) {
-					return this.flush()
+					return this.flush();
 				}
-			} else if (char === ',') {
-				return this.clear()
-			} else if (char === '{') {
-				return this.pushContext({})
-			} else if (char === '[') {
-				return this.pushContext([])
-			} else if (char === '}' || char === ']') {
-				return this.popContext()
-			} else if (char === '`') {
-				return this.isInQuote = true
+			} else if (char === ",") {
+				return this.clear();
+			} else if (char === "{") {
+				return this.pushContext({});
+			} else if (char === "[") {
+				return this.pushContext([]);
+			} else if (char === "}" || char === "]") {
+				return this.popContext();
+			} else if (char === "`") {
+				return (this.isInQuote = true);
 			}
 		}
 
-		this.buffer += char
+		this.buffer += char;
 	}
 
-	next () {
-		this.read(this.input[this.index])
-		this.index++
+	next() {
+		this.read(this.input[this.index]);
+		this.index++;
 	}
 
-	parse (input: string) {
-		this.init(input)
+	parse(input: string) {
+		this.init(input);
 
-		if (typeof this.input !== 'string') {
-			return input
+		if (typeof this.input !== "string") {
+			return input;
 		}
 
 		while (this.index < this.input.length) {
-			this.next()
+			this.next();
 		}
 
 		if (this.isInQuote) {
-			this.error('Unterminated string')
+			this.error("Unterminated string");
 		}
 
 		if (this.key || this.context) {
-			this.clear()
+			this.clear();
 		}
 
 		if (this.context && this.isImplicitContext) {
-			this.popContext()
+			this.popContext();
 		}
 
 		if (this.contextStack.length > 0) {
-			this.error('Unclosed context')
+			this.error("Unclosed context");
 		}
 
 		if (this.lastContext) {
-			return this.lastContext
+			return this.lastContext;
 		} else {
-			return parseValue(this.buffer)
+			return parseValue(this.buffer);
 		}
 	}
 }

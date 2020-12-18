@@ -1,44 +1,44 @@
-import { Emitter } from '../emitter'
+import { Emitter } from "../emitter";
 
 interface Events {
-	tick: (delta: number) => void,
-	[key: string]: any
+	tick: (delta: number) => void;
+	[key: string]: any;
 }
 
 export class Ticker extends Emitter<Events> {
-	private stamp: number = null
-	private isTicking: boolean = false
-	private handler = this.run.bind(this)
+	private stamp: number = null;
+	private isTicking: boolean = false;
+	private handler = this.run.bind(this);
 
-	protected schedule () {
-		window.requestAnimationFrame(this.handler)
+	protected schedule() {
+		window.requestAnimationFrame(this.handler);
 	}
 
-	protected run () {
+	protected run() {
 		if (!this.isTicking) {
-			return
+			return;
 		}
 
-		let now = Date.now()
-		let diff = now - this.stamp
+		let now = Date.now();
+		let diff = now - this.stamp;
 
-		this.tick(diff)
+		this.tick(diff);
 
-		this.stamp = now
-		this.schedule()
+		this.stamp = now;
+		this.schedule();
 	}
 
-	protected tick (delta: number) {
-		this.emit('tick', delta)
+	protected tick(delta: number) {
+		this.emit("tick", delta);
 	}
 
-	start () {
-		this.isTicking = true
-		this.stamp = Date.now()
-		this.schedule()
+	start() {
+		this.isTicking = true;
+		this.stamp = Date.now();
+		this.schedule();
 	}
 
-	stop () {
-		this.isTicking = false
+	stop() {
+		this.isTicking = false;
 	}
 }

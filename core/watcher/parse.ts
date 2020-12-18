@@ -1,48 +1,48 @@
-import { Parser } from '../../utils/config'
+import { Parser } from "../../utils/config";
 
-const config = new Parser()
+const config = new Parser();
 
-export function value (input: any) {
-	if (typeof input === 'string' && input.length > 0) {
-		if (input[0] === '{') {
-			return JSON.parse(input)
+export function value(input: any) {
+	if (typeof input === "string" && input.length > 0) {
+		if (input[0] === "{") {
+			return JSON.parse(input);
 		} else {
-			return config.parse(input)
+			return config.parse(input);
 		}
 	} else {
-		return undefined
+		return undefined;
 	}
 }
 
 export interface ComponentMeta {
-	attr: string
-	id: string
-	name: string
+	attr: string;
+	id: string;
+	name: string;
 
-	parentAttr: string
-	parentId: string
-	parentName: string
+	parentAttr: string;
+	parentId: string;
+	parentName: string;
 
-	value: string
+	value: string;
 }
 
-export function attribute (input: Attr, prefix: string): ComponentMeta {
-	let attr = input.name
-	let value = input.value
+export function attribute(input: Attr, prefix: string): ComponentMeta {
+	let attr = input.name;
+	let value = input.value;
 
 	if (attr.indexOf(prefix) >= 0) {
-		let id = attr.replace(prefix, '')
-		let split = id.split('-')
-		let name = split.pop()
-		let parentId = split.join('-')
-		let parentName = split.pop()
-		let parentAttr = null
+		let id = attr.replace(prefix, "");
+		let split = id.split("-");
+		let name = split.pop();
+		let parentId = split.join("-");
+		let parentName = split.pop();
+		let parentAttr = null;
 
 		if (parentName) {
-			parentAttr = attr.replace(id, parentId)
+			parentAttr = attr.replace(id, parentId);
 		} else {
-			parentId = null
-			parentName = null
+			parentId = null;
+			parentName = null;
 		}
 
 		return {
@@ -52,9 +52,9 @@ export function attribute (input: Attr, prefix: string): ComponentMeta {
 			parentAttr,
 			parentId,
 			parentName,
-			value
-		}
+			value,
+		};
 	}
 
-	return null
+	return null;
 }
