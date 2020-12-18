@@ -4,9 +4,9 @@ export class Screen {
 	items: Item[];
 	offset: number;
 
-	constructor(items: Item[], offset: number) {
-		this.items = items;
-		this.offset = offset;
+	constructor(options: { items: Item[]; offset: number }) {
+		this.items = options.items;
+		this.offset = options.offset;
 	}
 
 	left() {

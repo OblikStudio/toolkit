@@ -6,11 +6,13 @@ import { Screen } from "./screen";
 
 interface Options {
 	clickThreshold: number;
-	screenChangeSpeed: number;
 	overdrag: number;
 	infinite: boolean;
 	itemsPerScreen?: number;
 	orderContainer?: HTMLElement;
+	screenOffset?: number;
+	screenCentering?: boolean;
+	screenChangeSpeed?: number;
 }
 
 export class Rail extends Component<HTMLElement, Options> {
@@ -20,9 +22,11 @@ export class Rail extends Component<HTMLElement, Options> {
 
 	static defaults: Options = {
 		clickThreshold: 40,
-		screenChangeSpeed: 500,
 		overdrag: 0.3,
 		infinite: false,
+		screenOffset: 0.5,
+		screenCentering: false,
+		screenChangeSpeed: 500,
 	};
 
 	$item: Item[] = [];
@@ -33,7 +37,6 @@ export class Rail extends Component<HTMLElement, Options> {
 	swipe: Swipe;
 	screens: Screen[];
 	activeScreen: Screen;
-	itemsPerScreen: number;
 	width: number;
 	offset: number;
 	offsetRender: number;
@@ -69,7 +72,7 @@ export class Rail extends Component<HTMLElement, Options> {
 			ticker.on("tick", this.updateOrder, this);
 		}
 
-		this.calc();
+		this.updateLayout();
 		this.setScreen(this.screens[0]);
 		this.update();
 
@@ -98,7 +101,7 @@ export class Rail extends Component<HTMLElement, Options> {
 	handleResize() {
 		let idx = this.screens.indexOf(this.activeScreen);
 
-		this.calc();
+		this.updateLayout();
 
 		if (this.screens[idx]) {
 			this.setScreen(this.screens[idx]);
@@ -107,13 +110,14 @@ export class Rail extends Component<HTMLElement, Options> {
 		this.update();
 	}
 
-	calc() {
-		this.calcDimensions();
-		this.calcItemsPerScreen();
-		this.calcScreens();
+	updateLayout() {
+		this.width = this.getWidth();
+		this.screens = this.getScreens(this.getScreenGroups()).map((options) => {
+			return new Screen(options);
+		});
 	}
 
-	calcDimensions() {
+	getWidth() {
 		let width = 0;
 
 		for (let item of this.$item) {
@@ -126,33 +130,52 @@ export class Rail extends Component<HTMLElement, Options> {
 			width += item.space();
 		}
 
-		this.width = width;
+		return width;
 	}
 
-	calcItemsPerScreen() {
-		if (typeof this.$options.itemsPerScreen === "number") {
-			this.itemsPerScreen = this.$options.itemsPerScreen;
-		} else {
-			this.itemsPerScreen = Math.round(
-				this.$element.offsetWidth / this.$item[0].width
-			);
-		}
-	}
-
-	calcScreens() {
+	getScreenGroups() {
 		let groups: Item[][] = [];
-		let current: Item[] = null;
+		let current: Item[];
+		let currentWidth: number;
+		let containerWidth = this.$element.offsetWidth;
+		let perScreen = this.$options.itemsPerScreen;
 
 		this.$item.forEach((el) => {
-			if (!current || current.length >= this.itemsPerScreen) {
+			let elWidth = el.$element.offsetWidth;
+			let check = perScreen
+				? current?.length >= perScreen
+				: currentWidth + elWidth > containerWidth;
+
+			if (!current || check) {
 				current = [];
+				currentWidth = 0;
 				groups.push(current);
 			}
 
 			current.push(el);
+			currentWidth += elWidth;
 		});
 
-		this.screens = groups.map((items) => new Screen(items, 0.5));
+		return groups;
+	}
+
+	getScreens(groups: Item[][]) {
+		return groups.map((items, index) => {
+			let offset = this.$options.screenOffset;
+
+			if (!this.$options.screenCentering) {
+				if (index === 0) {
+					offset = 0;
+				} else if (index === groups.length - 1) {
+					offset = 1;
+				}
+			}
+
+			return {
+				items,
+				offset,
+			};
+		});
 	}
 
 	pointerDown(event) {
