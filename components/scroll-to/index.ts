@@ -23,7 +23,7 @@ export class ScrollTo extends Component<Element, Options> {
 					url.origin === window.location.origin &&
 					url.pathname === window.location.pathname
 				) {
-					let target = document.querySelector(href);
+					let target = document.querySelector(url.hash);
 					let config = merge({}, this.defaults, options, {
 						target,
 					});
