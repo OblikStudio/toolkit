@@ -12,24 +12,35 @@ export class ScrollTo extends Component<Element, Options> {
 
 	static clickHandler(options?: Partial<Options>) {
 		return (event: MouseEvent) => {
+			if (event.defaultPrevented) {
+				// If the default behavior is prevented, e.g. due to a carousel
+				// item being dragged, do nothing. Otherwise, when the drag
+				// ends, the page will be scrolled, which is unexpected.
+				return false;
+			}
+
 			let el = findAnchor(event.target as Element);
 			let href = el?.getAttribute("href");
 
-			if (href) {
-				let url = new URL(href, window.location.href);
+			if (!href) {
+				return false;
+			}
 
-				if (
-					url.hash &&
-					url.origin === window.location.origin &&
-					url.pathname === window.location.pathname
-				) {
-					let target = document.querySelector(url.hash);
-					let config = merge({}, this.defaults, options, {
-						target,
-					});
+			let url = new URL(href, window.location.href);
 
-					scrollTo(config);
-				}
+			if (
+				url.hash &&
+				url.origin === window.location.origin &&
+				url.pathname === window.location.pathname
+			) {
+				let target = document.querySelector(url.hash);
+				let config = merge({}, this.defaults, options, {
+					target,
+				});
+
+				return scrollTo(config);
+			} else {
+				return false;
 			}
 		};
 	}
