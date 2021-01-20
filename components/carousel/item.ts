@@ -24,9 +24,16 @@ export class Item extends Component<HTMLElement> {
 
 	update() {
 		let style = window.getComputedStyle(this.$element);
-		this.marginLeft = parseFloat(style.marginLeft);
-		this.marginRight = parseFloat(style.marginRight);
+		let paddingLeft = parseFloat(style.paddingLeft);
+		let paddingRight = parseFloat(style.paddingRight);
+
+		this.marginLeft = parseFloat(style.marginLeft) + paddingLeft;
+		this.marginRight = parseFloat(style.marginRight) + paddingRight;
 		this.width = parseFloat(style.width);
+
+		if (style.boxSizing === "border-box") {
+			this.width -= paddingLeft + paddingRight;
+		}
 	}
 
 	space() {
