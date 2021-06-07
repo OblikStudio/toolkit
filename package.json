@@ -3,7 +3,6 @@
 	"version": "1.1.1",
 	"description": "Minimal, extensible, renderless front-end components and utilities",
 	"scripts": {
-		"dev": "webpack-dev-server --mode=development --watch",
 		"build": "webpack --mode=production",
 		"test": "karma start --single-run",
 		"karma": "karma start"
