@@ -51,6 +51,53 @@ export class Watcher {
 		added.forEach((node) => this.iterate(node, "add"));
 	}
 
+	run(el: Element) {
+		let comps = this.options.components;
+		let names = Object.keys(comps);
+
+		for (let k of names) {
+			let attr = this.options.prefix + k;
+			let qs = el.querySelectorAll(`[${attr}]`); // searchCriteria()?
+
+			for (let i = qs.length - 1; i >= 0; i--) {
+				console.log(qs[i]);
+
+				let attrVal = qs[i].getAttribute(attr);
+				let inst = new comps[k](qs[i], value(attrVal));
+
+				if (comps[k].components) {
+					this.runChildren(inst, k);
+				}
+
+				inst.$init();
+			}
+		}
+	}
+
+	// fix parent carousel uses items of child carousel
+
+	runChildren(comp: Component, name: string) {
+		let comps = comp.constructor.components;
+		let names = Object.keys(comps);
+
+		for (let k of names) {
+			let fullName = name + "-" + k;
+			let attr = this.options.prefix + fullName;
+			let qs = comp.$element.querySelectorAll(`[${attr}]`);
+
+			for (let i = qs.length - 1; i >= 0; i--) {
+				console.log(qs[i]);
+
+				let attrVal = qs[i].getAttribute(attr);
+				let inst = new comps[k](qs[i], value(attrVal), comp);
+
+				if (comps[k].components) {
+					this.runChildren(inst, fullName);
+				}
+			}
+		}
+	}
+
 	private iterate(node: Node, event: string) {
 		if (node instanceof Element) {
 			if (this.predicate(node) === true) {
