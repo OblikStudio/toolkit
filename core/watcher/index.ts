@@ -12,7 +12,7 @@ interface WatcherSettings {
 }
 
 export class Watcher {
-	private instances: Map<Element, { [key: string]: Component }>;
+	private instances: Map<Element, Map<ComponentConstructor<any>, Component>>;
 	private observer: MutationObserver;
 
 	target: Element;
@@ -51,48 +51,47 @@ export class Watcher {
 		added.forEach((node) => this.iterate(node, "add"));
 	}
 
-	run(el: Element) {
-		let comps = this.options.components;
-		let names = Object.keys(comps);
-
-		for (let k of names) {
-			let attr = this.options.prefix + k;
-			let qs = el.querySelectorAll(`[${attr}]`); // searchCriteria()?
-
-			for (let i = qs.length - 1; i >= 0; i--) {
-				console.log(qs[i]);
-
-				let attrVal = qs[i].getAttribute(attr);
-				let inst = new comps[k](qs[i], value(attrVal));
-
-				if (comps[k].components) {
-					this.runChildren(inst, k);
-				}
-
-				inst.$init();
-			}
-		}
+	run(target: Element) {
+		this.runInternal(target, this.options.components);
 	}
 
-	// fix parent carousel uses items of child carousel
+	private runInternal(
+		target: Element | Component,
+		components: { [key: string]: ComponentConstructor<any> },
+		name?: string
+	) {
+		let el = target instanceof Element ? target : target.$element;
+		let parent = target instanceof Element ? undefined : target;
 
-	runChildren(comp: Component, name: string) {
-		let comps = comp.constructor.components;
-		let names = Object.keys(comps);
-
-		for (let k of names) {
-			let fullName = name + "-" + k;
+		for (let k in components) {
+			let comp = components[k];
+			let fullName = (name ? `${name}-` : "") + k;
 			let attr = this.options.prefix + fullName;
-			let qs = comp.$element.querySelectorAll(`[${attr}]`);
+			let qs = el.querySelectorAll(`[${attr}]`);
 
 			for (let i = qs.length - 1; i >= 0; i--) {
-				console.log(qs[i]);
+				let eq = qs[i];
+				let comps = this.instances.get(eq);
 
-				let attrVal = qs[i].getAttribute(attr);
-				let inst = new comps[k](qs[i], value(attrVal), comp);
+				if (!comps) {
+					comps = new Map();
+					this.instances.set(eq, comps);
+				} else if (comps.get(comp)) {
+					continue;
+				}
 
-				if (comps[k].components) {
-					this.runChildren(inst, fullName);
+				let opts = value(eq.getAttribute(attr));
+				let inst = new comp(eq, opts, parent);
+				comps.set(comp, inst);
+
+				if (comp.components) {
+					this.runInternal(inst, comp.components, fullName);
+				}
+
+				if (!parent) {
+					// Children are initialized by parents, so only parents
+					// should be initialized.
+					inst.$init();
 				}
 			}
 		}
