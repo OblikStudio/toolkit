@@ -40,7 +40,7 @@ export class Watcher {
 
 			mutation.removedNodes.forEach((n) => {
 				if (n instanceof Element) {
-					this.runDestroy(n, this.options.components);
+					this.runDestroy(n);
 				}
 			});
 		});
@@ -90,34 +90,13 @@ export class Watcher {
 		}
 	}
 
-	private runDestroy(
-		target: Element,
-		components: { [key: string]: ComponentConstructor<any> },
-		name?: string
-	) {
-		let comps = this.instances.get(target);
-		if (comps) {
-			comps.forEach((c) => c.$destroy());
-			this.instances.delete(target);
-		}
-
-		for (let k in components) {
-			let fullName = (name ? `${name}-` : "") + k;
-			let attr = this.options.prefix + fullName;
-
-			target.querySelectorAll(`[${attr}]`).forEach((e) => {
-				let comps = this.instances.get(e);
-				if (comps) {
-					comps.forEach((c) => c.$destroy());
-					this.instances.delete(e);
-				}
-			});
-
-			let ctor = components[k];
-			if (ctor.components) {
-				this.runDestroy(target, ctor.components, fullName);
+	private runDestroy(target: Element) {
+		this.instances.forEach((comps, el) => {
+			if (el === target || target.contains(el)) {
+				comps.forEach((c) => c.$destroy());
+				this.instances.delete(target);
 			}
-		}
+		});
 	}
 
 	run() {
