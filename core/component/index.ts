@@ -1,7 +1,7 @@
 import { Emitter } from "../../utils/emitter";
 import { merge } from "../../utils/functions";
 
-export interface ComponentConstructor<O> {
+export interface ComponentConstructor<O = object> {
 	new (element: Element, options?: Partial<O>, parent?: Component): Component;
 	readonly components?: {
 		[key: string]: ComponentConstructor<any>;

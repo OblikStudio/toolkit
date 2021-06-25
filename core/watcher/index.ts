@@ -6,12 +6,12 @@ import { resolve } from "./resolve";
 interface WatcherSettings {
 	prefix?: string;
 	components: {
-		[key: string]: ComponentConstructor<object>;
+		[key: string]: ComponentConstructor;
 	};
 }
 
 export class Watcher {
-	private instances: Map<Element, Map<ComponentConstructor<any>, Component>>;
+	private instances: Map<Element, Map<ComponentConstructor, Component>>;
 	private observer?: MutationObserver;
 
 	target: Element;
@@ -48,7 +48,7 @@ export class Watcher {
 
 	private runInternal(
 		target: Element | Component,
-		components: { [key: string]: ComponentConstructor<any> },
+		components: { [key: string]: ComponentConstructor },
 		name?: string
 	) {
 		let el = target instanceof Element ? target : target.$element;
