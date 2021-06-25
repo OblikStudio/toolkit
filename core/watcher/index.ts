@@ -58,7 +58,12 @@ export class Watcher {
 			let comp = components[k];
 			let fullName = (name ? `${name}-` : "") + k;
 			let attr = this.options.prefix + fullName;
-			let qs = el.querySelectorAll(`[${attr}]`);
+			let sel = `[${attr}]`;
+			let qs = Array.from(el.querySelectorAll(sel));
+
+			if (el.matches(sel)) {
+				qs.unshift(el);
+			}
 
 			for (let i = qs.length - 1; i >= 0; i--) {
 				let eq = qs[i];
