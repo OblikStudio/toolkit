@@ -21,7 +21,7 @@ export class Watcher {
 		this.target = element;
 		this.options = merge(
 			{
-				prefix: "ob-",
+				prefix: "ob",
 				components: {},
 			},
 			settings
@@ -56,8 +56,8 @@ export class Watcher {
 
 		for (let k in components) {
 			let comp = components[k];
-			let fullName = (name ? `${name}-` : "") + k;
-			let attr = this.options.prefix + fullName;
+			let fullName = name ? `${name}-${k}` : k;
+			let attr = `${this.options.prefix}-${fullName}`;
 			let sel = `[${attr}]`;
 			let qs = Array.from(el.querySelectorAll(sel));
 
