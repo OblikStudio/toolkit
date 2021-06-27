@@ -140,5 +140,3 @@ export class Component<
 	init() {}
 	destroy() {}
 }
-
-export default Component;

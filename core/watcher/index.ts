@@ -1,5 +1,5 @@
-import { Component, ComponentConstructor } from "../..";
 import { merge } from "../../utils/functions";
+import { Component, ComponentConstructor } from "../component";
 import { value } from "./parse";
 import { resolve } from "./resolve";
 
@@ -17,7 +17,7 @@ export class Watcher {
 
 	options: WatcherSettings;
 
-	constructor(settings: WatcherSettings) {
+	constructor(settings: Partial<WatcherSettings>) {
 		this.options = merge<WatcherSettings>(
 			{
 				element: document.body,
@@ -30,23 +30,7 @@ export class Watcher {
 		this.instances = new Map();
 	}
 
-	private handleMutations(list: MutationRecord[]) {
-		list.forEach((mutation) => {
-			mutation.addedNodes.forEach((n) => {
-				if (n instanceof Element) {
-					this.runInternal(n, this.options.components);
-				}
-			});
-
-			mutation.removedNodes.forEach((n) => {
-				if (n instanceof Element) {
-					this.runDestroy(n);
-				}
-			});
-		});
-	}
-
-	private runInternal(
+	private runCreate(
 		target: Element | Component,
 		components: { [key: string]: ComponentConstructor },
 		name?: string
@@ -83,7 +67,7 @@ export class Watcher {
 				comps.set(comp, inst);
 
 				if (comp.components) {
-					this.runInternal(inst, comp.components, fullName);
+					this.runCreate(inst, comp.components, fullName);
 				}
 
 				if (!parent) {
@@ -104,13 +88,27 @@ export class Watcher {
 		});
 	}
 
+	private handleMutations(list: MutationRecord[]) {
+		list.forEach((mutation) => {
+			mutation.addedNodes.forEach((n) => {
+				if (n instanceof Element) {
+					this.runCreate(n, this.options.components);
+				}
+			});
+
+			mutation.removedNodes.forEach((n) => {
+				if (n instanceof Element) {
+					this.runDestroy(n);
+				}
+			});
+		});
+	}
+
 	run() {
-		this.runInternal(this.options.element, this.options.components);
+		this.runCreate(this.options.element, this.options.components);
 	}
 
 	observe() {
-		this.run();
-
 		this.observer = new MutationObserver((list) => this.handleMutations(list));
 		this.observer.observe(this.options.element, {
 			childList: true,
@@ -118,8 +116,9 @@ export class Watcher {
 		});
 	}
 
-	instance(element: Element, id: string) {
-		return this.instances.get(element)?.[id];
+	get(element: Element, constructor?: ComponentConstructor) {
+		let comps = this.instances.get(element);
+		return comps && constructor ? comps.get(constructor) : comps;
 	}
 
 	destroy() {
