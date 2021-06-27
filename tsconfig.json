@@ -9,5 +9,5 @@
 		"outDir": "build",
 		"lib": ["ES2015", "ES2017", "dom", "dom.iterable"]
 	},
-	"exclude": ["./**/tests"]
+	"exclude": ["**/tests/**/*", "**/node_modules/**/*"]
 }

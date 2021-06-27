@@ -2,6 +2,12 @@ export function isObject(input: any): input is object {
 	return input && typeof input === "object";
 }
 
+export function merge<T, S, S2, S3>(
+	target: T,
+	source: S,
+	source2: S2,
+	source3: S3
+): T & S & S2 & S3;
 export function merge<T, S, S2>(target: T, source: S, source2: S2): T & S & S2;
 export function merge<T, S>(target: T, source: S): T & S;
 export function merge<T>(target: T, ...sources: any[]): T {

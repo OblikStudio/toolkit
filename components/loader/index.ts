@@ -144,7 +144,7 @@ export class Loader extends Component<Element, Options> {
 			action
 				.then(() => {
 					ready = true;
-					resolve();
+					resolve(true);
 				})
 				.catch(reject);
 
