@@ -2,7 +2,7 @@ export function isObject(input: any): input is object {
 	return input && typeof input === "object";
 }
 
-export function merge(target: object, ...sources: object[]): any {
+export function merge<T>(target: T, ...sources: object[]): T {
 	sources.forEach((obj) => {
 		if (isObject(obj)) {
 			for (let k in obj) {

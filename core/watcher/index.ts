@@ -4,6 +4,7 @@ import { value } from "./parse";
 import { resolve } from "./resolve";
 
 interface WatcherSettings {
+	element?: HTMLElement;
 	prefix?: string;
 	components: {
 		[key: string]: ComponentConstructor;
@@ -14,13 +15,12 @@ export class Watcher {
 	private instances: Map<Element, Map<ComponentConstructor, Component>>;
 	private observer?: MutationObserver;
 
-	target: Element;
 	options: WatcherSettings;
 
-	constructor(element: Element, settings: WatcherSettings) {
-		this.target = element;
-		this.options = merge(
+	constructor(settings: WatcherSettings) {
+		this.options = merge<WatcherSettings>(
 			{
+				element: document.body,
 				prefix: "ob",
 				components: {},
 			},
@@ -105,14 +105,14 @@ export class Watcher {
 	}
 
 	run() {
-		this.runInternal(this.target, this.options.components);
+		this.runInternal(this.options.element, this.options.components);
 	}
 
 	observe() {
 		this.run();
 
 		this.observer = new MutationObserver((list) => this.handleMutations(list));
-		this.observer.observe(this.target, {
+		this.observer.observe(this.options.element, {
 			childList: true,
 			subtree: true,
 		});
@@ -123,7 +123,6 @@ export class Watcher {
 	}
 
 	destroy() {
-		this.target = null;
 		this.instances.clear();
 		this.observer?.disconnect();
 	}
