@@ -1,4 +1,3 @@
-import { merge } from "../../utils/functions";
 import { Component, ComponentConstructor } from "../component";
 import { value } from "./parse";
 import { resolve } from "./resolve";
@@ -17,16 +16,16 @@ export class Watcher {
 
 	options: WatcherSettings;
 
-	constructor(settings: Partial<WatcherSettings>) {
-		this.options = merge<WatcherSettings>(
-			{
-				element: document.body,
-				prefix: "ob",
-				components: {},
-			},
-			settings
-		);
+	constructor(settings: WatcherSettings) {
+		if (!settings.element) {
+			settings.element = document.body;
+		}
 
+		if (!settings.prefix) {
+			settings.prefix = "ob";
+		}
+
+		this.options = settings;
 		this.instances = new Map();
 	}
 
@@ -116,9 +115,11 @@ export class Watcher {
 		});
 	}
 
-	get(element: Element, constructor?: ComponentConstructor) {
-		let comps = this.instances.get(element);
-		return comps && constructor ? comps.get(constructor) : comps;
+	get<T extends ComponentConstructor<any, any, any>>(
+		element: Element,
+		constructor: T
+	): InstanceType<T> {
+		return this.instances.get(element)?.get(constructor) as any;
 	}
 
 	destroy() {

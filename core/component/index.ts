@@ -11,7 +11,6 @@ export interface ComponentConstructor<
 		[key: string]: ComponentConstructor<any, any, any>;
 	};
 	defaults?: Partial<O>;
-	isMovable?: boolean;
 	$name(ctor: ComponentConstructor<any, any, any>): string;
 }
 
@@ -31,8 +30,6 @@ export class Component<
 	$parent: P;
 	$emitter: Emitter<any>;
 	$children: Component[] = [];
-
-	static isMovable = true;
 
 	static $name(this: ComponentConstructor, ctor: ComponentConstructor) {
 		if (this.components) {
@@ -54,7 +51,7 @@ export class Component<
 
 	constructor(element: E, options?: Partial<O>, parent?: P) {
 		this.$element = element;
-		this.$options = merge<O>({} as any, this.constructor.defaults, options);
+		this.$options = merge({} as any, this.constructor.defaults, options);
 		this.$parent = parent;
 		this.$emitter = new Emitter();
 

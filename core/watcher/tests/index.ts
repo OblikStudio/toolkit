@@ -28,10 +28,6 @@ class Parent extends Tester<{ foo: string }> {
 	};
 }
 
-class NonMovable extends Tester {
-	static isMovable = false;
-}
-
 describe("watcher", () => {
 	it("initializes components", () => {
 		fixture.set(`
@@ -45,16 +41,17 @@ describe("watcher", () => {
 		let main = fixture.el.querySelector("main");
 		let parent = main.firstElementChild;
 		let child = parent.firstElementChild;
-		let watcher = new Watcher(main, {
+		let watcher = new Watcher({
+			element: main,
 			components: {
 				test: Parent,
 			},
 		});
 
-		watcher.init();
+		watcher.run();
 
-		let parentInstance = watcher.instance(parent, "test") as Parent;
-		let childInstance = watcher.instance(child, "test-child") as Tester;
+		let parentInstance = watcher.get(parent, Parent);
+		let childInstance = watcher.get(child, Tester);
 
 		expect(parentInstance.spyCreate.called).true;
 		expect(childInstance.spyCreate).calledAfter(parentInstance.spyCreate);
@@ -66,20 +63,22 @@ describe("watcher", () => {
 		fixture.set(`<main></main>`);
 
 		let main = fixture.el.querySelector("main");
-		let watcher = new Watcher(main, {
+		let watcher = new Watcher({
+			element: main,
 			components: {
 				test: Tester,
 			},
 		});
 
-		watcher.init();
+		watcher.run();
+		watcher.observe();
 
 		let el = document.createElement("div");
 		el.setAttribute("ob-test", "");
 		main.appendChild(el);
 
 		window.requestAnimationFrame(() => {
-			let component = watcher.instance(el, "test") as Tester;
+			let component = watcher.get(el, Tester);
 			expect(component.spyInit.called).true;
 			done();
 		});
@@ -90,58 +89,21 @@ describe("watcher", () => {
 
 		let main = fixture.el.querySelector("main");
 		let target = main.firstElementChild;
-		let watcher = new Watcher(main, {
+		let watcher = new Watcher({
+			element: main,
 			components: {
 				test: Tester,
 			},
 		});
 
-		watcher.init();
+		watcher.run();
+		watcher.observe();
 
-		let component = watcher.instance(target, "test") as Tester;
+		let component = watcher.get(target, Tester);
 		main.removeChild(target);
 
 		window.requestAnimationFrame(() => {
 			expect(component.spyDestroy.called).true;
-			done();
-		});
-	});
-
-	it("moves components", function (done) {
-		fixture.set(`
-			<main>
-				<div><div ob-test></div></div>
-				<div><div ob-test2></div></div>
-				<div id="dest"></div>
-			</main>
-		`);
-
-		let main = fixture.el.querySelector("main");
-		let target1 = main.querySelector("[ob-test]");
-		let target2 = main.querySelector("[ob-test2]");
-		let dest = main.querySelector("#dest");
-		let watcher = new Watcher(main, {
-			components: {
-				test: Tester,
-				test2: NonMovable,
-			},
-		});
-
-		watcher.init();
-
-		let comp1 = watcher.instance(target1, "test") as Tester;
-		let comp2 = watcher.instance(target2, "test2") as NonMovable;
-
-		dest.appendChild(target1);
-		dest.appendChild(target2);
-
-		window.requestAnimationFrame(() => {
-			expect(comp1.spyDestroy.called).false;
-			expect(comp2.spyDestroy.called).true;
-
-			let newComp2 = watcher.instance(target2, "test2") as NonMovable;
-			expect(newComp2).not.equal(comp2);
-			expect(newComp2.spyInit.called).true;
 			done();
 		});
 	});
