@@ -1,18 +1,26 @@
 import { Emitter } from "../../utils/emitter";
 import { merge } from "../../utils/functions";
 
-export interface ComponentConstructor<O = object> {
-	new (element: Element, options?: Partial<O>, parent?: Component): Component;
+export interface ComponentConstructor<
+	E extends Element = Element,
+	O = object,
+	P extends Component = Component
+> {
+	new (element: E, options?: O, parent?: P): Component<E, O, P>;
 	readonly components?: {
-		[key: string]: ComponentConstructor<any>;
+		[key: string]: ComponentConstructor<any, any, any>;
 	};
 	defaults?: Partial<O>;
 	isMovable?: boolean;
-	$name(ctor: ComponentConstructor<any>): string;
+	$name(ctor: ComponentConstructor<any, any, any>): string;
 }
 
-export class Component<E extends Element = Element, O = object> {
-	["constructor"]: ComponentConstructor<O>;
+export class Component<
+	E extends Element = Element,
+	O = object,
+	P extends Component = Component<Element, object, any>
+> {
+	["constructor"]: ComponentConstructor<E, O, P>;
 
 	private _isInit = false;
 	private _isDestroyed = false;
@@ -20,16 +28,13 @@ export class Component<E extends Element = Element, O = object> {
 	$name: string = null;
 	$element: E;
 	$options: O;
-	$parent: Component;
+	$parent: P;
 	$emitter: Emitter<any>;
 	$children: Component[] = [];
 
 	static isMovable = true;
 
-	static $name(
-		this: ComponentConstructor<any>,
-		ctor: ComponentConstructor<any>
-	) {
+	static $name(this: ComponentConstructor, ctor: ComponentConstructor) {
 		if (this.components) {
 			let names = Object.entries(this.components)
 				.filter((entry) => entry[1] === ctor)
@@ -47,9 +52,9 @@ export class Component<E extends Element = Element, O = object> {
 		}
 	}
 
-	constructor(element: E, options?: Partial<O>, parent?: Component) {
+	constructor(element: E, options?: Partial<O>, parent?: P) {
 		this.$element = element;
-		this.$options = merge({}, this.constructor.defaults, options);
+		this.$options = merge<O>({} as any, this.constructor.defaults, options);
 		this.$parent = parent;
 		this.$emitter = new Emitter();
 

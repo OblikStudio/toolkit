@@ -2,7 +2,7 @@ export function isObject(input: any): input is object {
 	return input && typeof input === "object";
 }
 
-export function merge<T>(target: T, ...sources: object[]): T {
+export function merge<T>(target: Partial<T>, ...sources: Partial<T>[]): T {
 	sources.forEach((obj) => {
 		if (isObject(obj)) {
 			for (let k in obj) {
@@ -17,7 +17,7 @@ export function merge<T>(target: T, ...sources: object[]): T {
 		}
 	});
 
-	return target;
+	return target as T;
 }
 
 export function debounce<T extends (...args: any) => any>(

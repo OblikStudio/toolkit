@@ -7,7 +7,7 @@ interface WatcherSettings {
 	element?: HTMLElement;
 	prefix?: string;
 	components: {
-		[key: string]: ComponentConstructor;
+		[key: string]: ComponentConstructor<any, any, any>;
 	};
 }
 
