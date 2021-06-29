@@ -48,7 +48,7 @@ export class Watcher {
 				qs.unshift(el);
 			}
 
-			for (let i = qs.length - 1; i >= 0; i--) {
+			for (let i = 0, l = qs.length; i < l; i++) {
 				let eq = qs[i];
 				let comps = this.instances.get(eq);
 
