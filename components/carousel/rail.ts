@@ -15,6 +15,11 @@ interface Options {
 	screenChangeSpeed?: number;
 }
 
+interface RailScreenOptions {
+	items: Item[];
+	offset: number;
+}
+
 export class Rail extends Component<HTMLElement, Options> {
 	static components = {
 		item: Item,
@@ -110,11 +115,15 @@ export class Rail extends Component<HTMLElement, Options> {
 		this.update();
 	}
 
+	createScreen(options: RailScreenOptions) {
+		return new Screen(options);
+	}
+
 	updateLayout() {
 		this.width = this.getWidth();
-		this.screens = this.getScreens(this.getScreenGroups()).map((options) => {
-			return new Screen(options);
-		});
+		this.screens = this.getScreens(this.getScreenGroups()).map((options) =>
+			this.createScreen(options)
+		);
 	}
 
 	getWidth() {
@@ -383,9 +392,8 @@ export class Rail extends Component<HTMLElement, Options> {
 	updateOrder() {
 		let rectContainer = this.orderContainer.getBoundingClientRect();
 		let rectFirst = this.order[0].$element.getBoundingClientRect();
-		let rectLast = this.order[
-			this.order.length - 1
-		].$element.getBoundingClientRect();
+		let rectLast =
+			this.order[this.order.length - 1].$element.getBoundingClientRect();
 		let target: Item;
 
 		if (
