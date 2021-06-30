@@ -15,12 +15,11 @@ interface Options {
 	screenChangeSpeed?: number;
 }
 
-interface RailScreenOptions {
-	items: Item[];
-	offset: number;
-}
-
 export class Rail extends Component<HTMLElement, Options> {
+	["constructor"]: typeof Rail;
+
+	static Screen = Screen;
+
 	static components = {
 		item: Item,
 	};
@@ -115,14 +114,10 @@ export class Rail extends Component<HTMLElement, Options> {
 		this.update();
 	}
 
-	createScreen(options: RailScreenOptions) {
-		return new Screen(options);
-	}
-
 	updateLayout() {
 		this.width = this.getWidth();
-		this.screens = this.getScreens(this.getScreenGroups()).map((options) =>
-			this.createScreen(options)
+		this.screens = this.getScreens(this.getScreenGroups()).map(
+			(options) => new this.constructor.Screen(options)
 		);
 	}
 
