@@ -6,7 +6,7 @@ interface WatcherSettings {
 	element?: HTMLElement;
 	prefix?: string;
 	components: {
-		[key: string]: ComponentConstructor<any, any, any>;
+		[key: string]: ComponentConstructor<any, any>;
 	};
 }
 
@@ -62,8 +62,12 @@ export class Watcher {
 				let opts = value(eq.getAttribute(attr));
 				resolve(opts, eq);
 
-				let inst = new comp(eq, opts, parent);
+				let inst = new comp(eq, opts);
 				comps.set(comp, inst);
+
+				if (parent) {
+					parent.$addChild(inst);
+				}
 
 				if (comp.components) {
 					this.runCreate(inst, comp.components, fullName);
@@ -115,7 +119,7 @@ export class Watcher {
 		});
 	}
 
-	get<T extends ComponentConstructor<any, any, any>>(
+	get<T extends ComponentConstructor<any, any>>(
 		element: Element,
 		constructor: T
 	): InstanceType<T> {

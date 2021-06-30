@@ -1,25 +1,17 @@
 import { Emitter } from "../../utils/emitter";
 import { merge } from "../../utils/functions";
 
-export interface ComponentConstructor<
-	E extends Element = Element,
-	O = object,
-	P extends Component = Component
-> {
-	new (element: E, options?: O, parent?: P): Component<E, O, P>;
+export interface ComponentConstructor<E extends Element = Element, O = object> {
+	new (element: E, options?: O): Component<E, O>;
 	readonly components?: {
-		[key: string]: ComponentConstructor<any, any, any>;
+		[key: string]: ComponentConstructor<any, any>;
 	};
 	defaults?: Partial<O>;
-	$name(ctor: ComponentConstructor<any, any, any>): string;
+	$name(ctor: ComponentConstructor<any, any>): string;
 }
 
-export class Component<
-	E extends Element = Element,
-	O = object,
-	P extends Component = Component<Element, object, any>
-> {
-	["constructor"]: ComponentConstructor<E, O, P>;
+export class Component<E extends Element = Element, O = object> {
+	["constructor"]: ComponentConstructor<E, O>;
 
 	private _isInit = false;
 	private _isDestroyed = false;
@@ -27,7 +19,7 @@ export class Component<
 	$name: string = null;
 	$element: E;
 	$options: O;
-	$parent: P;
+	$parent: Component<Element, any>;
 	$emitter: Emitter<any>;
 	$children: Component[] = [];
 
@@ -49,18 +41,12 @@ export class Component<
 		}
 	}
 
-	constructor(element: E, options?: Partial<O>, parent?: P) {
+	constructor(element: E, options?: Partial<O>) {
 		this.$element = element;
 		this.$options = merge({} as any, this.constructor.defaults, options);
-		this.$parent = parent;
 		this.$emitter = new Emitter();
 
 		this.create();
-
-		if (this.$parent) {
-			this.$name = this.$parent.constructor.$name(this.constructor);
-			this.$parent._addChild(this);
-		}
 	}
 
 	$init() {
@@ -99,17 +85,22 @@ export class Component<
 		}
 	}
 
-	private _addChild(component: Component<Element, any>) {
+	$addChild(component: Component<Element, any>) {
 		if (this.$children.indexOf(component) < 0) {
+			component.$name = this.constructor.$name(component.constructor);
+			component.$parent = this;
+
 			this.$children.push(component);
 			this._ref(component);
 			this.$emitter.emit("add:" + component.$name, component);
 		}
 	}
 
-	private _removeChild(component: Component<Element, any>) {
+	$removeChild(component: Component<Element, any>) {
 		let index = this.$children.indexOf(component);
 		if (index >= 0) {
+			component.$parent = null;
+
 			this.$children.splice(index, 1);
 			this._ref(component, true);
 			this.$emitter.emit("remove:" + component.$name, component);
@@ -125,7 +116,7 @@ export class Component<
 			});
 
 			if (this.$parent) {
-				this.$parent._removeChild(this);
+				this.$parent.$removeChild(this);
 			}
 
 			this.$emitter.emit("destroy");
