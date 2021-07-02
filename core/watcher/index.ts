@@ -9,6 +9,9 @@ interface WatcherSettings {
 	components: {
 		[key: string]: ComponentConstructor<any, any>;
 	};
+	getters?: {
+		[key: string]: (value: any, element?: Element) => any;
+	};
 }
 
 export class Watcher {
@@ -25,6 +28,13 @@ export class Watcher {
 		if (!settings.prefix) {
 			settings.prefix = "ob";
 		}
+
+		if (!settings.getters) {
+			settings.getters = {};
+		}
+
+		settings.getters.qs = (q) => document.documentElement.querySelector(q);
+		settings.getters.qsa = (q) => document.documentElement.querySelectorAll(q);
 
 		this.options = settings;
 		this.instances = new Map();
@@ -60,7 +70,7 @@ export class Watcher {
 					continue;
 				}
 
-				let opts = this.parseOptions(eq.getAttribute(attr));
+				let opts = this.parseOptions(eq.getAttribute(attr), eq);
 				let inst = new comp(eq, opts);
 				comps.set(comp, inst);
 
@@ -106,7 +116,7 @@ export class Watcher {
 		});
 	}
 
-	private parseOptions(value: string) {
+	private parseOptions(value: string, element: Element) {
 		if (value[0] === "{") {
 			return JSON.parse(value);
 		}
@@ -130,6 +140,14 @@ export class Watcher {
 				v = null;
 			} else if (v.length === 0) {
 				v = undefined;
+			}
+
+			if (k.indexOf("$") > 0) {
+				let split = k.split("$");
+				let getter = this.options.getters[split[1]];
+
+				k = split[0];
+				v = getter ? getter(v, element) : null;
 			}
 
 			result[k] = v;
