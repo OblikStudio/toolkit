@@ -1,6 +1,7 @@
 import { Component, ComponentConstructor } from "../component";
-import { value } from "./parse";
-import { resolve } from "./resolve";
+
+const RE_CONFIG = /([^:]+):([^,]*),?/g;
+const RE_NUMBER = /^\-?\d*\.?\d+(?:e-?\d+)?$/;
 
 interface WatcherSettings {
 	element?: HTMLElement;
@@ -59,9 +60,7 @@ export class Watcher {
 					continue;
 				}
 
-				let opts = value(eq.getAttribute(attr));
-				resolve(opts, eq);
-
+				let opts = this.parseOptions(eq.getAttribute(attr));
 				let inst = new comp(eq, opts);
 				comps.set(comp, inst);
 
@@ -105,6 +104,38 @@ export class Watcher {
 				}
 			});
 		});
+	}
+
+	private parseOptions(value: string) {
+		if (value[0] === "{") {
+			return JSON.parse(value);
+		}
+
+		let result = {};
+		let match: RegExpExecArray;
+
+		RE_CONFIG.lastIndex = 0;
+
+		while ((match = RE_CONFIG.exec(value))) {
+			let k = match[1].trim();
+			let v: any = match[2].trim();
+
+			if (v.match(RE_NUMBER)) {
+				v = parseFloat(v);
+			} else if (v === "true") {
+				v = true;
+			} else if (v === "false") {
+				v = false;
+			} else if (v === "null") {
+				v = null;
+			} else if (v.length === 0) {
+				v = undefined;
+			}
+
+			result[k] = v;
+		}
+
+		return result;
 	}
 
 	run() {
