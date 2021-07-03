@@ -1,5 +1,9 @@
 export function isObject(input: any): input is object {
-	return input && typeof input === "object";
+	return typeof input === "object" && input !== null;
+}
+
+export function isPlainObject(input: any): input is object {
+	return isObject(input) && Object.getPrototypeOf(input) === Object.prototype;
 }
 
 export function merge<T, S, S2, S3>(
@@ -12,13 +16,16 @@ export function merge<T, S, S2>(target: T, source: S, source2: S2): T & S & S2;
 export function merge<T, S>(target: T, source: S): T & S;
 export function merge<T>(target: T, ...sources: any[]): T {
 	sources.forEach((obj) => {
-		if (isObject(obj)) {
+		if (isPlainObject(obj)) {
 			for (let k in obj) {
 				if (obj.hasOwnProperty(k)) {
-					if (isObject(obj[k]) && isObject(target[k])) {
+					if (isPlainObject(obj[k]) && isPlainObject(target[k])) {
 						merge(target[k], obj[k]);
 					} else {
-						target[k] = obj[k];
+						let desc = Object.getOwnPropertyDescriptor(target, k);
+						if (!desc || desc.configurable === true) {
+							target[k] = obj[k];
+						}
 					}
 				}
 			}
