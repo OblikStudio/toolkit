@@ -1,4 +1,6 @@
+import { merge } from "../../utils/functions";
 import { Component, ComponentConstructor } from "../component";
+import * as getters from "./getters";
 
 const RE_CONFIG = /([^:]+):([^,]*),?/g;
 const RE_NUMBER = /^\-?\d*\.?\d+(?:e-?\d+)?$/;
@@ -10,7 +12,7 @@ interface WatcherSettings {
 		[key: string]: ComponentConstructor<any, any>;
 	};
 	getters?: {
-		[key: string]: (value: any, element?: Element) => any;
+		[key: string]: getters.Getter;
 	};
 }
 
@@ -18,25 +20,17 @@ export class Watcher {
 	private instances: Map<Element, Map<ComponentConstructor, Component>>;
 	private observer?: MutationObserver;
 
-	options: WatcherSettings;
+	options: WatcherSettings = {
+		element: document.body,
+		prefix: "ob",
+		components: {},
+		getters: {
+			...getters,
+		},
+	};
 
 	constructor(settings: WatcherSettings) {
-		if (!settings.element) {
-			settings.element = document.body;
-		}
-
-		if (!settings.prefix) {
-			settings.prefix = "ob";
-		}
-
-		if (!settings.getters) {
-			settings.getters = {};
-		}
-
-		settings.getters.qs = (q) => document.documentElement.querySelector(q);
-		settings.getters.qsa = (q) => document.documentElement.querySelectorAll(q);
-
-		this.options = settings;
+		this.options = merge({}, this.options, settings);
 		this.instances = new Map();
 	}
 
