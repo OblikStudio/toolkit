@@ -64,8 +64,15 @@ export class Watcher {
 					continue;
 				}
 
-				let opts = this.parseOptions(eq.getAttribute(attr), eq);
-				let inst = new comp(eq, opts);
+				let inst: Component;
+
+				try {
+					inst = new comp(eq, this.parseOptions(eq.getAttribute(attr), eq));
+				} catch (e) {
+					console.error(`Create ${fullName}:`, e);
+					continue;
+				}
+
 				comps.set(comp, inst);
 
 				if (parent) {
@@ -79,7 +86,11 @@ export class Watcher {
 				if (!parent) {
 					// Children are initialized by parents, so only parents
 					// should be initialized.
-					inst.$init();
+					try {
+						inst.$init();
+					} catch (e) {
+						console.error(`Init ${fullName}:`, e);
+					}
 				}
 			}
 		}
