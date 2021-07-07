@@ -1,10 +1,8 @@
 class Listener {
-	callback: (...args: any) => any;
-	context: any;
-	limit: number = Infinity;
-	calls: number = 0;
+	limit = Infinity;
+	calls = 0;
 
-	constructor(callback: Listener["callback"], context?: any) {
+	constructor(public callback: (...args: any) => any, public context?: any) {
 		this.callback = callback;
 		this.context = context;
 	}
@@ -53,8 +51,8 @@ export class Emitter<T extends Events> {
 
 	promise<K extends keyof T>(name: K) {
 		return new Promise<Parameters<T[K]>>((resolve) => {
-			let handler = function (...args: Parameters<typeof handler>) {
-				resolve(args);
+			let handler = function (...args) {
+				resolve(args as any);
 			} as T[K];
 
 			this.once(name, handler);
@@ -124,9 +122,5 @@ export class Emitter<T extends Events> {
 		for (let name in this.listeners) {
 			this.off(name, null, context);
 		}
-	}
-
-	destroy() {
-		this.listeners = null;
 	}
 }
