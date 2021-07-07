@@ -1,4 +1,5 @@
 import { findAnchor } from "../../utils/dom";
+import { Emitter } from "../../utils/emitter";
 import { Gesture, Swipe } from "../../utils/gesture";
 import { Component, ticker } from "../..";
 import { Item } from "./item";
@@ -14,6 +15,10 @@ interface Options {
 	screenCentering?: boolean;
 	screenChangeSpeed?: number;
 }
+
+type Events = {
+	slideChange: (slide: number, screen: Screen) => void;
+};
 
 export class Rail extends Component<HTMLElement, Options> {
 	["constructor"]: typeof Rail;
@@ -33,6 +38,7 @@ export class Rail extends Component<HTMLElement, Options> {
 		screenChangeSpeed: 500,
 	};
 
+	$emitter = new Emitter<Events>();
 	$item: Item[] = [];
 	isDrag: boolean;
 	isDragging: boolean;
@@ -88,7 +94,6 @@ export class Rail extends Component<HTMLElement, Options> {
 	}
 
 	destroy() {
-		this.gesture.destroy();
 		ticker.purge(this);
 
 		this.$element.removeEventListener("click", this.clickHandler);

@@ -1,4 +1,3 @@
-import { Emitter } from "../../utils/emitter";
 import { merge } from "../../utils/functions";
 
 export interface ComponentConstructor<E extends Element = Element, O = object> {
@@ -20,7 +19,6 @@ export class Component<E extends Element = Element, O = object> {
 	$element: E;
 	$options: O;
 	$parent: Component<Element, any>;
-	$emitter: Emitter<any>;
 	$children: Component[] = [];
 
 	static $name(this: ComponentConstructor, ctor: ComponentConstructor) {
@@ -44,7 +42,6 @@ export class Component<E extends Element = Element, O = object> {
 	constructor(element: E, options?: Partial<O>) {
 		this.$element = element;
 		this.$options = merge({} as any, this.constructor.defaults, options);
-		this.$emitter = new Emitter();
 
 		this.create();
 	}
@@ -54,7 +51,6 @@ export class Component<E extends Element = Element, O = object> {
 			this.$children.forEach((child) => child.$init());
 
 			this.init();
-			this.$emitter.emit("init");
 			this._isInit = true;
 		}
 	}
@@ -92,7 +88,6 @@ export class Component<E extends Element = Element, O = object> {
 
 			this.$children.push(component);
 			this._ref(component);
-			this.$emitter.emit("add:" + component.$name, component);
 		}
 	}
 
@@ -103,7 +98,6 @@ export class Component<E extends Element = Element, O = object> {
 
 			this.$children.splice(index, 1);
 			this._ref(component, true);
-			this.$emitter.emit("remove:" + component.$name, component);
 		}
 	}
 
@@ -119,7 +113,6 @@ export class Component<E extends Element = Element, O = object> {
 				this.$parent.$removeChild(this);
 			}
 
-			this.$emitter.emit("destroy");
 			this._isDestroyed = true;
 		}
 	}
