@@ -1,7 +1,6 @@
 export { Accordion } from "./accordion";
 export { Carousel } from "./carousel";
 export { Height } from "./height";
-export { Loader } from "./loader";
 export { Masonry } from "./masonry";
 export { Parallax } from "./parallax";
 export { ScrollTo } from "./scroll-to";
