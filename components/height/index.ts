@@ -1,4 +1,3 @@
-import { Poller } from "../../utils/poller";
 import { Component } from "../..";
 
 interface Options {
@@ -8,14 +7,13 @@ interface Options {
 }
 
 export class Height extends Component<HTMLElement, Options> {
+	target: HTMLElement;
 	varName: string;
 	varTarget: HTMLElement;
-	poller: Poller<HTMLElement, ["offsetHeight"]>;
 
 	create() {
-		let target =
+		this.target =
 			this.$options.target ?? (this.$element.firstElementChild as HTMLElement);
-		this.poller = new Poller(target, "offsetHeight");
 
 		if (this.$options?.var) {
 			this.varName = this.$options.var;
@@ -24,23 +22,17 @@ export class Height extends Component<HTMLElement, Options> {
 	}
 
 	init() {
-		this.poller.on("change", (changes) => {
-			this.update(changes.offsetHeight.newValue);
-		});
+		this.update();
 	}
 
-	update(value: number) {
-		let height = `${value.toString()}px`;
+	update() {
+		let height = `${this.target.offsetHeight}px`;
 
 		if (this.varTarget) {
 			this.varTarget.style.setProperty("--" + this.varName, height);
-		} else if (value) {
+		} else {
 			this.$element.style.height = height;
 		}
-	}
-
-	destroy() {
-		this.poller.destroy();
 	}
 }
 

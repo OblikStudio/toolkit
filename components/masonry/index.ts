@@ -1,4 +1,3 @@
-import { Poller } from "../../utils/poller";
 import { Component } from "../..";
 
 function getElementBottom(el: HTMLElement) {
@@ -17,22 +16,7 @@ function elementsIntersect(a: HTMLElement, b: HTMLElement) {
 	return Math.abs(centerA - centerB) < halfA + halfB - 1; // -1 for threshold because widths are rounded
 }
 
-export class Item extends Component<HTMLElement> {
-	$parent: Masonry;
-
-	poller: Poller<HTMLElement, ["offsetTop", "offsetHeight"]>;
-
-	init() {
-		this.poller = new Poller(this.$element, "offsetTop", "offsetHeight");
-		this.poller.on("change", () => {
-			this.$parent.update();
-		});
-	}
-
-	destroy() {
-		this.poller.destroy();
-	}
-}
+export class Item extends Component<HTMLElement> {}
 
 export class Masonry extends Component<HTMLElement> {
 	static components = {
@@ -43,6 +27,10 @@ export class Masonry extends Component<HTMLElement> {
 
 	init() {
 		this.update();
+
+		window.addEventListener("resize", () => {
+			this.update();
+		});
 	}
 
 	update() {

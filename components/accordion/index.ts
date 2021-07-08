@@ -4,7 +4,7 @@ export class Toggle extends Component {
 	$parent: Item;
 
 	init() {
-		this.$element.addEventListener("click", (foo) => {
+		this.$element.addEventListener("click", () => {
 			this.$parent.$parent.toggle(this.$parent);
 		});
 	}

@@ -1,6 +1,6 @@
-import { ticker } from "../../core/timer";
 import { Emitter } from "../emitter";
 import { Point, Vector } from "../math";
+import { Ticker } from "../ticker";
 
 export type GestureEvent = MouseEvent | TouchEvent;
 export type Events = {
@@ -35,8 +35,8 @@ export class Swipe {
 }
 
 export class Gesture extends Emitter<Events> {
-	element: Element;
-	swipes: Swipe[];
+	swipes: Swipe[] = [];
+	ticker = new Ticker();
 
 	protected mouseStartHandler = this.mouseStart.bind(this);
 	protected mouseMoveHandler = this.mouseMove.bind(this);
@@ -45,17 +45,16 @@ export class Gesture extends Emitter<Events> {
 	protected touchMoveHandler = this.touchMove.bind(this);
 	protected touchEndHandler = this.touchEnd.bind(this);
 
-	constructor(element: Element) {
+	constructor(public element: Element) {
 		super();
-
-		this.element = element;
-		this.swipes = [];
 
 		this.element.addEventListener("mousedown", this.mouseStartHandler);
 		this.element.addEventListener("touchstart", this.touchStartHandler);
 		this.element.addEventListener("touchmove", this.touchMoveHandler);
 		this.element.addEventListener("touchend", this.touchEndHandler);
 		this.element.addEventListener("touchcancel", this.touchEndHandler);
+
+		this.ticker.on("tick", this.handleTick, this);
 	}
 
 	protected getEventPoint(input: MouseEvent | Touch) {
@@ -126,7 +125,7 @@ export class Gesture extends Emitter<Events> {
 	protected emitStart(event: GestureEvent) {
 		if (this.swipes.length === 1) {
 			this.emit("start", event);
-			ticker.on("tick", this.handleTick, this);
+			this.ticker.start();
 		}
 
 		this.emit("down", event);
@@ -139,7 +138,7 @@ export class Gesture extends Emitter<Events> {
 	protected emitEnd(event: GestureEvent) {
 		if (this.swipes.length === 0) {
 			this.emit("end", event);
-			ticker.purge(this);
+			this.ticker.stop();
 		}
 
 		this.emit("up", event);
