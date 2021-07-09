@@ -1,4 +1,4 @@
-import { merge } from "../../utils/functions";
+import { defaults } from "../../utils/functions";
 import { Component, ComponentConstructor } from "../component";
 import * as getters from "./getters";
 
@@ -30,7 +30,7 @@ export class Watcher {
 	};
 
 	constructor(settings: WatcherSettings) {
-		this.options = merge({}, this.options, settings);
+		this.options = defaults(settings, this.options);
 		this.instances = new Map();
 	}
 

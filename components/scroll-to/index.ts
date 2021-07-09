@@ -1,6 +1,6 @@
 import { findAnchor } from "../../utils/dom";
 import { easeOutQuint } from "../../utils/easings";
-import { merge } from "../../utils/functions";
+import { defaults } from "../../utils/functions";
 import { scrollTo, Options } from "../../utils/scroll";
 import { Component } from "../..";
 
@@ -34,9 +34,13 @@ export class ScrollTo extends Component<Element, Options> {
 				url.pathname === window.location.pathname
 			) {
 				let target = document.querySelector(url.hash);
-				let config = merge({}, this.defaults, options, {
-					target,
-				});
+				let config = defaults(
+					{
+						target,
+					},
+					options,
+					this.defaults
+				);
 
 				return scrollTo(config);
 			} else {

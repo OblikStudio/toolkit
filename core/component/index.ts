@@ -1,4 +1,4 @@
-import { merge } from "../../utils/functions";
+import { defaults } from "../../utils/functions";
 
 export interface ComponentConstructor<E extends Element = Element, O = object> {
 	new (element: E, options?: O): Component<E, O>;
@@ -41,7 +41,7 @@ export class Component<E extends Element = Element, O = object> {
 
 	constructor(element: E, options?: Partial<O>) {
 		this.$element = element;
-		this.$options = merge({} as any, this.constructor.defaults, options);
+		this.$options = defaults(options, this.constructor.defaults);
 
 		this.create();
 	}
