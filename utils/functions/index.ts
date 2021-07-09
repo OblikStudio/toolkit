@@ -2,8 +2,17 @@ export function isObject(input: any): input is object {
 	return typeof input === "object" && input !== null;
 }
 
+/**
+ * Checks for basic user-defined objects.
+ * @see https://stackoverflow.com/q/68220676/3130281
+ */
 export function isPlainObject(input: any): input is object {
-	return isObject(input) && Object.getPrototypeOf(input) === Object.prototype;
+	if (isObject(input)) {
+		let p = Object.getPrototypeOf(input);
+		return p === null || p === Object.prototype;
+	}
+
+	return false;
 }
 
 export function merge<T, S, S2, S3>(
