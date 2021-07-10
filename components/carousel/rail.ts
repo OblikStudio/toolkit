@@ -60,6 +60,7 @@ export class Rail extends Component<HTMLElement, Options> {
 
 	clickHandler = this.handleClick.bind(this);
 	resizeHandler = this.handleResize.bind(this);
+	renderHandler = this.updateOffsetRender.bind(this);
 
 	create() {
 		this.gesture = new Gesture(this.$element);
@@ -81,7 +82,7 @@ export class Rail extends Component<HTMLElement, Options> {
 				this.orderContainer = this.$element.parentElement;
 			}
 
-			this.ticker.on("tick", this.updateOrder, this);
+			this.ticker.on("tick", this.updateOrder.bind(this));
 		}
 
 		this.updateLayout();
@@ -206,7 +207,7 @@ export class Rail extends Component<HTMLElement, Options> {
 		// Stop propagating so when nesting sliders, parent sliders don't move.
 		event.stopPropagation();
 
-		this.ticker.on("tick", this.updateOffsetRender, this);
+		this.ticker.on("tick", this.renderHandler);
 	}
 
 	pointerUp() {
@@ -226,7 +227,7 @@ export class Rail extends Component<HTMLElement, Options> {
 
 		this.swipe = null;
 
-		this.ticker.off("tick", this.updateOffsetRender, this);
+		this.ticker.off("tick", this.renderHandler);
 		this.updateOffsetRender();
 
 		this.$element.classList.remove("is-dragged");

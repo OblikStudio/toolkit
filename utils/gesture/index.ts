@@ -54,7 +54,7 @@ export class Gesture extends Emitter<Events> {
 		this.element.addEventListener("touchend", this.touchEndHandler);
 		this.element.addEventListener("touchcancel", this.touchEndHandler);
 
-		this.ticker.on("tick", this.handleTick, this);
+		this.ticker.on("tick", this.handleTick.bind(this));
 	}
 
 	protected getEventPoint(input: MouseEvent | Touch) {
