@@ -1,14 +1,13 @@
 import { Emitter } from "../emitter";
 
-interface Events {
+type TickerEvents = {
 	tick: (delta: number) => void;
-	[key: string]: any;
-}
+};
 
-export class Ticker extends Emitter<Events> {
-	private stamp: number = null;
-	private isTicking: boolean = false;
-	private handler = this.run.bind(this);
+export class Ticker extends Emitter<TickerEvents> {
+	protected stamp: number;
+	protected isTicking = false;
+	protected handler = this.run.bind(this);
 
 	protected schedule() {
 		window.requestAnimationFrame(this.handler);
@@ -20,16 +19,14 @@ export class Ticker extends Emitter<Events> {
 		}
 
 		let now = Date.now();
-		let diff = now - this.stamp;
+		let delta = now - this.stamp;
 
-		this.tick(diff);
-
-		this.stamp = now;
-		this.schedule();
-	}
-
-	protected tick(delta: number) {
 		this.emit("tick", delta);
+
+		if (this.isTicking) {
+			this.stamp = now;
+			this.schedule();
+		}
 	}
 
 	start() {
