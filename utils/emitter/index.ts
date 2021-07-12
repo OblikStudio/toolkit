@@ -16,7 +16,8 @@ export class Emitter<T extends Events> {
 	}
 
 	on<K extends keyof T>(name: K, callback: T[K]) {
-		this.list(name).push(callback);
+		let l = this.list(name);
+		if (l.indexOf(callback) < 0) l.push(callback);
 	}
 
 	emit<K extends keyof T>(name: K, ...args: Parameters<T[K]>) {
