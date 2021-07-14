@@ -9,7 +9,7 @@ interface WatcherSettings {
 	element?: HTMLElement;
 	prefix?: string;
 	components: {
-		[key: string]: ComponentConstructor<any, any>;
+		[key: string]: ComponentConstructor;
 	};
 	getters?: {
 		[key: string]: getters.Getter;
@@ -133,29 +133,32 @@ export class Watcher {
 
 		while ((match = RE_CONFIG.exec(value))) {
 			let k = match[1].trim();
-			let v: any = match[2].trim();
+			let v = match[2].trim();
+
+			let key = k;
+			let val: any = v;
 
 			if (v.match(RE_NUMBER)) {
-				v = parseFloat(v);
+				val = parseFloat(v);
 			} else if (v === "true") {
-				v = true;
+				val = true;
 			} else if (v === "false") {
-				v = false;
+				val = false;
 			} else if (v === "null") {
-				v = null;
-			} else if (v.length === 0) {
-				v = undefined;
+				val = null;
+			} else if (v === "undefined" || v.length === 0) {
+				val = undefined;
 			}
 
 			if (k.indexOf("$") > 0) {
 				let split = k.split("$");
 				let getter = this.options.getters[split[1]];
 
-				k = split[0];
-				v = getter ? getter(v, element) : null;
+				key = split[0];
+				val = getter ? getter(val, element) : null;
 			}
 
-			result[k] = v;
+			result[key] = val;
 		}
 
 		return result;
@@ -173,7 +176,7 @@ export class Watcher {
 		});
 	}
 
-	get<T extends ComponentConstructor<any, any>>(
+	get<T extends ComponentConstructor>(
 		element: Element,
 		constructor: T
 	): InstanceType<T> {

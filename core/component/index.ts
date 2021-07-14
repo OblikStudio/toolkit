@@ -1,24 +1,27 @@
 import { defaults } from "../../utils/functions";
 
-export interface ComponentConstructor<E extends Element = Element, O = object> {
+export interface ComponentConstructor<
+	E extends Element = Element,
+	O extends object = object
+> {
 	new (element: E, options?: O): Component<E, O>;
 	readonly components?: {
-		[key: string]: ComponentConstructor<any, any>;
+		[key: string]: ComponentConstructor;
 	};
 	defaults?: Partial<O>;
-	$name(ctor: ComponentConstructor<any, any>): string;
+	$name(ctor: ComponentConstructor): string;
 }
 
-export class Component<E extends Element = Element, O = object> {
+export class Component<E extends Element = Element, O extends object = object> {
 	["constructor"]: ComponentConstructor<E, O>;
 
 	private _isInit = false;
 	private _isDestroyed = false;
 
-	$name: string = null;
+	$name: string;
 	$element: E;
 	$options: O;
-	$parent: Component<Element, any>;
+	$parent: Component;
 	$children: Component[] = [];
 
 	static $name(this: ComponentConstructor, ctor: ComponentConstructor) {
@@ -56,6 +59,8 @@ export class Component<E extends Element = Element, O = object> {
 	}
 
 	private _ref(component: Component, remove = false) {
+		if (!component.$name) return;
+
 		let prop = "$" + component.$name;
 		let value = this[prop];
 
@@ -81,7 +86,7 @@ export class Component<E extends Element = Element, O = object> {
 		}
 	}
 
-	$addChild(component: Component<Element, any>) {
+	$addChild(component: Component) {
 		if (this.$children.indexOf(component) < 0) {
 			component.$name = this.constructor.$name(component.constructor);
 			component.$parent = this;
@@ -91,7 +96,7 @@ export class Component<E extends Element = Element, O = object> {
 		}
 	}
 
-	$removeChild(component: Component<Element, any>) {
+	$removeChild(component: Component) {
 		let index = this.$children.indexOf(component);
 		if (index >= 0) {
 			component.$parent = null;
