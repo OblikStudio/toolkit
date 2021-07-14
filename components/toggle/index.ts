@@ -1,21 +1,18 @@
 import { Component } from "../..";
 
-interface Options {
+interface ToggleOptions {
 	target: Element;
 	on?: keyof GlobalEventHandlersEventMap;
 	off?: keyof GlobalEventHandlersEventMap;
-	active?: boolean;
 	class?: string;
 }
 
-export class Toggle extends Component<Element, Options> {
-	static defaults: Partial<Options> = {
+export class Toggle extends Component<Element, ToggleOptions> {
+	static defaults: Partial<ToggleOptions> = {
 		on: "click",
-		active: false,
 		class: "is-active",
 	};
 
-	active: boolean;
 	onHandler: () => void;
 	offHandler: () => void;
 
@@ -34,29 +31,18 @@ export class Toggle extends Component<Element, Options> {
 		}
 
 		this.$element.addEventListener(this.$options.on, this.onHandler);
-		this.change(this.$options.active);
 	}
 
 	on() {
-		this.change(true);
+		this.$options.target.classList.add(this.$options.class);
 	}
 
 	off() {
-		this.change(false);
+		this.$options.target.classList.remove(this.$options.class);
 	}
 
 	toggle() {
-		this.change(!this.active);
-	}
-
-	change(active: boolean) {
-		if (active === true) {
-			this.$options.target.classList.add(this.$options.class);
-		} else {
-			this.$options.target.classList.remove(this.$options.class);
-		}
-
-		this.active = active;
+		this.$options.target.classList.toggle(this.$options.class);
 	}
 
 	destroy() {
