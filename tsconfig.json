@@ -1,13 +1,12 @@
 {
 	"compilerOptions": {
-		"target": "es5",
-		"module": "es6",
+		"target": "es6",
 		"moduleResolution": "node",
 		"declaration": true,
 		"strictBindCallApply": true,
 		"downlevelIteration": true,
 		"outDir": "build",
-		"lib": ["ES2015", "ES2017", "dom", "dom.iterable"]
+		"lib": ["ES5", "ES6", "DOM", "DOM.Iterable"]
 	},
 	"exclude": ["**/tests/**/*", "**/node_modules/**/*"]
 }
