@@ -5,19 +5,16 @@ type TickerEvents = {
 };
 
 class Ticker extends Emitter<TickerEvents> {
+	private req: number;
 	private stamp: number;
 	private isActive = false;
 	private handler = this.run.bind(this);
 
 	private schedule() {
-		window.requestAnimationFrame(this.handler);
+		this.req = window.requestAnimationFrame(this.handler);
 	}
 
 	private run() {
-		if (!this.isActive) {
-			return;
-		}
-
 		let now = Date.now();
 		let delta = now - this.stamp;
 
@@ -36,6 +33,7 @@ class Ticker extends Emitter<TickerEvents> {
 	}
 
 	private stop() {
+		window.cancelAnimationFrame(this.req);
 		this.isActive = false;
 	}
 
