@@ -1,4 +1,5 @@
 export * from "./core/component";
+export * from "./core/mutate";
 export * from "./core/ticker";
 export * from "./core/watcher";
 
