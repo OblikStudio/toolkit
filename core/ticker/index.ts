@@ -6,7 +6,7 @@ type TickerEvents = {
 
 class Ticker extends Emitter<TickerEvents> {
 	private stamp: number;
-	private isTicking = false;
+	private isActive = false;
 	private handler = this.run.bind(this);
 
 	private schedule() {
@@ -14,7 +14,7 @@ class Ticker extends Emitter<TickerEvents> {
 	}
 
 	private run() {
-		if (!this.isTicking) {
+		if (!this.isActive) {
 			return;
 		}
 
@@ -23,26 +23,26 @@ class Ticker extends Emitter<TickerEvents> {
 
 		this.emit("tick", delta);
 
-		if (this.isTicking) {
+		if (this.isActive) {
 			this.stamp = now;
 			this.schedule();
 		}
 	}
 
 	private start() {
-		this.isTicking = true;
+		this.isActive = true;
 		this.stamp = Date.now();
 		this.schedule();
 	}
 
 	private stop() {
-		this.isTicking = false;
+		this.isActive = false;
 	}
 
 	private checkListeners() {
 		if (this.list("tick").length > 0) {
-			if (!this.isTicking) this.start();
-		} else if (this.isTicking) {
+			if (!this.isActive) this.start();
+		} else if (this.isActive) {
 			this.stop();
 		}
 	}
