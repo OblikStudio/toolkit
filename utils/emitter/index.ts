@@ -22,7 +22,7 @@ export class Emitter<T extends Events> {
 
 	emit<K extends keyof T>(name: K, ...args: Parameters<T[K]>) {
 		this.list(name).forEach((listener) => {
-			listener(...args);
+			listener(...(args as any));
 		});
 	}
 
