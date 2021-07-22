@@ -22,27 +22,35 @@ export class Toggle extends Component<Element, ToggleOptions> {
 		}
 
 		if (this.$options.off) {
-			this.onHandler = this.on.bind(this);
-			this.offHandler = this.off.bind(this);
+			this.onHandler = this.activate.bind(this);
+			this.offHandler = this.deactivate.bind(this);
 
 			this.$element.addEventListener(this.$options.off, this.offHandler);
 		} else {
-			this.onHandler = this.toggle.bind(this);
+			this.onHandler = () => this.toggle();
 		}
 
 		this.$element.addEventListener(this.$options.on, this.onHandler);
 	}
 
-	on() {
-		this.$options.target.classList.add(this.$options.class);
+	/**
+	 * @param value `true` adds, `false` removes, `undefined` toggles the class
+	 * @returns `true` when the class was added, `false` when removed
+	 */
+	toggle(value?: boolean) {
+		return this.$options.target.classList.toggle(this.$options.class, value);
 	}
 
-	off() {
-		this.$options.target.classList.remove(this.$options.class);
+	activate() {
+		this.toggle(true);
 	}
 
-	toggle() {
-		this.$options.target.classList.toggle(this.$options.class);
+	deactivate() {
+		this.toggle(false);
+	}
+
+	get isActive() {
+		return this.$options.target.classList.contains(this.$options.class);
 	}
 
 	destroy() {
