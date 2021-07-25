@@ -1,22 +1,18 @@
 import { Component } from "../..";
 
-function getElementBottom(el: HTMLElement) {
-	return (
-		el.offsetTop +
-		el.offsetHeight +
-		parseInt(window.getComputedStyle(el).marginBottom)
-	);
-}
-
-function elementsIntersect(a: HTMLElement, b: HTMLElement) {
-	let halfA = a.offsetWidth / 2;
-	let halfB = b.offsetWidth / 2;
-	let centerA = a.offsetLeft + halfA;
-	let centerB = b.offsetLeft + halfB;
-	return Math.abs(centerA - centerB) < halfA + halfB - 1; // -1 for threshold because widths are rounded
-}
-
 export class Item extends Component<HTMLElement> {}
+
+interface Gap {
+	top: number;
+	left: number;
+	right: number;
+	bottom: number;
+}
+
+interface Element {
+	width: number;
+	height: number;
+}
 
 export class Masonry extends Component<HTMLElement> {
 	static components = {
@@ -26,6 +22,7 @@ export class Masonry extends Component<HTMLElement> {
 	$item: Item[] = [];
 
 	init() {
+		this.$element.style.height = `1000px`;
 		this.update();
 
 		window.addEventListener("resize", () => {
@@ -34,47 +31,83 @@ export class Masonry extends Component<HTMLElement> {
 	}
 
 	update() {
-		this.$item.forEach((item) => {
-			// Reset previous marginTop settings because they affect positions.
-			item.$element.style.marginTop = "";
+		let gaps: Gap[] = [
+			{
+				top: 0,
+				left: 0,
+				right: this.$element.offsetWidth,
+				bottom: Infinity,
+			},
+		];
+
+		this.$item.forEach((e) => {
+			let el: Element = {
+				width: e.$element.offsetWidth,
+				height: e.$element.offsetHeight + 50,
+			};
+
+			let gap = this.chooseGap(gaps, el);
+			let newGaps = this.splitGap(gap, el);
+
+			gaps.splice(gaps.indexOf(gap), 1);
+			gaps.push(...newGaps);
+
+			gaps = this.clearGaps(gaps);
+
+			e.$element.style.transform = `translate(${gap.left}px, ${gap.top}px)`;
+		});
+	}
+
+	chooseGap(gaps: Gap[], el: Element): Gap {
+		return gaps
+			.filter((gap) => {
+				return gap.right - gap.left >= el.width;
+			})
+			.reduce((memo, val) => {
+				return val.top < memo.top ? val : memo;
+			});
+	}
+
+	splitGap(gap: Gap, el: Element): Gap[] {
+		let gaps: Gap[] = [];
+
+		if (gap.right - gap.left > el.width + 1) {
+			gaps.push({
+				...gap,
+				left: gap.left + el.width,
+			});
+		}
+
+		gaps.push({
+			...gap,
+			top: gap.top + el.height,
 		});
 
-		let prevElements: HTMLElement[] = [];
+		return gaps;
+	}
 
-		this.$item.forEach((item) => {
-			let el = item.$element;
+	clearGaps(gaps: Gap[]) {
+		let filtered: Gap[] = [];
 
-			let aboveElements = prevElements.filter((prev) => {
-				return prev.offsetTop < el.offsetTop && elementsIntersect(el, prev);
+		gaps.forEach((gap) => {
+			let remove = false;
+
+			filtered.forEach((gap2) => {
+				if (
+					gap.top >= gap2.top &&
+					gap.left >= gap2.left &&
+					gap.right <= gap2.right
+				) {
+					remove = true;
+				}
 			});
 
-			let lowestElement = aboveElements.reduce((memo, node) => {
-				if (!memo) {
-					return node;
-				}
-
-				let bottom = getElementBottom(node);
-				let memoBottom = getElementBottom(memo);
-
-				if (bottom > memoBottom) {
-					return node;
-				} else {
-					return memo;
-				}
-			}, null);
-
-			if (lowestElement) {
-				let currentMarginTop = parseInt(window.getComputedStyle(el).marginTop);
-				let marginTop =
-					getElementBottom(lowestElement) - el.offsetTop + currentMarginTop * 2;
-
-				if (marginTop !== currentMarginTop) {
-					el.style.marginTop = `${marginTop}px`;
-				}
+			if (!remove) {
+				filtered.push(gap);
 			}
-
-			prevElements.push(el);
 		});
+
+		return filtered;
 	}
 }
 
