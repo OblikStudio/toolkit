@@ -43,18 +43,18 @@ export class Masonry extends Component<HTMLElement> {
 		this.$item.forEach((e) => {
 			let el: Element = {
 				width: e.$element.offsetWidth,
-				height: e.$element.offsetHeight + 50,
+				height: e.$element.offsetHeight,
 			};
 
 			let gap = this.chooseGap(gaps, el);
-			let newGaps = this.splitGap(gap, el);
-
-			gaps.splice(gaps.indexOf(gap), 1);
-			gaps.push(...newGaps);
-
-			gaps = this.clearGaps(gaps);
 
 			e.$element.style.transform = `translate(${gap.left}px, ${gap.top}px)`;
+
+			gaps = this.updateGaps(gaps, {
+				...gap,
+				right: gap.left + el.width,
+				bottom: gap.top + el.height,
+			});
 		});
 	}
 
@@ -68,46 +68,62 @@ export class Masonry extends Component<HTMLElement> {
 			});
 	}
 
-	splitGap(gap: Gap, el: Element): Gap[] {
-		let gaps: Gap[] = [];
+	updateGaps(gaps: Gap[], rect: Gap): Gap[] {
+		let map = gaps.map((gap) => {
+			let newGaps: Gap[] = [];
 
-		if (gap.right - gap.left > el.width + 1) {
-			gaps.push({
-				...gap,
-				left: gap.left + el.width,
-			});
-		}
-
-		gaps.push({
-			...gap,
-			top: gap.top + el.height,
-		});
-
-		return gaps;
-	}
-
-	clearGaps(gaps: Gap[]) {
-		let filtered: Gap[] = [];
-
-		gaps.forEach((gap) => {
-			let remove = false;
-
-			filtered.forEach((gap2) => {
-				if (
-					gap.top >= gap2.top &&
-					gap.left >= gap2.left &&
-					gap.right <= gap2.right
-				) {
-					remove = true;
-				}
-			});
-
-			if (!remove) {
-				filtered.push(gap);
+			if (
+				rect.left <= gap.left &&
+				rect.top <= gap.top &&
+				rect.right >= gap.right &&
+				rect.bottom >= gap.bottom
+			) {
+				return newGaps;
 			}
+
+			let top = rect.top > gap.top && rect.top < gap.bottom;
+			let bottom = rect.bottom > gap.top && rect.bottom < gap.bottom;
+			let left = rect.left > gap.left && rect.left < gap.right;
+			let right = rect.right > gap.left && rect.right < gap.right;
+			let hor = left || right;
+			let ver = top || bottom;
+
+			if (top && hor) {
+				newGaps.push({
+					...gap,
+					bottom: rect.top,
+				});
+			}
+
+			if (bottom && hor) {
+				newGaps.push({
+					...gap,
+					top: rect.bottom,
+				});
+			}
+
+			if (left && ver) {
+				newGaps.push({
+					...gap,
+					right: rect.left,
+				});
+			}
+
+			if (right && ver) {
+				newGaps.push({
+					...gap,
+					left: rect.right,
+				});
+			}
+
+			if (!hor || !ver) {
+				newGaps.push(gap);
+			}
+
+			return newGaps;
 		});
 
-		return filtered;
+		return [].concat(...map);
 	}
 }
 
