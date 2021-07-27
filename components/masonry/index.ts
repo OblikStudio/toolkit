@@ -9,11 +9,6 @@ interface Gap {
 	bottom: number;
 }
 
-interface Element {
-	width: number;
-	height: number;
-}
-
 export class Masonry extends Component<HTMLElement> {
 	static components = {
 		item: Item,
@@ -31,37 +26,36 @@ export class Masonry extends Component<HTMLElement> {
 	}
 
 	update() {
+		let rect = this.$element.getBoundingClientRect();
 		let gaps: Gap[] = [
 			{
 				top: 0,
 				left: 0,
-				right: this.$element.offsetWidth,
+				right: rect.width,
 				bottom: Infinity,
 			},
 		];
 
 		this.$item.forEach((e) => {
-			let el: Element = {
-				width: e.$element.offsetWidth,
-				height: e.$element.offsetHeight,
-			};
-
-			let gap = this.chooseGap(gaps, el);
+			let rect = e.$element.getBoundingClientRect();
+			let gap = this.chooseGap(gaps, rect);
 
 			e.$element.style.transform = `translate(${gap.left}px, ${gap.top}px)`;
 
 			gaps = this.updateGaps(gaps, {
 				...gap,
-				right: gap.left + el.width,
-				bottom: gap.top + el.height,
+				right: gap.left + rect.width,
+				bottom: gap.top + rect.height,
 			});
 		});
 	}
 
-	chooseGap(gaps: Gap[], el: Element): Gap {
+	chooseGap(gaps: Gap[], el: DOMRect): Gap {
 		return gaps
 			.filter((gap) => {
-				return gap.right - gap.left >= el.width;
+				return (
+					gap.right - gap.left >= el.width && gap.bottom - gap.top >= el.height
+				);
 			})
 			.reduce((memo, val) => {
 				return val.top < memo.top ? val : memo;
@@ -81,10 +75,10 @@ export class Masonry extends Component<HTMLElement> {
 				return newGaps;
 			}
 
-			let top = rect.top > gap.top && rect.top < gap.bottom;
-			let bottom = rect.bottom > gap.top && rect.bottom < gap.bottom;
-			let left = rect.left > gap.left && rect.left < gap.right;
-			let right = rect.right > gap.left && rect.right < gap.right;
+			let top = rect.top >= gap.top && rect.top < gap.bottom;
+			let bottom = rect.bottom > gap.top && rect.bottom <= gap.bottom;
+			let left = rect.left >= gap.left && rect.left < gap.right;
+			let right = rect.right > gap.left && rect.right <= gap.right;
 			let hor = left || right;
 			let ver = top || bottom;
 
