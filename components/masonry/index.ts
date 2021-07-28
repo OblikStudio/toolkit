@@ -62,55 +62,32 @@ export class Masonry extends Component<HTMLElement> {
 			});
 	}
 
+	/**
+	 * @todo join same left+right/top+bottom gaps
+	 */
 	updateGaps(gaps: Gap[], rect: Gap): Gap[] {
 		let map = gaps.map((gap) => {
 			let newGaps: Gap[] = [];
+			let x = rect.right > gap.left && rect.left < gap.right;
+			let y = rect.bottom > gap.top && rect.top < gap.bottom;
 
-			if (
-				rect.left <= gap.left &&
-				rect.top <= gap.top &&
-				rect.right >= gap.right &&
-				rect.bottom >= gap.bottom
-			) {
-				return newGaps;
+			if (rect.top - gap.top >= 1 && rect.top < gap.bottom && x) {
+				newGaps.push({ ...gap, bottom: rect.top });
 			}
 
-			let top = rect.top >= gap.top && rect.top < gap.bottom;
-			let bottom = rect.bottom > gap.top && rect.bottom <= gap.bottom;
-			let left = rect.left >= gap.left && rect.left < gap.right;
-			let right = rect.right > gap.left && rect.right <= gap.right;
-			let hor = left || right;
-			let ver = top || bottom;
-
-			if (top && hor) {
-				newGaps.push({
-					...gap,
-					bottom: rect.top,
-				});
+			if (gap.bottom - rect.bottom >= 1 && rect.bottom > gap.top && x) {
+				newGaps.push({ ...gap, top: rect.bottom });
 			}
 
-			if (bottom && hor) {
-				newGaps.push({
-					...gap,
-					top: rect.bottom,
-				});
+			if (rect.left - gap.left >= 1 && rect.left < gap.right && y) {
+				newGaps.push({ ...gap, right: rect.left });
 			}
 
-			if (left && ver) {
-				newGaps.push({
-					...gap,
-					right: rect.left,
-				});
+			if (gap.right - rect.right >= 1 && rect.right > gap.left && y) {
+				newGaps.push({ ...gap, left: rect.right });
 			}
 
-			if (right && ver) {
-				newGaps.push({
-					...gap,
-					left: rect.right,
-				});
-			}
-
-			if (!hor || !ver) {
+			if (!x || !y) {
 				newGaps.push(gap);
 			}
 
