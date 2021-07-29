@@ -62,9 +62,6 @@ export class Masonry extends Component<HTMLElement> {
 			});
 	}
 
-	/**
-	 * @todo join same left+right/top+bottom gaps
-	 */
 	updateGaps(gaps: Gap[], rect: Gap): Gap[] {
 		let map = gaps.map((gap) => {
 			let newGaps: Gap[] = [];
@@ -94,7 +91,40 @@ export class Masonry extends Component<HTMLElement> {
 			return newGaps;
 		});
 
-		return [].concat(...map);
+		let updatedGaps: Gap[] = [].concat(...map);
+
+		for (let i = 0; i < updatedGaps.length; i++) {
+			let e1 = updatedGaps[i];
+
+			for (let i2 = i + 1; i2 < updatedGaps.length; i2++) {
+				let e2 = updatedGaps[i2];
+
+				if (
+					e1.top === e2.top &&
+					e1.bottom === e2.bottom &&
+					e1.right >= e2.left &&
+					e1.left <= e2.right
+				) {
+					e1.left = Math.min(e1.left, e2.left);
+					e1.right = Math.max(e1.right, e2.right);
+					updatedGaps.splice(i2, 1);
+					continue;
+				}
+
+				if (
+					e1.left === e2.left &&
+					e1.right === e2.right &&
+					e1.bottom >= e2.top &&
+					e1.top <= e2.bottom
+				) {
+					e1.top = Math.min(e1.top, e2.top);
+					e1.bottom = Math.max(e1.bottom, e2.bottom);
+					updatedGaps.splice(i2, 1);
+				}
+			}
+		}
+
+		return updatedGaps;
 	}
 }
 
