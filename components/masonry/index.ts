@@ -1,8 +1,14 @@
 import { Component } from "../..";
 
-export class Item extends Component<HTMLElement> {}
+export class Item extends Component<HTMLElement> {
+	bounds: Rect;
 
-interface Gap {
+	render() {
+		this.$element.style.transform = `translate(${this.bounds.left}px, ${this.bounds.top}px)`;
+	}
+}
+
+interface Rect {
 	top: number;
 	left: number;
 	right: number;
@@ -15,19 +21,19 @@ export class Masonry extends Component<HTMLElement> {
 	};
 
 	$item: Item[] = [];
+	gaps: Rect[];
 
 	init() {
-		this.$element.style.height = `1000px`;
-		this.update();
-
 		window.addEventListener("resize", () => {
 			this.update();
 		});
+
+		this.update();
 	}
 
 	update() {
 		let rect = this.$element.getBoundingClientRect();
-		let gaps: Gap[] = [
+		this.gaps = [
 			{
 				top: 0,
 				left: 0,
@@ -38,19 +44,31 @@ export class Masonry extends Component<HTMLElement> {
 
 		this.$item.forEach((e) => {
 			let rect = e.$element.getBoundingClientRect();
-			let gap = this.chooseGap(gaps, rect);
+			let gap = this.chooseGap(this.gaps, rect);
 
-			e.$element.style.transform = `translate(${gap.left}px, ${gap.top}px)`;
-
-			gaps = this.updateGaps(gaps, {
+			e.bounds = {
 				...gap,
 				right: gap.left + rect.width,
 				bottom: gap.top + rect.height,
-			});
+			};
+
+			e.render();
+
+			this.gaps = this.updateGaps(this.gaps, e.bounds);
 		});
+
+		this.$element.style.height = `${this.getHeight()}px`;
 	}
 
-	chooseGap(gaps: Gap[], el: DOMRect): Gap {
+	getHeight() {
+		let lowestItem = this.$item.reduce((memo, val) => {
+			return val.bounds.bottom > memo.bounds.bottom ? val : memo;
+		});
+
+		return lowestItem.bounds.bottom;
+	}
+
+	chooseGap(gaps: Rect[], el: DOMRect): Rect {
 		return gaps
 			.filter((gap) => {
 				return (
@@ -62,9 +80,9 @@ export class Masonry extends Component<HTMLElement> {
 			});
 	}
 
-	updateGaps(gaps: Gap[], rect: Gap): Gap[] {
+	updateGaps(gaps: Rect[], rect: Rect): Rect[] {
 		let map = gaps.map((gap) => {
-			let newGaps: Gap[] = [];
+			let newGaps: Rect[] = [];
 			let x = rect.right > gap.left && rect.left < gap.right;
 			let y = rect.bottom > gap.top && rect.top < gap.bottom;
 
@@ -91,7 +109,7 @@ export class Masonry extends Component<HTMLElement> {
 			return newGaps;
 		});
 
-		let updatedGaps: Gap[] = [].concat(...map);
+		let updatedGaps: Rect[] = [].concat(...map);
 
 		for (let i = 0; i < updatedGaps.length; i++) {
 			let e1 = updatedGaps[i];
