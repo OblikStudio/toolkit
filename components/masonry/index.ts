@@ -1,18 +1,30 @@
 import { Component } from "../..";
+import { mutate } from "../../core/mutate";
 
 export class Item extends Component<HTMLElement> {
-	bounds: Rect;
-
-	render() {
-		this.$element.style.transform = `translate(${this.bounds.left}px, ${this.bounds.top}px)`;
-	}
-}
-
-interface Rect {
 	top: number;
-	left: number;
 	right: number;
 	bottom: number;
+	left: number;
+	width: number;
+	height: number;
+	renderTop: number;
+	renderBottom: number;
+
+	updateOrigin() {
+		this.top = this.$element.offsetTop;
+		this.left = this.$element.offsetLeft;
+		this.width = this.$element.offsetWidth;
+		this.height = this.$element.offsetHeight;
+		this.right = this.left + this.width;
+		this.bottom = this.top + this.height;
+	}
+
+	render() {
+		this.$element.style.transform = `translateY(${
+			this.renderTop - this.top
+		}px)`;
+	}
 }
 
 export class Masonry extends Component<HTMLElement> {
@@ -21,7 +33,8 @@ export class Masonry extends Component<HTMLElement> {
 	};
 
 	$item: Item[] = [];
-	gaps: Rect[];
+	height: number;
+	visualHeight: number;
 
 	init() {
 		window.addEventListener("resize", () => {
@@ -31,118 +44,62 @@ export class Masonry extends Component<HTMLElement> {
 		this.update();
 	}
 
-	update() {
-		let rect = this.$element.getBoundingClientRect();
-		this.gaps = [
-			{
-				top: 0,
-				left: 0,
-				right: rect.width,
-				bottom: Infinity,
-			},
-		];
+	measure() {
+		this.height = this.$element.offsetHeight;
 
 		this.$item.forEach((e) => {
-			let rect = e.$element.getBoundingClientRect();
-			let gap = this.chooseGap(this.gaps, rect);
-
-			e.bounds = {
-				...gap,
-				right: gap.left + rect.width,
-				bottom: gap.top + rect.height,
-			};
-
-			e.render();
-
-			this.gaps = this.updateGaps(this.gaps, e.bounds);
+			e.updateOrigin();
 		});
-
-		this.$element.style.height = `${this.getHeight()}px`;
 	}
 
-	getHeight() {
-		let lowestItem = this.$item.reduce((memo, val) => {
-			return val.bounds.bottom > memo.bounds.bottom ? val : memo;
+	calculate() {
+		let sorted = [...this.$item].sort((a, b) => {
+			let d = a.top - b.top;
+			return d !== 0 ? d : a.left - b.left;
 		});
 
-		return lowestItem.bounds.bottom;
-	}
+		for (let i = 0; i < sorted.length; i++) {
+			let e1 = sorted[i];
+			let bottom = null;
+			let gap = null;
 
-	chooseGap(gaps: Rect[], el: DOMRect): Rect {
-		return gaps
-			.filter((gap) => {
-				return (
-					gap.right - gap.left >= el.width && gap.bottom - gap.top >= el.height
-				);
-			})
-			.reduce((memo, val) => {
-				return val.top < memo.top ? val : memo;
-			});
-	}
+			for (let i2 = i - 1; i2 >= 0; i2--) {
+				let e2 = sorted[i2];
+				let diff = e1.top - e2.bottom;
 
-	updateGaps(gaps: Rect[], rect: Rect): Rect[] {
-		let map = gaps.map((gap) => {
-			let newGaps: Rect[] = [];
-			let x = rect.right > gap.left && rect.left < gap.right;
-			let y = rect.bottom > gap.top && rect.top < gap.bottom;
-
-			if (rect.top - gap.top >= 1 && rect.top < gap.bottom && x) {
-				newGaps.push({ ...gap, bottom: rect.top });
-			}
-
-			if (gap.bottom - rect.bottom >= 1 && rect.bottom > gap.top && x) {
-				newGaps.push({ ...gap, top: rect.bottom });
-			}
-
-			if (rect.left - gap.left >= 1 && rect.left < gap.right && y) {
-				newGaps.push({ ...gap, right: rect.left });
-			}
-
-			if (gap.right - rect.right >= 1 && rect.right > gap.left && y) {
-				newGaps.push({ ...gap, left: rect.right });
-			}
-
-			if (!x || !y) {
-				newGaps.push(gap);
-			}
-
-			return newGaps;
-		});
-
-		let updatedGaps: Rect[] = [].concat(...map);
-
-		for (let i = 0; i < updatedGaps.length; i++) {
-			let e1 = updatedGaps[i];
-
-			for (let i2 = i + 1; i2 < updatedGaps.length; i2++) {
-				let e2 = updatedGaps[i2];
-
-				if (
-					e1.top === e2.top &&
-					e1.bottom === e2.bottom &&
-					e1.right >= e2.left &&
-					e1.left <= e2.right
-				) {
-					e1.left = Math.min(e1.left, e2.left);
-					e1.right = Math.max(e1.right, e2.right);
-					updatedGaps.splice(i2, 1);
-					continue;
+				if (e1.left < e2.right && e1.right > e2.left) {
+					bottom = Math.max(bottom, e2.renderBottom);
 				}
 
-				if (
-					e1.left === e2.left &&
-					e1.right === e2.right &&
-					e1.bottom >= e2.top &&
-					e1.top <= e2.bottom
-				) {
-					e1.top = Math.min(e1.top, e2.top);
-					e1.bottom = Math.max(e1.bottom, e2.bottom);
-					updatedGaps.splice(i2, 1);
+				if (diff >= 0) {
+					gap = gap !== null ? Math.min(diff, gap) : diff;
 				}
 			}
+
+			if (bottom !== null) {
+				bottom += gap !== null ? gap : 0;
+			} else {
+				bottom = Math.min(0, e1.top);
+			}
+
+			e1.renderTop = bottom;
+			e1.renderBottom = bottom + e1.height;
 		}
 
-		return updatedGaps;
+		this.visualHeight = sorted.reduce((a, b) =>
+			a.renderBottom > b.renderBottom ? a : b
+		).renderBottom;
+	}
+
+	render() {
+		this.$item.forEach((e) => e.render());
+		this.$element.style.marginBottom = `${this.visualHeight - this.height}px`;
+	}
+
+	update() {
+		this.measure();
+		this.calculate();
+		mutate(() => this.render());
 	}
 }
 
