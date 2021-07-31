@@ -1,5 +1,6 @@
 export { Accordion } from "./accordion";
 export { Carousel } from "./carousel";
+export { Expandable } from "./expandable";
 export { Height } from "./height";
 export { Masonry } from "./masonry";
 export { Parallax } from "./parallax";
