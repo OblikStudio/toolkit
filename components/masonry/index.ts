@@ -10,6 +10,8 @@ export class Item extends Component<HTMLElement> {
 	height: number;
 	renderTop: number;
 	renderBottom: number;
+	prevTop: number;
+	prevLeft: number;
 
 	updateOrigin() {
 		this.top = this.$element.offsetTop;
@@ -18,6 +20,14 @@ export class Item extends Component<HTMLElement> {
 		this.height = this.$element.offsetHeight;
 		this.right = this.left + this.width;
 		this.bottom = this.top + this.height;
+	}
+
+	renderPrev() {
+		if (typeof this.prevTop === "number") {
+			this.$element.style.transform = `translate(${
+				this.prevLeft - this.left
+			}px, ${this.prevTop - this.top}px)`;
+		}
 	}
 
 	render() {
@@ -48,6 +58,8 @@ export class Masonry extends Component<HTMLElement> {
 		this.height = this.$element.offsetHeight;
 
 		this.$item.forEach((e) => {
+			e.prevLeft = e.left;
+			e.prevTop = e.renderTop;
 			e.updateOrigin();
 		});
 	}
@@ -92,8 +104,19 @@ export class Masonry extends Component<HTMLElement> {
 	}
 
 	render() {
-		this.$item.forEach((e) => e.render());
 		this.$element.style.marginBottom = `${this.visualHeight - this.height}px`;
+
+		this.$item.forEach((e) => {
+			e.$element.style.transition = "none";
+			e.renderPrev();
+		});
+
+		mutate(() => {
+			this.$item.forEach((e) => {
+				e.$element.style.transition = "";
+				e.render();
+			});
+		});
 	}
 
 	update() {
