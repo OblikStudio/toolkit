@@ -1,38 +1,37 @@
 import { Component } from "../..";
+import { mutate } from "../../core/mutate";
 
 interface Options {
 	var?: string;
 	varTarget?: HTMLElement;
-	target?: HTMLElement;
 }
 
 export class Height extends Component<HTMLElement, Options> {
 	target: HTMLElement;
-	varName: string;
-	varTarget: HTMLElement;
-
-	create() {
-		this.target =
-			this.$options.target ?? (this.$element.firstElementChild as HTMLElement);
-
-		if (this.$options?.var) {
-			this.varName = this.$options.var;
-			this.varTarget = this.$options.varTarget ?? this.$element;
-		}
-	}
 
 	init() {
+		this.target = this.$element.firstElementChild as HTMLElement;
 		this.update();
+		this.listen();
+	}
+
+	listen() {
+		window.addEventListener("resize", () => {
+			this.update();
+		});
 	}
 
 	update() {
 		let height = `${this.target.offsetHeight}px`;
 
-		if (this.varTarget) {
-			this.varTarget.style.setProperty("--" + this.varName, height);
-		} else {
-			this.$element.style.height = height;
-		}
+		mutate(() => {
+			if (this.$options.var) {
+				let target = this.$options.varTarget ?? this.$element;
+				target.style.setProperty(`--${this.$options.var}`, height);
+			} else {
+				this.$element.style.height = height;
+			}
+		});
 	}
 }
 
