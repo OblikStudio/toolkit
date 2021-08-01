@@ -15,15 +15,16 @@ export class Expandable extends Component<HTMLElement> {
 	};
 
 	$content: Content;
-	target: HTMLElement;
+	wrapper: HTMLElement;
 
 	init() {
+		this.wrapper = this.$element.firstElementChild as HTMLElement;
 		this.update();
 		this.listen();
 	}
 
 	update() {
-		let fullHeight = this.$element.offsetHeight;
+		let fullHeight = this.wrapper.offsetHeight;
 		let expandedHeight = this.$content.$element.offsetHeight;
 		let fluidHeight = this.$content.wrapper.offsetHeight;
 		let fixedHeight = fullHeight - expandedHeight;
