@@ -37,7 +37,11 @@ export class Item extends Component<HTMLElement> {
 	}
 }
 
-export class Masonry extends Component<HTMLElement> {
+interface Options {
+	animate: boolean;
+}
+
+export class Masonry extends Component<HTMLElement, Options> {
 	static components = {
 		item: Item,
 	};
@@ -106,17 +110,21 @@ export class Masonry extends Component<HTMLElement> {
 	render() {
 		this.$element.style.marginBottom = `${this.visualHeight - this.height}px`;
 
-		this.$item.forEach((e) => {
-			e.$element.style.transition = "none";
-			e.renderPrev();
-		});
-
-		mutate(() => {
+		if (this.$options.animate) {
 			this.$item.forEach((e) => {
-				e.$element.style.transition = "";
-				e.render();
+				e.$element.style.transition = "none";
+				e.renderPrev();
 			});
-		});
+
+			mutate(() => {
+				this.$item.forEach((e) => {
+					e.$element.style.transition = "";
+					e.render();
+				});
+			});
+		} else {
+			this.$item.forEach((e) => e.render());
+		}
 	}
 
 	update() {
