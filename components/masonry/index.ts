@@ -51,11 +51,14 @@ export class Masonry extends Component<HTMLElement, Options> {
 	visualHeight: number;
 
 	init() {
+		this.update();
+		this.listen();
+	}
+
+	listen() {
 		window.addEventListener("resize", () => {
 			this.update();
 		});
-
-		this.update();
 	}
 
 	measure() {
