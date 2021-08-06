@@ -8,11 +8,18 @@ interface Options {
 export class Lightbox extends Component<HTMLImageElement, Options> {
 	elBox: HTMLElement;
 	elImg: HTMLImageElement;
+	width: number;
+	height: number;
+	isExpandable: boolean;
 
 	init() {
+		this.width = parseInt(this.$element.getAttribute("width"));
+		this.height = parseInt(this.$element.getAttribute("height"));
+
 		this.$element.addEventListener("click", () => {
 			this.clone();
 			this.open();
+			this.checkExpand();
 		});
 	}
 
@@ -37,16 +44,42 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 		this.elBox = target.cloneNode(true) as HTMLElement;
 		this.elImg = this.elBox.querySelector("[data-img]") as HTMLImageElement;
-		this.elImg.width = parseInt(this.$element.getAttribute("width"));
-		this.elImg.height = parseInt(this.$element.getAttribute("height"));
+		this.elImg.width = this.width;
+		this.elImg.height = this.height;
 
 		this.elBox.addEventListener("click", () => {
 			this.close();
 		});
 
+		this.elImg.addEventListener("click", (e) => {
+			if (this.isExpandable) {
+				e.stopPropagation();
+				this.expand();
+			}
+		});
+
 		this.preload();
 
 		document.body.appendChild(this.elBox);
+	}
+
+	expand() {
+		let sw = this.width / this.elImg.offsetWidth;
+		let sh = this.height / this.elImg.offsetHeight;
+		this.elImg.style.transform = `scale(${sw}, ${sh})`;
+	}
+
+	checkExpand() {
+		let w = this.elImg.offsetWidth;
+		let h = this.elImg.offsetHeight;
+
+		this.isExpandable = this.width > w || this.height > h;
+
+		if (this.isExpandable) {
+			this.elBox.classList.add("is-expandable");
+		} else {
+			this.elBox.classList.remove("is-expandable");
+		}
 	}
 
 	open() {

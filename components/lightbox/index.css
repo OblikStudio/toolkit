@@ -26,6 +26,12 @@
 	}
 }
 
+.b-lightbox.is-expandable {
+	[data-img] {
+		cursor: zoom-in;
+	}
+}
+
 .b-lightbox [data-box] {
 	display: flex;
 	align-items: center;
