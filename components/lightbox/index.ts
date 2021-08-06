@@ -21,6 +21,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			img.height = h;
 
 			this.box.addEventListener("click", () => {
+				this.box.classList.remove("is-open");
 				document.body.removeChild(this.box);
 			});
 
@@ -49,16 +50,10 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			let sy = r1.top - (r2.top + (r2.height - r1.height) / 2);
 			let trans = `translate(${sx}px, ${sy}px) scale(${sw}, ${sh})`;
 
-			img.style.transition = "none";
-			img.style.transform = trans;
-			this.box.style.transition = "none";
-			this.box.style.opacity = "0";
+			this.box.style.setProperty("--img-transform", trans);
 
 			mutate(() => {
-				img.style.transition = "";
-				img.style.transform = "none";
-				this.box.style.transition = "";
-				this.box.style.opacity = "1";
+				this.box.classList.add("is-open");
 			});
 		});
 	}

@@ -8,11 +8,22 @@
 	width: 100%;
 	height: 100%;
 	background-color: rgba(0, 0, 0, 0.6);
-	transition: opacity 0.3s ease;
 }
 
-.b-lightbox [data-img] {
-	transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+.b-lightbox.is-open {
+	transition: opacity 0.3s ease;
+
+	[data-img] {
+		transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+}
+
+.b-lightbox:not(.is-open) {
+	opacity: 0;
+
+	[data-img] {
+		transform: var(--img-transform);
+	}
 }
 
 .b-lightbox [data-box] {
