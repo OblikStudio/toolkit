@@ -8,6 +8,10 @@
 	width: 100%;
 	height: 100%;
 	background-color: rgba(0, 0, 0, 0.6);
+
+	[data-img] {
+		transform-origin: left top;
+	}
 }
 
 .b-lightbox.is-open {
@@ -29,6 +33,12 @@
 .b-lightbox.is-expandable {
 	[data-img] {
 		cursor: zoom-in;
+	}
+}
+
+.b-lightbox.is-dragging {
+	[data-img] {
+		transition: none;
 	}
 }
 
