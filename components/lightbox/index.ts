@@ -77,6 +77,9 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	}
 
 	acc: Vector;
+	rp = new Point();
+	isDragging = false;
+
 	tickHandler = () => {
 		this.pos.add(this.acc);
 		this.acc.magnitude *= 0.85;
@@ -125,17 +128,32 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		this.render();
 	};
 
+	lastRp: Point;
+
+	measureSpeed = () => {
+		if (this.isDragging) {
+			if (this.lastRp) {
+				this.acc.set(this.lastRp, this.rp);
+			}
+
+			this.lastRp = this.rp;
+		}
+	};
+
 	expand() {
 		this.scaleX = this.width / this.elImg.offsetWidth;
 		this.scaleY = this.height / this.elImg.offsetHeight;
 		this.elImg.style.transform = `scale(${this.scaleX}, ${this.scaleY})`;
 		this.isExpanded = true;
-		this.pos = new Point();
+		this.pos = new Point(this.elImg.offsetLeft, this.elImg.offsetTop);
+		this.acc = new Vector(this.pos, this.pos);
+		ticker.on("tick", this.measureSpeed);
 
 		let g = new Gesture(this.elImg);
 		g.on("start", (e) => {
 			ticker.off("tick", this.tickHandler);
 			this.elBox.classList.add("is-dragging");
+			this.isDragging = true;
 
 			e.preventDefault();
 			e.stopPropagation();
@@ -146,23 +164,19 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			let o = g.swipes[0].origin;
 			this.transX = p.x - o.x;
 			this.transY = p.y - o.y;
-			this.acc = g.swipes[0].delta;
 
 			this.render();
 		});
 
 		g.on("end", (e) => {
-			this.pos.x += this.transX;
-			this.pos.y += this.transY;
+			this.pos.x = this.rp.x;
+			this.pos.y = this.rp.y;
 			this.transX = 0;
 			this.transY = 0;
 
-			// if (this.pos.x < 0) {
-			// 	this.pos.x = 0;
-			// }
-
 			// this.elBox.classList.remove("is-dragging");
 
+			this.isDragging = false;
 			ticker.on("tick", this.tickHandler);
 		});
 	}
@@ -176,7 +190,48 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		let tx = this.pos.x + this.transX;
 		let ty = this.pos.y + this.transY;
 
-		this.elImg.style.transform = `translate(${tx}px, ${ty}px) scale(${this.scaleX}, ${this.scaleY})`;
+		if (this.isDragging) {
+			let r1 = this.elImg.getBoundingClientRect();
+			let r2 = this.elWrap.getBoundingClientRect();
+
+			let bt = Math.min(r2.top, r2.bottom - r1.height);
+			let br = Math.max(r2.right, r2.left + r1.width);
+			let bb = Math.max(r2.bottom, r2.top + r1.height);
+			let bl = Math.min(r2.left, r2.right - r1.width);
+
+			let dt = bt - ty;
+			let dr = tx + r1.width - br;
+			let db = ty + r1.height - bb;
+			let dl = bl - tx;
+
+			if (dt > 0) {
+				ty = bt - this.getOverdrag(dt);
+			}
+
+			if (dr > 0) {
+				tx = br - r1.width + this.getOverdrag(dr);
+			}
+
+			if (db > 0) {
+				ty = bb - r1.height + this.getOverdrag(db);
+			}
+
+			if (dl > 0) {
+				tx = bl - this.getOverdrag(dl);
+			}
+
+			// doesn't work because measuring client rect
+			// pos should be relative to screen
+			// convert screen coords to transform in render()
+		}
+
+		this.rp = new Point(tx, ty);
+
+		this.elImg.style.transform = `translate(${
+			this.rp.x - this.elImg.offsetLeft
+		}px, ${this.rp.y - this.elImg.offsetTop}px) scale(${this.scaleX}, ${
+			this.scaleY
+		})`;
 	}
 
 	checkExpand() {
