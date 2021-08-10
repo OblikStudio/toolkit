@@ -79,11 +79,10 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	acc: Vector;
 	rp = new Point();
 	isDragging = false;
+	lastRp: Point;
+	bounds: DOMRect;
 
-	tickHandler = () => {
-		this.pos.add(this.acc);
-		this.acc.magnitude *= 0.85;
-
+	updateBounds() {
 		let r1 = this.elImg.getBoundingClientRect();
 		let r2 = this.elWrap.getBoundingClientRect();
 
@@ -92,10 +91,26 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		let bb = Math.max(r2.bottom, r2.top + r1.height);
 		let bl = Math.min(r2.left, r2.right - r1.width);
 
-		let dt = bt - r1.top;
-		let dr = r1.right - br;
-		let db = r1.bottom - bb;
-		let dl = bl - r1.left;
+		this.bounds = new DOMRect(bl, bt, br - bl, bb - bt);
+	}
+
+	updateDrag() {
+		if (this.lastRp) {
+			this.acc.set(this.lastRp, this.rp);
+		}
+
+		this.lastRp = this.rp;
+	}
+
+	updateSlide() {
+		this.pos.add(this.acc);
+		this.acc.magnitude *= 0.85;
+
+		let r1 = this.elImg.getBoundingClientRect();
+		let dt = this.bounds.top - r1.top;
+		let dr = r1.right - this.bounds.right;
+		let db = r1.bottom - this.bounds.bottom;
+		let dl = this.bounds.left - r1.left;
 
 		if (dt > 0) {
 			let p2 = new Point(this.pos.x, this.pos.y + dt);
@@ -126,17 +141,15 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		}
 
 		this.render();
-	};
+	}
 
-	lastRp: Point;
+	handleTick = () => {
+		this.updateBounds();
 
-	measureSpeed = () => {
 		if (this.isDragging) {
-			if (this.lastRp) {
-				this.acc.set(this.lastRp, this.rp);
-			}
-
-			this.lastRp = this.rp;
+			this.updateDrag();
+		} else {
+			this.updateSlide();
 		}
 	};
 
@@ -147,11 +160,10 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		this.isExpanded = true;
 		this.pos = new Point(this.elImg.offsetLeft, this.elImg.offsetTop);
 		this.acc = new Vector(this.pos, this.pos);
-		ticker.on("tick", this.measureSpeed);
+		ticker.on("tick", this.handleTick);
 
 		let g = new Gesture(this.elImg);
 		g.on("start", (e) => {
-			ticker.off("tick", this.tickHandler);
 			this.elBox.classList.add("is-dragging");
 			this.isDragging = true;
 
@@ -177,7 +189,6 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			// this.elBox.classList.remove("is-dragging");
 
 			this.isDragging = false;
-			ticker.on("tick", this.tickHandler);
 		});
 	}
 
@@ -192,37 +203,26 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 		if (this.isDragging) {
 			let r1 = this.elImg.getBoundingClientRect();
-			let r2 = this.elWrap.getBoundingClientRect();
-
-			let bt = Math.min(r2.top, r2.bottom - r1.height);
-			let br = Math.max(r2.right, r2.left + r1.width);
-			let bb = Math.max(r2.bottom, r2.top + r1.height);
-			let bl = Math.min(r2.left, r2.right - r1.width);
-
-			let dt = bt - ty;
-			let dr = tx + r1.width - br;
-			let db = ty + r1.height - bb;
-			let dl = bl - tx;
+			let dt = this.bounds.top - ty;
+			let dr = tx + r1.width - this.bounds.right;
+			let db = ty + r1.height - this.bounds.bottom;
+			let dl = this.bounds.left - tx;
 
 			if (dt > 0) {
-				ty = bt - this.getOverdrag(dt);
+				ty = this.bounds.top - this.getOverdrag(dt);
 			}
 
 			if (dr > 0) {
-				tx = br - r1.width + this.getOverdrag(dr);
+				tx = this.bounds.right - r1.width + this.getOverdrag(dr);
 			}
 
 			if (db > 0) {
-				ty = bb - r1.height + this.getOverdrag(db);
+				ty = this.bounds.bottom - r1.height + this.getOverdrag(db);
 			}
 
 			if (dl > 0) {
-				tx = bl - this.getOverdrag(dl);
+				tx = this.bounds.left - this.getOverdrag(dl);
 			}
-
-			// doesn't work because measuring client rect
-			// pos should be relative to screen
-			// convert screen coords to transform in render()
 		}
 
 		this.rp = new Point(tx, ty);
