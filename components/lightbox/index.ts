@@ -21,6 +21,13 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	pos: Point;
 	transX: number;
 	transY: number;
+	acc: Vector;
+	rp = new Point();
+	isDragging = false;
+	lastRp: Point;
+	rectImg: DOMRect;
+	rectWrap: DOMRect;
+	rectBounds: DOMRectReadOnly;
 
 	init() {
 		this.width = parseInt(this.$element.getAttribute("width"));
@@ -76,80 +83,51 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		document.body.appendChild(this.elBox);
 	}
 
-	acc: Vector;
-	rp = new Point();
-	isDragging = false;
-	lastRp: Point;
-	bounds: DOMRect;
-
 	updateBounds() {
-		let r1 = this.elImg.getBoundingClientRect();
-		let r2 = this.elWrap.getBoundingClientRect();
+		let r1 = this.rectImg;
+		let r2 = this.rectWrap;
 
 		let bt = Math.min(r2.top, r2.bottom - r1.height);
 		let br = Math.max(r2.right, r2.left + r1.width);
 		let bb = Math.max(r2.bottom, r2.top + r1.height);
 		let bl = Math.min(r2.left, r2.right - r1.width);
 
-		this.bounds = new DOMRect(bl, bt, br - bl, bb - bt);
+		this.rectBounds = new DOMRectReadOnly(bl, bt, br - bl, bb - bt);
 	}
 
-	updateDrag() {
-		if (this.lastRp) {
-			this.acc.set(this.lastRp, this.rp);
-		}
+	constrainSlide() {
+		let x = this.pos.x;
+		let y = this.pos.y;
+		let r1 = this.rectImg;
+		let r2 = this.rectBounds;
+		let dt = r2.top - r1.top;
+		let dl = r2.left - r1.left;
+		let dr = r1.right - r2.right;
+		let db = r1.bottom - r2.bottom;
 
-		this.lastRp = this.rp;
-	}
+		if (dt > 0) y += dt;
+		if (dl > 0) x += dl;
+		if (dr > 0) x -= dr;
+		if (db > 0) y -= db;
 
-	updateSlide() {
-		this.pos.add(this.acc);
-		this.acc.magnitude *= 0.85;
-
-		let r1 = this.elImg.getBoundingClientRect();
-		let dt = this.bounds.top - r1.top;
-		let dr = r1.right - this.bounds.right;
-		let db = r1.bottom - this.bounds.bottom;
-		let dl = this.bounds.left - r1.left;
-
-		if (dt > 0) {
-			let p2 = new Point(this.pos.x, this.pos.y + dt);
-			let v = new Vector(this.pos, p2);
-			v.magnitude *= 0.25;
-			this.pos.add(v);
-		}
-
-		if (dr > 0) {
-			let p2 = new Point(this.pos.x - dr, this.pos.y);
-			let v = new Vector(this.pos, p2);
-			v.magnitude *= 0.25;
-			this.pos.add(v);
-		}
-
-		if (db > 0) {
-			let p2 = new Point(this.pos.x, this.pos.y - db);
-			let v = new Vector(this.pos, p2);
-			v.magnitude *= 0.25;
-			this.pos.add(v);
-		}
-
-		if (dl > 0) {
-			let p2 = new Point(this.pos.x + dl, this.pos.y);
-			let v = new Vector(this.pos, p2);
-			v.magnitude *= 0.25;
-			this.pos.add(v);
-		}
-
-		this.render();
+		let p = new Point(x, y);
+		let v = new Vector(this.pos, p);
+		v.magnitude *= 0.25;
+		this.pos.add(v);
 	}
 
 	handleTick = () => {
+		this.rectImg = this.elImg.getBoundingClientRect();
+		this.rectWrap = this.elWrap.getBoundingClientRect();
 		this.updateBounds();
 
 		if (this.isDragging) {
-			this.updateDrag();
+			this.lastRp = this.rp;
 		} else {
-			this.updateSlide();
+			this.pos.add(this.acc);
+			this.acc.magnitude *= 0.85;
+			this.constrainSlide();
+			this.render();
 		}
 	};
 
@@ -181,6 +159,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		});
 
 		g.on("end", (e) => {
+			this.acc.set(this.lastRp, this.rp);
 			this.pos.x = this.rp.x;
 			this.pos.y = this.rp.y;
 			this.transX = 0;
@@ -197,35 +176,31 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		return (amount * limit) / (amount + limit);
 	}
 
+	constrainDrag() {
+		let x = this.rp.x;
+		let y = this.rp.y;
+		let r1 = this.rectImg;
+		let r2 = this.rectBounds;
+		let dt = r2.top - y;
+		let dl = r2.left - x;
+		let dr = x + r1.width - r2.right;
+		let db = y + r1.height - r2.bottom;
+
+		if (dt > 0) y = r2.top - this.getOverdrag(dt);
+		if (dl > 0) x = r2.left - this.getOverdrag(dl);
+		if (dr > 0) x = r2.right - r1.width + this.getOverdrag(dr);
+		if (db > 0) y = r2.bottom - r1.height + this.getOverdrag(db);
+
+		this.rp.x = x;
+		this.rp.y = y;
+	}
+
 	render() {
-		let tx = this.pos.x + this.transX;
-		let ty = this.pos.y + this.transY;
+		this.rp = new Point(this.pos.x + this.transX, this.pos.y + this.transY);
 
 		if (this.isDragging) {
-			let r1 = this.elImg.getBoundingClientRect();
-			let dt = this.bounds.top - ty;
-			let dr = tx + r1.width - this.bounds.right;
-			let db = ty + r1.height - this.bounds.bottom;
-			let dl = this.bounds.left - tx;
-
-			if (dt > 0) {
-				ty = this.bounds.top - this.getOverdrag(dt);
-			}
-
-			if (dr > 0) {
-				tx = this.bounds.right - r1.width + this.getOverdrag(dr);
-			}
-
-			if (db > 0) {
-				ty = this.bounds.bottom - r1.height + this.getOverdrag(db);
-			}
-
-			if (dl > 0) {
-				tx = this.bounds.left - this.getOverdrag(dl);
-			}
+			this.constrainDrag();
 		}
-
-		this.rp = new Point(tx, ty);
 
 		this.elImg.style.transform = `translate(${
 			this.rp.x - this.elImg.offsetLeft
