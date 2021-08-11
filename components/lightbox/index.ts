@@ -21,7 +21,8 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	isDragging = false;
 	ptImg: Point;
 	ptDrag: Point;
-	ptDragLast: Point;
+	ptDragTick: Point;
+	ptDragLastTick: Point;
 	vcDrag: Vector;
 	vcInertia: Vector;
 	rectImg: DOMRect;
@@ -111,7 +112,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 		let p = new Point(x, y);
 		let v = new Vector(this.ptImg, p);
-		v.magnitude *= 0.25;
+		v.magnitude *= 0.2;
 		this.ptImg.add(v);
 	}
 
@@ -121,10 +122,11 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		this.updateBounds();
 
 		if (this.isDragging) {
-			this.ptDragLast = this.ptDrag;
+			this.ptDragLastTick = this.ptDragTick;
+			this.ptDragTick = this.ptDrag;
 		} else {
 			this.ptImg.add(this.vcInertia);
-			this.vcInertia.magnitude *= 0.85;
+			this.vcInertia.magnitude *= 0.9;
 			this.constrainSlide();
 			this.render(this.ptImg);
 		}
@@ -133,8 +135,6 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	expand() {
 		this.scaleX = this.width / this.elImg.offsetWidth;
 		this.scaleY = this.height / this.elImg.offsetHeight;
-		this.elImg.style.transform = `scale(${this.scaleX}, ${this.scaleY})`;
-		this.isExpanded = true;
 		this.ptImg = new Point(this.elImg.offsetLeft, this.elImg.offsetTop);
 		this.vcInertia = new Vector(this.ptImg, this.ptImg);
 		ticker.on("tick", this.handleTick);
@@ -161,14 +161,14 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		});
 
 		g.on("end", (e) => {
-			this.vcInertia.set(this.ptDragLast, this.ptDrag);
+			this.vcInertia.set(this.ptDragLastTick, this.ptDragTick);
 			this.ptImg.x = this.ptDrag.x;
 			this.ptImg.y = this.ptDrag.y;
-
-			// this.elBox.classList.remove("is-dragging");
-
 			this.isDragging = false;
 		});
+
+		this.render(this.ptImg);
+		this.isExpanded = true;
 	}
 
 	getOverdrag(amount: number) {
