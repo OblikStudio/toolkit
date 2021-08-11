@@ -26,15 +26,19 @@ export class Point {
 		}
 	}
 
-	add(input: number | Vector, y = 0) {
+	add(input: number | Point | Vector, y = 0) {
 		if (typeof input === "number") {
 			this.set(this.x + input, this.y + y);
+		} else if (input instanceof Point) {
+			this.add(input.x, input.y);
 		} else if (input instanceof Vector) {
 			this.add(
 				input.magnitude * Math.cos(input.direction),
 				input.magnitude * Math.sin(input.direction)
 			);
 		}
+
+		return this;
 	}
 
 	subtract(input: Point) {
