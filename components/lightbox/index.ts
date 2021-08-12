@@ -1,7 +1,7 @@
 import { Component } from "../../core/component";
 import { mutate } from "../../core/mutate";
 import { ticker } from "../../core/ticker";
-import { Gesture } from "../../utils/gesture";
+import { Gesture, GestureEvent } from "../../utils/gesture";
 import { Point, Vector } from "../../utils/math";
 
 interface Options {
@@ -19,6 +19,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	scaleX: number;
 	scaleY: number;
 	isDragging = false;
+	gesture: Gesture;
 	ptImg: Point;
 	ptDrag: Point;
 	ptDragTick: Point;
@@ -116,7 +117,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		this.ptImg.add(v);
 	}
 
-	handleTick = () => {
+	handleTickExpanded() {
 		this.rectImg = this.elImg.getBoundingClientRect();
 		this.rectWrap = this.elWrap.getBoundingClientRect();
 		this.updateBounds();
@@ -130,45 +131,49 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			this.constrainSlide();
 			this.render(this.ptImg);
 		}
-	};
+	}
 
 	expand() {
 		this.scaleX = this.width / this.elImg.offsetWidth;
 		this.scaleY = this.height / this.elImg.offsetHeight;
 		this.ptImg = new Point(this.elImg.offsetLeft, this.elImg.offsetTop);
-		this.vcInertia = new Vector(this.ptImg, this.ptImg);
-		ticker.on("tick", this.handleTick);
+		this.vcInertia = new Vector();
 
-		let g = new Gesture(this.elImg);
-		g.on("start", (e) => {
-			this.ptDrag = this.ptImg.copy();
-			this.elBox.classList.add("is-dragging");
-			this.isDragging = true;
-
-			e.preventDefault();
-			e.stopPropagation();
-		});
-
-		g.on("move", (e) => {
-			let p = g.swipes[0].position;
-			let o = g.swipes[0].origin;
-			let v = o.to(p);
-
-			this.ptDrag = this.ptImg.copy().add(v);
-
-			this.constrainDrag();
-			this.render(this.ptDrag);
-		});
-
-		g.on("end", (e) => {
-			this.vcInertia.set(this.ptDragLastTick, this.ptDragTick);
-			this.ptImg.x = this.ptDrag.x;
-			this.ptImg.y = this.ptDrag.y;
-			this.isDragging = false;
-		});
+		this.gesture = new Gesture(this.elImg);
+		this.gesture.on("start", this.handleDragStart.bind(this));
+		this.gesture.on("move", this.handleDragMove.bind(this));
+		this.gesture.on("end", this.handleDragEnd.bind(this));
+		ticker.on("tick", this.handleTickExpanded.bind(this));
 
 		this.render(this.ptImg);
 		this.isExpanded = true;
+	}
+
+	handleDragStart(e: GestureEvent) {
+		this.ptDrag = this.ptImg.copy();
+		this.elBox.classList.add("is-dragging");
+		this.isDragging = true;
+
+		e.preventDefault();
+		e.stopPropagation();
+	}
+
+	handleDragMove() {
+		let p = this.gesture.swipes[0].position;
+		let o = this.gesture.swipes[0].origin;
+		let v = o.to(p);
+
+		this.ptDrag = this.ptImg.copy().add(v);
+
+		this.constrainDrag();
+		this.render(this.ptDrag);
+	}
+
+	handleDragEnd() {
+		this.vcInertia.set(this.ptDragLastTick, this.ptDragTick);
+		this.ptImg.x = this.ptDrag.x;
+		this.ptImg.y = this.ptDrag.y;
+		this.isDragging = false;
 	}
 
 	getOverdrag(amount: number) {
