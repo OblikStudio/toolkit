@@ -36,9 +36,16 @@
 	}
 }
 
-.b-lightbox.is-dragging {
+.b-lightbox.is-expanded {
 	[data-img] {
 		transition: none;
+		cursor: grab;
+	}
+}
+
+.b-lightbox.is-dragging {
+	[data-img] {
+		cursor: grabbing;
 	}
 }
 

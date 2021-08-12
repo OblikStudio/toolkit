@@ -19,6 +19,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	scaleX: number;
 	scaleY: number;
 	isDragging = false;
+	wasDragging = false;
 	gesture: Gesture;
 	ptImg: Point;
 	ptDrag: Point;
@@ -29,6 +30,8 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	rectImg: DOMRect;
 	rectWrap: DOMRect;
 	rectBounds: DOMRectReadOnly;
+
+	handleTickExpandedFn = this.handleTickExpanded.bind(this);
 
 	init() {
 		this.width = parseInt(this.$element.getAttribute("width"));
@@ -76,6 +79,13 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			if (this.isExpandable && !this.isExpanded) {
 				e.stopPropagation();
 				this.expand();
+			} else if (this.isExpanded) {
+				if (this.wasDragging) {
+					this.wasDragging = false;
+				} else {
+					e.stopPropagation();
+					this.contract();
+				}
 			}
 		});
 
@@ -143,19 +153,30 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		this.gesture.on("start", this.handleDragStart.bind(this));
 		this.gesture.on("move", this.handleDragMove.bind(this));
 		this.gesture.on("end", this.handleDragEnd.bind(this));
-		ticker.on("tick", this.handleTickExpanded.bind(this));
+		ticker.on("tick", this.handleTickExpandedFn);
 
+		this.elBox.classList.add("is-expanded");
 		this.render(this.ptImg);
 		this.isExpanded = true;
 	}
 
+	contract() {
+		ticker.off("tick", this.handleTickExpandedFn);
+		this.gesture.destroy();
+		this.gesture = null;
+
+		this.elBox.classList.remove("is-expanded");
+		this.elImg.style.transform = "";
+		this.isExpanded = false;
+	}
+
 	handleDragStart(e: GestureEvent) {
+		e.preventDefault();
+		e.stopPropagation();
+
 		this.ptDrag = this.ptImg.copy();
 		this.elBox.classList.add("is-dragging");
 		this.isDragging = true;
-
-		e.preventDefault();
-		e.stopPropagation();
 	}
 
 	handleDragMove() {
@@ -163,6 +184,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		let o = this.gesture.swipes[0].origin;
 		let v = o.to(p);
 
+		this.wasDragging = true;
 		this.ptDrag = this.ptImg.copy().add(v);
 
 		this.constrainDrag();
@@ -173,6 +195,8 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		this.vcInertia.set(this.ptDragLastTick, this.ptDragTick);
 		this.ptImg.x = this.ptDrag.x;
 		this.ptImg.y = this.ptDrag.y;
+
+		this.elBox.classList.remove("is-dragging");
 		this.isDragging = false;
 	}
 
