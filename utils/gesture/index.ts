@@ -152,4 +152,16 @@ export class Gesture extends Emitter<Events> {
 			el.positionPrev = el.position;
 		});
 	}
+
+	destroy() {
+		this.element.removeEventListener("mousedown", this.mouseStartHandler);
+		this.element.removeEventListener("mousemove", this.mouseMoveHandler);
+		this.element.removeEventListener("mouseup", this.mouseEndHandler);
+		this.element.removeEventListener("mouseleave", this.mouseEndHandler);
+		this.element.removeEventListener("touchstart", this.touchStartHandler);
+		this.element.removeEventListener("touchmove", this.touchMoveHandler);
+		this.element.removeEventListener("touchend", this.touchEndHandler);
+		this.element.removeEventListener("touchcancel", this.touchEndHandler);
+		ticker.off("tick", this.tickHandler);
+	}
 }
