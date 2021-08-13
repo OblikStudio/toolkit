@@ -78,7 +78,11 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		this.elImg.addEventListener("click", (e) => {
 			if (this.isExpandable && !this.isExpanded) {
 				e.stopPropagation();
-				this.expand();
+
+				let r = this.elImg.getBoundingClientRect();
+				let rx = (e.clientX - r.x) / r.width;
+				let ry = (e.clientY - r.y) / r.height;
+				this.expand(rx, ry);
 			} else if (this.isExpanded) {
 				if (this.wasDragging) {
 					this.wasDragging = false;
@@ -143,10 +147,17 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		}
 	}
 
-	expand() {
+	expand(rx: number, ry: number) {
+		let pullX = (this.width - this.elImg.offsetWidth) * rx;
+		let pullY = (this.height - this.elImg.offsetHeight) * ry;
+
 		this.scaleX = this.width / this.elImg.offsetWidth;
 		this.scaleY = this.height / this.elImg.offsetHeight;
-		this.ptImg = new Point(this.elImg.offsetLeft, this.elImg.offsetTop);
+
+		this.ptImg = new Point(
+			this.elImg.offsetLeft - pullX,
+			this.elImg.offsetTop - pullY
+		);
 		this.vcInertia = new Vector();
 
 		this.gesture = new Gesture(this.elImg);
