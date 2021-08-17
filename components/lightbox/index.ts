@@ -142,6 +142,11 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		} else {
 			this.ptImg.add(this.vcInertia);
 			this.vcInertia.magnitude *= 0.9;
+
+			if (this.vcInertia.magnitude < 0.01) {
+				this.vcInertia.magnitude = 0;
+			}
+
 			this.constrainSlide();
 			this.render(this.ptImg);
 		}
@@ -176,7 +181,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		this.gesture.destroy();
 		this.gesture = null;
 
-		this.elBox.classList.remove("is-expanded");
+		this.elBox.classList.remove("is-expanded", "is-moved");
 		this.elImg.style.transform = "";
 		this.isExpanded = false;
 	}
@@ -195,7 +200,11 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		let o = this.gesture.swipes[0].origin;
 		let v = o.to(p);
 
-		this.wasDragging = true;
+		if (!this.wasDragging) {
+			this.wasDragging = true;
+			this.elBox.classList.add("is-moved");
+		}
+
 		this.ptDrag = this.ptImg.copy().add(v);
 
 		this.constrainDrag();

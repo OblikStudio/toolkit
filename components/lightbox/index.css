@@ -38,7 +38,6 @@
 
 .b-lightbox.is-expanded {
 	[data-img] {
-		transition: none;
 		cursor: grab;
 	}
 }
@@ -46,6 +45,12 @@
 .b-lightbox.is-dragging {
 	[data-img] {
 		cursor: grabbing;
+	}
+}
+
+.b-lightbox.is-moved {
+	[data-img] {
+		transition: none;
 	}
 }
 
