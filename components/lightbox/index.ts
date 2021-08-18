@@ -10,6 +10,7 @@ interface Options {
 
 export class Lightbox extends Component<HTMLImageElement, Options> {
 	elBox: HTMLElement;
+	elImgWrap: HTMLElement;
 	elImg: HTMLImageElement;
 	elWrap: HTMLElement;
 	width: number;
@@ -27,6 +28,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	ptDragLastTick: Point;
 	vcDrag: Vector;
 	vcInertia: Vector;
+	rectImgWrap: DOMRect;
 	rectImg: DOMRect;
 	rectWrap: DOMRect;
 	rectBounds: DOMRectReadOnly;
@@ -64,7 +66,8 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		let target = this.$options.template.content.firstElementChild;
 
 		this.elBox = target.cloneNode(true) as HTMLElement;
-		this.elWrap = this.elBox.querySelector("[data-box]") as HTMLImageElement;
+		this.elWrap = this.elBox.querySelector("[data-box]");
+		this.elImgWrap = this.elBox.querySelector("[data-img-wrap]");
 		this.elImg = this.elBox.querySelector("[data-img]") as HTMLImageElement;
 		this.elImg.width = this.width;
 		this.elImg.height = this.height;
@@ -95,14 +98,21 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		document.body.appendChild(this.elBox);
 	}
 
+	getMaxBoundsRect() {
+		let w = window.innerWidth / 3;
+		let h = window.innerHeight / 3;
+		return new DOMRect(w, h, w, h);
+	}
+
 	updateBounds() {
 		let r1 = this.rectImg;
-		let r2 = this.rectWrap;
+		let r2 = this.rectImgWrap;
+		let r3 = this.getMaxBoundsRect();
 
-		let bt = Math.min(r2.top, r2.bottom - r1.height);
-		let br = Math.max(r2.right, r2.left + r1.width);
-		let bb = Math.max(r2.bottom, r2.top + r1.height);
-		let bl = Math.min(r2.left, r2.right - r1.width);
+		let bt = Math.min(r2.top, r2.bottom - r1.height, r3.bottom - r1.height);
+		let br = Math.max(r2.right, r2.left + r1.width, r3.left + r1.width);
+		let bb = Math.max(r2.bottom, r2.top + r1.height, r3.top + r1.height);
+		let bl = Math.min(r2.left, r2.right - r1.width, r3.right - r1.width);
 
 		this.rectBounds = new DOMRectReadOnly(bl, bt, br - bl, bb - bt);
 	}
@@ -129,6 +139,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	}
 
 	handleTickExpanded() {
+		this.rectImgWrap = this.elImgWrap.getBoundingClientRect();
 		this.rectImg = this.elImg.getBoundingClientRect();
 		this.rectWrap = this.elWrap.getBoundingClientRect();
 		this.updateBounds();
