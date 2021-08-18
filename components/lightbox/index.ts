@@ -70,15 +70,13 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		this.elImg.height = this.height;
 
 		this.elBox.addEventListener("click", () => {
-			if (!this.isExpanded) {
-				this.close();
-			}
+			this.close();
 		});
 
 		this.elImg.addEventListener("click", (e) => {
-			if (this.isExpandable && !this.isExpanded) {
-				e.stopPropagation();
+			e.stopPropagation();
 
+			if (this.isExpandable && !this.isExpanded) {
 				let r = this.elImg.getBoundingClientRect();
 				let rx = (e.clientX - r.x) / r.width;
 				let ry = (e.clientY - r.y) / r.height;
@@ -87,7 +85,6 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 				if (this.wasDragging) {
 					this.wasDragging = false;
 				} else {
-					e.stopPropagation();
 					this.contract();
 				}
 			}
@@ -283,6 +280,10 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	}
 
 	close() {
+		if (this.isExpanded) {
+			this.contract();
+		}
+
 		this.elBox.classList.remove("is-open");
 		document.body.removeChild(this.elBox);
 	}
