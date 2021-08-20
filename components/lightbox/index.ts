@@ -1,5 +1,5 @@
 import { Component } from "../../core/component";
-import { mutate } from "../../core/mutate";
+import { afterMutate, mutate } from "../../core/mutate";
 import { ticker } from "../../core/ticker";
 import { Gesture, GestureEvent } from "../../utils/gesture";
 import { Point, Vector } from "../../utils/math";
@@ -17,6 +17,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	height: number;
 	isExpandable: boolean;
 	isExpanded: boolean;
+	isClosing = false;
 	scaleX: number;
 	scaleY: number;
 	isDragging = false;
@@ -77,6 +78,10 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		});
 
 		this.elImg.addEventListener("click", (e) => {
+			if (this.isClosing) {
+				return;
+			}
+
 			e.stopPropagation();
 
 			if (this.isExpandable && !this.isExpanded) {
@@ -189,9 +194,12 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		this.gesture.destroy();
 		this.gesture = null;
 
-		this.elBox.classList.remove("is-expanded", "is-moved");
-		this.elImg.style.transform = "";
 		this.isExpanded = false;
+
+		mutate(() => {
+			this.elBox.classList.remove("is-expanded", "is-moved");
+			this.elImg.style.transform = "";
+		});
 	}
 
 	handleDragStart(e: GestureEvent) {
@@ -271,9 +279,9 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		}
 	}
 
-	open() {
+	updateTransform() {
 		let r1 = this.$element.getBoundingClientRect();
-		let r2 = this.elImg.getBoundingClientRect();
+		let r2 = this.elImgWrap.getBoundingClientRect();
 
 		let sw = r1.width / r2.width;
 		let sh = r1.height / r2.height;
@@ -283,19 +291,51 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 		mutate(() => {
 			this.elBox.style.setProperty("--img-transform", trans);
+		});
+	}
 
-			mutate(() => {
-				this.elBox.classList.add("is-open");
-			});
+	open() {
+		this.isClosing = false;
+		this.updateTransform();
+
+		afterMutate(() => {
+			this.elBox.classList.add("is-open");
 		});
 	}
 
 	close() {
+		if (this.isClosing) {
+			return;
+		}
+
 		if (this.isExpanded) {
 			this.contract();
 		}
 
-		this.elBox.classList.remove("is-open");
-		document.body.removeChild(this.elBox);
+		this.updateTransform();
+
+		let box = this.elBox;
+		let remove = (e: TransitionEvent) => {
+			if (e.target !== box) return;
+
+			if (box.parentElement) {
+				box.parentElement.removeChild(box);
+			}
+
+			if (box === this.elBox) {
+				this.elBox = null;
+				this.elWrap = null;
+				this.elImgWrap = null;
+				this.elImg = null;
+			}
+		};
+
+		mutate(() => {
+			this.elBox.classList.remove("is-open");
+			this.elBox.classList.add("is-closing");
+			this.elBox.addEventListener("transitionend", remove);
+		});
+
+		this.isClosing = true;
 	}
 }
