@@ -307,10 +307,11 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		this.scaleX = 1;
 		this.scaleY = 1;
 
+		let activeScale = 1;
+
 		let gz = new Gesture(this.elImg);
 		gz.on("down", () => {
 			if (gz.swipes.length === 2) {
-				console.log("down", gz.swipes);
 			}
 		});
 
@@ -329,27 +330,27 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			let p = new Point((p3.x + p4.x) / 2, (p3.y + p4.y) / 2);
 			let odist = Math.hypot(Math.abs(p1.x - p2.x), Math.abs(p1.y - p2.y));
 			let dist = Math.hypot(Math.abs(p3.x - p4.x), Math.abs(p3.y - p4.y));
-			this.scaleX = this.scaleY = dist / odist;
+			let newScale = dist / odist;
+			this.scaleX = this.scaleY = newScale * activeScale;
 
 			let v = o.to(p);
-			let rx = (o.x - this.elImg.offsetLeft) / this.elImg.offsetWidth;
-			let ry = (o.y - this.elImg.offsetTop) / this.elImg.offsetHeight;
-			let w = this.elImg.offsetWidth;
-			let h = this.elImg.offsetHeight;
-			let px = (this.scaleX - 1) * rx * w;
-			let py = (this.scaleY - 1) * ry * h;
+			let rx = (o.x - this.ptImg.x) / (this.elImg.offsetWidth * activeScale);
+			let ry = (o.y - this.ptImg.y) / (this.elImg.offsetHeight * activeScale);
+
+			let px = (newScale - 1) * rx * (this.elImg.offsetWidth * activeScale);
+			let py = (newScale - 1) * ry * (this.elImg.offsetHeight * activeScale);
 
 			this.ptDrag = this.ptImg.copy().add(v);
 			this.ptDrag.x -= px;
 			this.ptDrag.y -= py;
 
-			console.log(w, this.scaleX, px);
-
 			this.render(this.ptDrag);
 		});
 
 		gz.on("up", () => {
-			console.log("up");
+			this.ptImg.x = this.ptDrag.x;
+			this.ptImg.y = this.ptDrag.y;
+			activeScale = this.scaleX;
 		});
 	}
 
