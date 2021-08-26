@@ -301,6 +301,56 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		afterMutate(() => {
 			this.elBox.classList.add("is-open");
 		});
+
+		this.elBox.classList.add("is-moved");
+		this.ptImg = new Point(this.elImg.offsetLeft, this.elImg.offsetTop);
+		this.scaleX = 1;
+		this.scaleY = 1;
+
+		let gz = new Gesture(this.elImg);
+		gz.on("down", () => {
+			if (gz.swipes.length === 2) {
+				console.log("down", gz.swipes);
+			}
+		});
+
+		gz.on("move", (e) => {
+			if (gz.swipes.length !== 2) {
+				return;
+			}
+
+			e.preventDefault();
+
+			let p1 = gz.swipes[0].origin;
+			let p2 = gz.swipes[1].origin;
+			let p3 = gz.swipes[0].position;
+			let p4 = gz.swipes[1].position;
+			let o = new Point((p1.x + p2.x) / 2, (p1.y + p2.y) / 2);
+			let p = new Point((p3.x + p4.x) / 2, (p3.y + p4.y) / 2);
+			let odist = Math.hypot(Math.abs(p1.x - p2.x), Math.abs(p1.y - p2.y));
+			let dist = Math.hypot(Math.abs(p3.x - p4.x), Math.abs(p3.y - p4.y));
+			this.scaleX = this.scaleY = dist / odist;
+
+			let v = o.to(p);
+			let rx = (o.x - this.elImg.offsetLeft) / this.elImg.offsetWidth;
+			let ry = (o.y - this.elImg.offsetTop) / this.elImg.offsetHeight;
+			let w = this.elImg.offsetWidth;
+			let h = this.elImg.offsetHeight;
+			let px = (this.scaleX - 1) * rx * w;
+			let py = (this.scaleY - 1) * ry * h;
+
+			this.ptDrag = this.ptImg.copy().add(v);
+			this.ptDrag.x -= px;
+			this.ptDrag.y -= py;
+
+			console.log(w, this.scaleX, px);
+
+			this.render(this.ptDrag);
+		});
+
+		gz.on("up", () => {
+			console.log("up");
+		});
 	}
 
 	close() {
