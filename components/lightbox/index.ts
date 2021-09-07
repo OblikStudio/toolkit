@@ -1,14 +1,16 @@
 import { Component } from "../../core/component";
-import { afterMutate, mutate } from "../../core/mutate";
-import { ticker } from "../../core/ticker";
-import { Gesture, GestureEvent } from "../../utils/gesture";
-import { Point, Vector } from "../../utils/math";
+import { Point } from "../../utils/math";
 
 interface Options {
 	template: HTMLTemplateElement;
 }
 
 export class Lightbox extends Component<HTMLImageElement, Options> {
+	/**
+	 * Image DOM offset from the viewport, subtracted when applying transform.
+	 */
+	ptOffset: Point;
+
 	/**
 	 * Active image position before any manipulation.
 	 */
@@ -31,7 +33,15 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	 */
 	scaleStatic: number;
 
+	/**
+	 * Coords at which a drag gesture has started.
+	 */
 	ptDown: Point;
+
+	/**
+	 * Final transform() offset.
+	 */
+	ptRender = new Point();
 
 	/**
 	 * Scale for the current zoom gesture.
@@ -84,11 +94,17 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 	open() {
 		this.elBox.classList.add("is-open");
-		this.ptStatic = new Point(this.elImg.offsetLeft, this.elImg.offsetTop);
+		this.ptOffset = new Point(this.elImg.offsetLeft, this.elImg.offsetTop);
+		this.ptStatic = this.ptOffset.copy();
 
 		let handleMove = (e: PointerEvent) => {
 			this.ptDelta.set(e.clientX - this.ptDown.x, e.clientY - this.ptDown.y);
-			this.elImg.style.transform = `translate(${this.ptDelta.x}px, ${this.ptDelta.y}px)`;
+			this.ptRender.set(
+				this.ptStatic.x + this.ptDelta.x - this.ptOffset.x,
+				this.ptStatic.y + this.ptDelta.y - this.ptOffset.y
+			);
+
+			this.elImg.style.transform = `translate(${this.ptRender.x}px, ${this.ptRender.y}px)`;
 		};
 
 		this.elBox.addEventListener("pointerdown", (e) => {
@@ -99,6 +115,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		});
 
 		this.elBox.addEventListener("pointerup", (e) => {
+			this.ptStatic.add(this.ptDelta);
 			this.elBox.removeEventListener("pointermove", handleMove);
 			this.elBox.classList.remove("is-moved");
 		});
