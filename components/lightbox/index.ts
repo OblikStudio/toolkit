@@ -5,6 +5,11 @@ interface Options {
 	template: HTMLTemplateElement;
 }
 
+interface Pointer {
+	id: number;
+	point: Point;
+}
+
 export class Lightbox extends Component<HTMLImageElement, Options> {
 	/**
 	 * Image DOM offset from the viewport, subtracted when applying transform.
@@ -47,6 +52,11 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	 * Scale for the current zoom gesture.
 	 */
 	scaleDelta: number;
+
+	/**
+	 * Currently active pointers.
+	 */
+	ptrs: Pointer[] = [];
 
 	elBox: HTMLElement;
 	elImgWrap: HTMLElement;
@@ -97,7 +107,16 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		this.ptOffset = new Point(this.elImg.offsetLeft, this.elImg.offsetTop);
 		this.ptStatic = this.ptOffset.copy();
 
+		/**
+		 * @todo calculate ptDelta from ptrs
+		 * @todo update ptTotalDelta and ptDown on pointerdown
+		 */
+
 		let handleMove = (e: PointerEvent) => {
+			this.ptrs
+				.find((p) => p.id === e.pointerId)
+				?.point.set(e.clientX, e.clientY);
+
 			this.ptDelta.set(e.clientX - this.ptDown.x, e.clientY - this.ptDown.y);
 			this.ptRender.set(
 				this.ptStatic.x + this.ptDelta.x - this.ptOffset.x,
@@ -109,15 +128,28 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 		this.elBox.addEventListener("pointerdown", (e) => {
 			e.preventDefault();
+
+			this.ptrs.push({
+				id: e.pointerId,
+				point: new Point(e.clientX, e.clientY),
+			});
+
 			this.ptDown = new Point(e.clientX, e.clientY);
 			this.elBox.addEventListener("pointermove", handleMove);
 			this.elBox.classList.add("is-moved");
 		});
 
 		this.elBox.addEventListener("pointerup", (e) => {
-			this.ptStatic.add(this.ptDelta);
-			this.elBox.removeEventListener("pointermove", handleMove);
-			this.elBox.classList.remove("is-moved");
+			let ptr = this.ptrs.find((p) => p.id === e.pointerId);
+			if (ptr) {
+				this.ptrs.splice(this.ptrs.indexOf(ptr), 1);
+			}
+
+			if (this.ptrs.length === 0) {
+				this.ptStatic.add(this.ptDelta);
+				this.elBox.removeEventListener("pointermove", handleMove);
+				this.elBox.classList.remove("is-moved");
+			}
 		});
 	}
 }
