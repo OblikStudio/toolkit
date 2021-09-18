@@ -113,6 +113,10 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		document.body.appendChild(this.elBox);
 	}
 
+	/**
+	 * @todo ptScaleStatic, ptScaleDelta, using avgPoint as focal point and
+	 * comparing average of original and current distance between all pointers.
+	 */
 	open() {
 		this.elBox.classList.add("is-open");
 		this.ptOffset = new Point(this.elImg.offsetLeft, this.elImg.offsetTop);
@@ -144,6 +148,9 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 				point: new Point(e.clientX, e.clientY),
 			});
 
+			/**
+			 * Add directly to ptStatic, instead of to ptTotalDelta.
+			 */
 			this.ptDown = avgPoint(this.ptrs);
 			this.ptTotalDelta.add(this.ptDelta);
 			this.ptDelta.set(0, 0);
