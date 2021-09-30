@@ -113,6 +113,24 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		document.body.appendChild(this.elBox);
 	}
 
+	getAverageDistance() {
+		let count = this.ptrs.length;
+
+		if (count > 1) {
+			let result = 0;
+
+			for (let i = 0; i < count; i++) {
+				let p1 = this.ptrs[i].point;
+				let p2 = (this.ptrs[i + 1] || this.ptrs[0]).point;
+				result += Math.hypot(Math.abs(p1.x - p2.x), Math.abs(p1.y - p2.y));
+			}
+
+			return result / count;
+		} else {
+			return null;
+		}
+	}
+
 	/**
 	 * @todo ptScaleStatic, ptScaleDelta, using avgPoint as focal point and
 	 * comparing average of original and current distance between all pointers.
@@ -121,6 +139,11 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		this.elBox.classList.add("is-open");
 		this.ptOffset = new Point(this.elImg.offsetLeft, this.elImg.offsetTop);
 		this.ptStatic = this.ptOffset.copy();
+
+		let scale = 1;
+		let scaleCurrent = 1;
+		let avgDistStatic = 1;
+		let avgDist = 1;
 
 		let handleMove = (e: PointerEvent) => {
 			this.ptrs
@@ -135,9 +158,18 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 				this.ptStatic.y + this.ptTotalDelta.y + this.ptDelta.y
 			);
 
+			// compensate scale offset:
 			this.elImg.style.transform = `translate(${
 				this.ptRender.x - this.ptOffset.x
-			}px, ${this.ptRender.y - this.ptOffset.y}px)`;
+			}px, ${this.ptRender.y - this.ptOffset.y}px) scale(${
+				scale * scaleCurrent
+			})`;
+
+			avgDist = this.getAverageDistance();
+
+			if (avgDist && avgDistStatic) {
+				scaleCurrent = avgDist / avgDistStatic;
+			}
 		};
 
 		this.elBox.addEventListener("pointerdown", (e) => {
@@ -155,6 +187,10 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			this.ptTotalDelta.add(this.ptDelta);
 			this.ptDelta.set(0, 0);
 
+			avgDistStatic = this.getAverageDistance();
+			scale *= scaleCurrent;
+			scaleCurrent = 1;
+
 			this.elBox.addEventListener("pointermove", handleMove);
 			this.elBox.classList.add("is-moved");
 		});
@@ -167,6 +203,10 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 			this.ptTotalDelta.add(this.ptDelta);
 			this.ptDelta.set(0, 0);
+
+			avgDistStatic = this.getAverageDistance();
+			scale *= scaleCurrent;
+			scaleCurrent = 1;
 
 			if (this.ptrs.length === 0) {
 				this.ptStatic.add(this.ptTotalDelta);
