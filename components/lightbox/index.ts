@@ -39,12 +39,6 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	ptDelta = new Point();
 
 	/**
-	 * Total offset from ptStatic for the current gesture, i.e. combination of
-	 * pointer up/down events.
-	 */
-	ptTotalDelta = new Point(); // entire offset from ptCurrent for the whole gesture
-
-	/**
 	 * Active scale excluding pinch gesture manipulation.
 	 */
 	scaleStatic: number;
@@ -132,8 +126,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	}
 
 	/**
-	 * @todo ptScaleStatic, ptScaleDelta, using avgPoint as focal point and
-	 * comparing average of original and current distance between all pointers.
+	 * @todo simplify logic
 	 */
 	open() {
 		this.elBox.classList.add("is-open");
@@ -144,6 +137,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		let scaleCurrent = 1;
 		let avgDistStatic = 1;
 		let avgDist = 1;
+		let ptPull = new Point();
 
 		let handleMove = (e: PointerEvent) => {
 			this.ptrs
@@ -153,12 +147,28 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			let avg = avgPoint(this.ptrs);
 			this.ptDelta.set(avg.x - this.ptDown.x, avg.y - this.ptDown.y);
 
-			this.ptRender.set(
-				this.ptStatic.x + this.ptTotalDelta.x + this.ptDelta.x,
-				this.ptStatic.y + this.ptTotalDelta.y + this.ptDelta.y
+			let w = this.elImg.offsetWidth;
+			let h = this.elImg.offsetHeight;
+
+			let sizeDiff = new Point(
+				(scaleCurrent - 1) * w * scale,
+				(scaleCurrent - 1) * h * scale
 			);
 
-			// compensate scale offset:
+			let downImgPos = new Point(this.ptStatic.x, this.ptStatic.y);
+
+			let pullRatio = new Point(
+				(this.ptDown.x - downImgPos.x) / (w * scale),
+				(this.ptDown.y - downImgPos.y) / (h * scale)
+			);
+
+			ptPull.set(sizeDiff.x * pullRatio.x, sizeDiff.y * pullRatio.y);
+
+			this.ptRender.set(
+				this.ptStatic.x + this.ptDelta.x - ptPull.x,
+				this.ptStatic.y + this.ptDelta.y - ptPull.y
+			);
+
 			this.elImg.style.transform = `translate(${
 				this.ptRender.x - this.ptOffset.x
 			}px, ${this.ptRender.y - this.ptOffset.y}px) scale(${
@@ -180,11 +190,8 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 				point: new Point(e.clientX, e.clientY),
 			});
 
-			/**
-			 * Add directly to ptStatic, instead of to ptTotalDelta.
-			 */
 			this.ptDown = avgPoint(this.ptrs);
-			this.ptTotalDelta.add(this.ptDelta);
+			this.ptStatic.add(this.ptDelta).subtract(ptPull);
 			this.ptDelta.set(0, 0);
 
 			avgDistStatic = this.getAverageDistance();
@@ -193,6 +200,8 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 			this.elBox.addEventListener("pointermove", handleMove);
 			this.elBox.classList.add("is-moved");
+
+			// render()
 		});
 
 		let handleOut = (e: PointerEvent) => {
@@ -201,22 +210,22 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 				this.ptrs.splice(this.ptrs.indexOf(ptr), 1);
 			}
 
-			this.ptTotalDelta.add(this.ptDelta);
+			this.ptStatic.add(this.ptDelta).subtract(ptPull);
 			this.ptDelta.set(0, 0);
+			ptPull.set(0, 0);
 
 			avgDistStatic = this.getAverageDistance();
 			scale *= scaleCurrent;
 			scaleCurrent = 1;
 
 			if (this.ptrs.length === 0) {
-				this.ptStatic.add(this.ptTotalDelta);
-				this.ptTotalDelta.set(0, 0);
-
 				this.elBox.removeEventListener("pointermove", handleMove);
 				this.elBox.classList.remove("is-moved");
 			} else {
 				this.ptDown = avgPoint(this.ptrs);
 			}
+
+			// render()
 		};
 
 		this.elBox.addEventListener("pointerup", handleOut);
