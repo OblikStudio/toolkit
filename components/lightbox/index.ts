@@ -139,31 +139,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		let avgDist = 1;
 		let ptPull = new Point();
 
-		let handleMove = (e: PointerEvent) => {
-			this.ptrs
-				.find((p) => p.id === e.pointerId)
-				?.point.set(e.clientX, e.clientY);
-
-			let avg = avgPoint(this.ptrs);
-			this.ptDelta.set(avg.x - this.ptDown.x, avg.y - this.ptDown.y);
-
-			let w = this.elImg.offsetWidth;
-			let h = this.elImg.offsetHeight;
-
-			let sizeDiff = new Point(
-				(scaleCurrent - 1) * w * scale,
-				(scaleCurrent - 1) * h * scale
-			);
-
-			let downImgPos = new Point(this.ptStatic.x, this.ptStatic.y);
-
-			let pullRatio = new Point(
-				(this.ptDown.x - downImgPos.x) / (w * scale),
-				(this.ptDown.y - downImgPos.y) / (h * scale)
-			);
-
-			ptPull.set(sizeDiff.x * pullRatio.x, sizeDiff.y * pullRatio.y);
-
+		let render = () => {
 			this.ptRender.set(
 				this.ptStatic.x + this.ptDelta.x - ptPull.x,
 				this.ptStatic.y + this.ptDelta.y - ptPull.y
@@ -174,12 +150,38 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			}px, ${this.ptRender.y - this.ptOffset.y}px) scale(${
 				scale * scaleCurrent
 			})`;
+		};
+
+		let handleMove = (e: PointerEvent) => {
+			this.ptrs
+				.find((p) => p.id === e.pointerId)
+				?.point.set(e.clientX, e.clientY);
+
+			let avg = avgPoint(this.ptrs);
+			this.ptDelta.set(avg.x - this.ptDown.x, avg.y - this.ptDown.y);
 
 			avgDist = this.getAverageDistance();
 
 			if (avgDist && avgDistStatic) {
 				scaleCurrent = avgDist / avgDistStatic;
 			}
+
+			let w = this.elImg.offsetWidth;
+			let h = this.elImg.offsetHeight;
+
+			let sizeDiff = new Point(
+				(scaleCurrent - 1) * w * scale,
+				(scaleCurrent - 1) * h * scale
+			);
+
+			let pullRatio = new Point(
+				(this.ptDown.x - this.ptStatic.x) / (w * scale),
+				(this.ptDown.y - this.ptStatic.y) / (h * scale)
+			);
+
+			ptPull.set(sizeDiff.x * pullRatio.x, sizeDiff.y * pullRatio.y);
+
+			render();
 		};
 
 		this.elBox.addEventListener("pointerdown", (e) => {
@@ -193,6 +195,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			this.ptDown = avgPoint(this.ptrs);
 			this.ptStatic.add(this.ptDelta).subtract(ptPull);
 			this.ptDelta.set(0, 0);
+			ptPull.set(0, 0);
 
 			avgDistStatic = this.getAverageDistance();
 			scale *= scaleCurrent;
@@ -201,7 +204,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			this.elBox.addEventListener("pointermove", handleMove);
 			this.elBox.classList.add("is-moved");
 
-			// render()
+			render();
 		});
 
 		let handleOut = (e: PointerEvent) => {
@@ -225,7 +228,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 				this.ptDown = avgPoint(this.ptrs);
 			}
 
-			// render()
+			render();
 		};
 
 		this.elBox.addEventListener("pointerup", handleOut);
