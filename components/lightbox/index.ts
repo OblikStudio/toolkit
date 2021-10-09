@@ -22,46 +22,18 @@ function avgPoint(points: Pointer[]) {
 }
 
 export class Lightbox extends Component<HTMLImageElement, Options> {
-	/**
-	 * Image DOM offset from the viewport, subtracted when applying transform.
-	 */
-	ptOffset: Point;
-
-	/**
-	 * Active image position before any manipulation.
-	 */
-	ptStatic: Point;
-
-	/**
-	 * Offset for the current pointer. Added to ptTotalOffset and reset on each
-	 * pointer up/down due to the different mechanics.
-	 */
+	ptOffset = new Point();
+	ptStatic = new Point();
+	ptDown = new Point();
 	ptDelta = new Point();
-
-	/**
-	 * Active scale excluding pinch gesture manipulation.
-	 */
-	scaleStatic: number;
-
-	/**
-	 * Coords at which a drag gesture has started.
-	 */
-	ptDown: Point;
-
-	/**
-	 * Final transform() offset.
-	 */
+	ptPull = new Point();
 	ptRender = new Point();
 
-	/**
-	 * Scale for the current zoom gesture.
-	 */
-	scaleDelta: number;
+	scaleStatic = 1;
+	scaleDelta = 1;
 
-	/**
-	 * Currently active pointers.
-	 */
 	ptrs: Pointer[] = [];
+	ptrDistStatic = 0;
 
 	elBox: HTMLElement;
 	elImgWrap: HTMLElement;
@@ -69,6 +41,12 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	elWrap: HTMLElement;
 	width: number;
 	height: number;
+
+	size = new Point();
+
+	downHandler = this.handleDown.bind(this);
+	moveHandler = this.handleMove.bind(this);
+	outHandler = this.handleOut.bind(this);
 
 	init() {
 		this.width = parseInt(this.$element.getAttribute("width"));
@@ -107,6 +85,107 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		document.body.appendChild(this.elBox);
 	}
 
+	open() {
+		this.elBox.classList.add("is-open");
+
+		this.size.set(this.elImg.offsetWidth, this.elImg.offsetHeight);
+		this.ptOffset.set(this.elImg.offsetLeft, this.elImg.offsetTop);
+		this.ptStatic.set(this.ptOffset);
+
+		this.elBox.addEventListener("pointerdown", this.downHandler);
+		this.elBox.addEventListener("pointerup", this.outHandler);
+		this.elBox.addEventListener("pointerleave", this.outHandler);
+		this.elBox.addEventListener("pointercancel", this.outHandler);
+	}
+
+	handleDown(e: PointerEvent) {
+		e.preventDefault();
+
+		this.ptrs.push({
+			id: e.pointerId,
+			point: new Point(e.clientX, e.clientY),
+		});
+
+		this.ptDown = avgPoint(this.ptrs);
+		this.ptStatic.add(this.ptDelta).subtract(this.ptPull);
+		this.ptDelta.set(0, 0);
+		this.ptPull.set(0, 0);
+
+		this.ptrDistStatic = this.getAverageDistance();
+		this.scaleStatic *= this.scaleDelta;
+		this.scaleDelta = 1;
+
+		this.elBox.addEventListener("pointermove", this.moveHandler);
+		this.elBox.classList.add("is-moved");
+
+		this.render();
+	}
+
+	handleMove(e: PointerEvent) {
+		this.ptrs
+			.find((p) => p.id === e.pointerId)
+			?.point.set(e.clientX, e.clientY);
+
+		let avg = avgPoint(this.ptrs);
+		this.ptDelta.set(avg.x - this.ptDown.x, avg.y - this.ptDown.y);
+
+		let avgDist = this.getAverageDistance();
+		if (avgDist && this.ptrDistStatic) {
+			this.scaleDelta = avgDist / this.ptrDistStatic;
+		}
+
+		let sizeDiff = new Point(
+			(this.scaleDelta - 1) * this.size.x * this.scaleStatic,
+			(this.scaleDelta - 1) * this.size.y * this.scaleStatic
+		);
+
+		let pullRatio = new Point(
+			(this.ptDown.x - this.ptStatic.x) / (this.size.x * this.scaleStatic),
+			(this.ptDown.y - this.ptStatic.y) / (this.size.y * this.scaleStatic)
+		);
+
+		this.ptPull.set(sizeDiff.x * pullRatio.x, sizeDiff.y * pullRatio.y);
+
+		this.render();
+	}
+
+	handleOut(e: PointerEvent) {
+		let ptr = this.ptrs.find((p) => p.id === e.pointerId);
+		if (ptr) {
+			this.ptrs.splice(this.ptrs.indexOf(ptr), 1);
+		}
+
+		this.ptStatic.add(this.ptDelta).subtract(this.ptPull);
+		this.ptDelta.set(0, 0);
+		this.ptPull.set(0, 0);
+
+		this.ptrDistStatic = this.getAverageDistance();
+		this.scaleStatic *= this.scaleDelta;
+		this.scaleDelta = 1;
+
+		if (this.ptrs.length === 0) {
+			this.elBox.removeEventListener("pointermove", this.moveHandler);
+			this.elBox.classList.remove("is-moved");
+		} else {
+			this.ptDown = avgPoint(this.ptrs);
+		}
+
+		this.render();
+	}
+
+	render() {
+		this.ptRender.set(
+			this.ptStatic.x + this.ptDelta.x - this.ptPull.x,
+			this.ptStatic.y + this.ptDelta.y - this.ptPull.y
+		);
+
+		this.elImg.style.transform = `translate(${
+			this.ptRender.x - this.ptOffset.x
+		}px, ${this.ptRender.y - this.ptOffset.y}px) scale(${
+			this.scaleStatic * this.scaleDelta
+		})`;
+	}
+
 	getAverageDistance() {
 		let count = this.ptrs.length;
 
@@ -123,116 +202,5 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		} else {
 			return null;
 		}
-	}
-
-	/**
-	 * @todo simplify logic
-	 */
-	open() {
-		this.elBox.classList.add("is-open");
-		this.ptOffset = new Point(this.elImg.offsetLeft, this.elImg.offsetTop);
-		this.ptStatic = this.ptOffset.copy();
-
-		let scale = 1;
-		let scaleCurrent = 1;
-		let avgDistStatic = 1;
-		let avgDist = 1;
-		let ptPull = new Point();
-
-		let render = () => {
-			this.ptRender.set(
-				this.ptStatic.x + this.ptDelta.x - ptPull.x,
-				this.ptStatic.y + this.ptDelta.y - ptPull.y
-			);
-
-			this.elImg.style.transform = `translate(${
-				this.ptRender.x - this.ptOffset.x
-			}px, ${this.ptRender.y - this.ptOffset.y}px) scale(${
-				scale * scaleCurrent
-			})`;
-		};
-
-		let handleMove = (e: PointerEvent) => {
-			this.ptrs
-				.find((p) => p.id === e.pointerId)
-				?.point.set(e.clientX, e.clientY);
-
-			let avg = avgPoint(this.ptrs);
-			this.ptDelta.set(avg.x - this.ptDown.x, avg.y - this.ptDown.y);
-
-			avgDist = this.getAverageDistance();
-
-			if (avgDist && avgDistStatic) {
-				scaleCurrent = avgDist / avgDistStatic;
-			}
-
-			let w = this.elImg.offsetWidth;
-			let h = this.elImg.offsetHeight;
-
-			let sizeDiff = new Point(
-				(scaleCurrent - 1) * w * scale,
-				(scaleCurrent - 1) * h * scale
-			);
-
-			let pullRatio = new Point(
-				(this.ptDown.x - this.ptStatic.x) / (w * scale),
-				(this.ptDown.y - this.ptStatic.y) / (h * scale)
-			);
-
-			ptPull.set(sizeDiff.x * pullRatio.x, sizeDiff.y * pullRatio.y);
-
-			render();
-		};
-
-		this.elBox.addEventListener("pointerdown", (e) => {
-			e.preventDefault();
-
-			this.ptrs.push({
-				id: e.pointerId,
-				point: new Point(e.clientX, e.clientY),
-			});
-
-			this.ptDown = avgPoint(this.ptrs);
-			this.ptStatic.add(this.ptDelta).subtract(ptPull);
-			this.ptDelta.set(0, 0);
-			ptPull.set(0, 0);
-
-			avgDistStatic = this.getAverageDistance();
-			scale *= scaleCurrent;
-			scaleCurrent = 1;
-
-			this.elBox.addEventListener("pointermove", handleMove);
-			this.elBox.classList.add("is-moved");
-
-			render();
-		});
-
-		let handleOut = (e: PointerEvent) => {
-			let ptr = this.ptrs.find((p) => p.id === e.pointerId);
-			if (ptr) {
-				this.ptrs.splice(this.ptrs.indexOf(ptr), 1);
-			}
-
-			this.ptStatic.add(this.ptDelta).subtract(ptPull);
-			this.ptDelta.set(0, 0);
-			ptPull.set(0, 0);
-
-			avgDistStatic = this.getAverageDistance();
-			scale *= scaleCurrent;
-			scaleCurrent = 1;
-
-			if (this.ptrs.length === 0) {
-				this.elBox.removeEventListener("pointermove", handleMove);
-				this.elBox.classList.remove("is-moved");
-			} else {
-				this.ptDown = avgPoint(this.ptrs);
-			}
-
-			render();
-		};
-
-		this.elBox.addEventListener("pointerup", handleOut);
-		this.elBox.addEventListener("pointerleave", handleOut);
-		this.elBox.addEventListener("pointercancel", handleOut);
 	}
 }
