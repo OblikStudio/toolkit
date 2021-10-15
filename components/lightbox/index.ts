@@ -42,8 +42,6 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	width: number;
 	height: number;
 
-	size = new Point();
-
 	downHandler = this.handleDown.bind(this);
 	moveHandler = this.handleMove.bind(this);
 	outHandler = this.handleOut.bind(this);
@@ -88,7 +86,6 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	open() {
 		this.elBox.classList.add("is-open");
 
-		this.size.set(this.elImg.offsetWidth, this.elImg.offsetHeight);
 		this.ptOffset.set(this.elImg.offsetLeft, this.elImg.offsetTop);
 		this.ptStatic.set(this.ptOffset);
 
@@ -142,17 +139,10 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			this.scaleDelta = avgDist / this.ptrDistStatic;
 		}
 
-		let sizeDiff = new Point(
-			(this.scaleDelta - 1) * this.size.x * this.scaleStatic,
-			(this.scaleDelta - 1) * this.size.y * this.scaleStatic
+		this.ptPull.set(
+			(this.scaleDelta - 1) * (this.ptDown.x - this.ptStatic.x),
+			(this.scaleDelta - 1) * (this.ptDown.y - this.ptStatic.y)
 		);
-
-		let pullRatio = new Point(
-			(this.ptDown.x - this.ptStatic.x) / (this.size.x * this.scaleStatic),
-			(this.ptDown.y - this.ptStatic.y) / (this.size.y * this.scaleStatic)
-		);
-
-		this.ptPull.set(sizeDiff.x * pullRatio.x, sizeDiff.y * pullRatio.y);
 
 		this.render();
 	}
