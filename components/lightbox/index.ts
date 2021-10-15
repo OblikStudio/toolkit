@@ -98,6 +98,22 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		this.elBox.addEventListener("pointercancel", this.outHandler);
 	}
 
+	pointersChange() {
+		if (this.ptrs.length) {
+			this.ptDown = avgPoint(this.ptrs);
+		} else {
+			this.ptDown = null;
+		}
+
+		this.ptStatic.add(this.ptDelta).subtract(this.ptPull);
+		this.ptDelta.set(0, 0);
+		this.ptPull.set(0, 0);
+
+		this.ptrDistStatic = this.getAverageDistance();
+		this.scaleStatic *= this.scaleDelta;
+		this.scaleDelta = 1;
+	}
+
 	handleDown(e: PointerEvent) {
 		e.preventDefault();
 
@@ -106,18 +122,10 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			point: new Point(e.clientX, e.clientY),
 		});
 
-		this.ptDown = avgPoint(this.ptrs);
-		this.ptStatic.add(this.ptDelta).subtract(this.ptPull);
-		this.ptDelta.set(0, 0);
-		this.ptPull.set(0, 0);
-
-		this.ptrDistStatic = this.getAverageDistance();
-		this.scaleStatic *= this.scaleDelta;
-		this.scaleDelta = 1;
-
 		this.elBox.addEventListener("pointermove", this.moveHandler);
 		this.elBox.classList.add("is-moved");
 
+		this.pointersChange();
 		this.render();
 	}
 
@@ -153,23 +161,18 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		let ptr = this.ptrs.find((p) => p.id === e.pointerId);
 		if (ptr) {
 			this.ptrs.splice(this.ptrs.indexOf(ptr), 1);
+		} else {
+			// On mobile, `pointerup` and `pointerleave` can both be triggered
+			// for the same pointer, causing handleOut() to run twice.
+			return;
 		}
-
-		this.ptStatic.add(this.ptDelta).subtract(this.ptPull);
-		this.ptDelta.set(0, 0);
-		this.ptPull.set(0, 0);
-
-		this.ptrDistStatic = this.getAverageDistance();
-		this.scaleStatic *= this.scaleDelta;
-		this.scaleDelta = 1;
 
 		if (this.ptrs.length === 0) {
 			this.elBox.removeEventListener("pointermove", this.moveHandler);
 			this.elBox.classList.remove("is-moved");
-		} else {
-			this.ptDown = avgPoint(this.ptrs);
 		}
 
+		this.pointersChange();
 		this.render();
 	}
 
