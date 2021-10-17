@@ -47,6 +47,10 @@ export class Point {
 		return this;
 	}
 
+	dist(p: Point) {
+		return Math.hypot(Math.abs(this.x - p.x), Math.abs(this.y - p.y));
+	}
+
 	to(input: Point) {
 		return new Vector(this, input);
 	}
