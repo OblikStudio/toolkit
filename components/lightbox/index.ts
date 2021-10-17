@@ -1,6 +1,14 @@
 import { Component } from "../../core/component";
 import { Point } from "../../utils/math";
 
+/**
+ * On down, if there's only one pointer and the last gesture (1) happened within
+ * TIME_DOUBLE_TAP, (2) within DIST_DOUBLE_TAP, and (3) was not a drag, flag a
+ * double-tap. On up, if the gesture was not a drag, trigger the double-tap.
+ */
+const DIST_DOUBLE_TAP = 50;
+const TIME_DOUBLE_TAP = 400;
+
 interface Options {
 	template: HTMLTemplateElement;
 }
@@ -8,6 +16,7 @@ interface Options {
 interface Pointer {
 	id: number;
 	point: Point;
+	origin: Point;
 }
 
 function avgPoint(points: Pointer[]) {
@@ -32,6 +41,10 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	scaleStatic = 1;
 	scaleDelta = 1;
 
+	isPinchToClose: boolean;
+	isDoubleTap: boolean;
+	lastTapUp: PointerEvent;
+
 	ptrs: Pointer[] = [];
 	ptrDistStatic = 0;
 
@@ -44,19 +57,18 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 	downHandler = this.handleDown.bind(this);
 	moveHandler = this.handleMove.bind(this);
-	outHandler = this.handleOut.bind(this);
+	outHandler = this.handleUp.bind(this);
 
 	init() {
 		this.width = parseInt(this.$element.getAttribute("width"));
 		this.height = parseInt(this.$element.getAttribute("height"));
 
 		this.$element.addEventListener("click", () => {
-			this.clone();
 			this.open();
 		});
 	}
 
-	clone() {
+	open() {
 		let target = this.$options.template.content.firstElementChild;
 
 		this.elBox = target.cloneNode(true) as HTMLElement;
@@ -81,18 +93,30 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		}
 
 		document.body.appendChild(this.elBox);
-	}
-
-	open() {
 		this.elBox.classList.add("is-open");
+		this.elBox.addEventListener("click", (e) => {
+			if (e.target !== this.elImg) {
+				this.close();
+			}
+		});
 
 		this.ptOffset.set(this.elImg.offsetLeft, this.elImg.offsetTop);
 		this.ptStatic.set(this.ptOffset);
+		this.scaleStatic = 1;
+		this.scaleDelta = 1;
 
 		this.elBox.addEventListener("pointerdown", this.downHandler);
 		this.elBox.addEventListener("pointerup", this.outHandler);
 		this.elBox.addEventListener("pointerleave", this.outHandler);
 		this.elBox.addEventListener("pointercancel", this.outHandler);
+	}
+
+	close() {
+		document.body.removeChild(this.elBox);
+		this.elBox = null;
+		this.elWrap = null;
+		this.elImgWrap = null;
+		this.elImg = null;
 	}
 
 	pointersChange() {
@@ -111,16 +135,41 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		this.scaleDelta = 1;
 	}
 
+	gestureStart(e: PointerEvent) {
+		if (this.scaleStatic === 1) {
+			this.isPinchToClose = true;
+		}
+
+		if (
+			this.lastTapUp &&
+			e.timeStamp - this.lastTapUp.timeStamp < TIME_DOUBLE_TAP
+		) {
+			let dist = Math.hypot(
+				Math.abs(e.clientX - this.lastTapUp.clientX),
+				Math.abs(e.clientY - this.lastTapUp.clientY)
+			);
+
+			if (dist < DIST_DOUBLE_TAP) {
+				this.isDoubleTap = true;
+			}
+		}
+
+		this.elBox.addEventListener("pointermove", this.moveHandler);
+		this.elBox.classList.add("is-moved");
+	}
+
 	handleDown(e: PointerEvent) {
 		e.preventDefault();
+
+		if (this.ptrs.length === 0) {
+			this.gestureStart(e);
+		}
 
 		this.ptrs.push({
 			id: e.pointerId,
 			point: new Point(e.clientX, e.clientY),
+			origin: new Point(e.clientX, e.clientY),
 		});
-
-		this.elBox.addEventListener("pointermove", this.moveHandler);
-		this.elBox.classList.add("is-moved");
 
 		this.pointersChange();
 		this.render();
@@ -137,6 +186,10 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		let avgDist = this.getAverageDistance();
 		if (avgDist && this.ptrDistStatic) {
 			this.scaleDelta = avgDist / this.ptrDistStatic;
+
+			if (this.scaleDelta > 1) {
+				this.isPinchToClose = false;
+			}
 		}
 
 		this.ptPull.set(
@@ -147,23 +200,57 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		this.render();
 	}
 
-	handleOut(e: PointerEvent) {
+	handleUp(e: PointerEvent) {
 		let ptr = this.ptrs.find((p) => p.id === e.pointerId);
-		if (ptr) {
-			this.ptrs.splice(this.ptrs.indexOf(ptr), 1);
-		} else {
+		if (!ptr) {
 			// On mobile, `pointerup` and `pointerleave` can both be triggered
 			// for the same pointer, causing handleOut() to run twice.
 			return;
 		}
 
-		if (this.ptrs.length === 0) {
-			this.elBox.removeEventListener("pointermove", this.moveHandler);
-			this.elBox.classList.remove("is-moved");
+		this.ptrs.splice(this.ptrs.indexOf(ptr), 1);
+
+		if (ptr.point.dist(ptr.origin) < DIST_DOUBLE_TAP) {
+			this.lastTapUp = e;
+		} else {
+			this.isDoubleTap = false;
 		}
 
 		this.pointersChange();
-		this.render();
+
+		if (this.ptrs.length === 0) {
+			this.gestureEnd();
+		}
+
+		if (this.elBox) {
+			this.render();
+		}
+	}
+
+	gestureEnd() {
+		this.elBox.removeEventListener("pointermove", this.moveHandler);
+		this.elBox.classList.remove("is-moved");
+
+		if (this.isDoubleTap) {
+			if (this.scaleStatic > 1) {
+				this.ptStatic.set(this.elImg.offsetLeft, this.elImg.offsetTop);
+				this.scaleStatic = 1;
+			} else {
+				// @todo set ptPull
+				this.scaleStatic = 1.5;
+			}
+
+			this.isDoubleTap = false;
+			this.lastTapUp = null;
+		}
+
+		if (this.isPinchToClose && this.scaleStatic < 1) {
+			this.close();
+		} else if (this.scaleStatic < 1) {
+			this.ptStatic.set(this.elImg.offsetLeft, this.elImg.offsetTop);
+			this.scaleStatic = 1;
+			navigator.vibrate?.(50);
+		}
 	}
 
 	render() {
