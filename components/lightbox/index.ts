@@ -136,9 +136,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	}
 
 	gestureStart(e: PointerEvent) {
-		if (this.scaleStatic === 1) {
-			this.isPinchToClose = true;
-		}
+		this.isPinchToClose = this.scaleStatic === 1;
 
 		if (
 			this.lastTapUp &&
@@ -210,6 +208,10 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 		this.ptrs.splice(this.ptrs.indexOf(ptr), 1);
 
+		/**
+		 * @todo fix case where pointer is dragged and brought back to the same
+		 * place, falsely considered as a tap
+		 */
 		if (ptr.point.dist(ptr.origin) < DIST_DOUBLE_TAP) {
 			this.lastTapUp = e;
 		} else {
@@ -219,7 +221,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		this.pointersChange();
 
 		if (this.ptrs.length === 0) {
-			this.gestureEnd();
+			this.gestureEnd(e);
 		}
 
 		if (this.elBox) {
@@ -227,7 +229,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		}
 	}
 
-	gestureEnd() {
+	gestureEnd(e: PointerEvent) {
 		this.elBox.removeEventListener("pointermove", this.moveHandler);
 		this.elBox.classList.remove("is-moved");
 
@@ -236,8 +238,14 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 				this.ptStatic.set(this.elImg.offsetLeft, this.elImg.offsetTop);
 				this.scaleStatic = 1;
 			} else {
-				// @todo set ptPull
-				this.scaleStatic = 1.5;
+				let scale = this.width / this.elImg.offsetWidth;
+				let pull = new Point(
+					(scale - 1) * (e.clientX - this.ptStatic.x),
+					(scale - 1) * (e.clientY - this.ptStatic.y)
+				);
+
+				this.ptStatic.subtract(pull);
+				this.scaleStatic = scale;
 			}
 
 			this.isDoubleTap = false;
