@@ -2,6 +2,16 @@ import { Component } from "../../core/component";
 import { Point } from "../../utils/math";
 
 /**
+ * @todo refactor bound constraints
+ * @todo scale overdrag, not allowing to scale past a point
+ * @todo drag inertia
+ * @todo lightbox closed when drag starts outside of image
+ * @todo smooth open/close transitions
+ * @todo gradual opacity change on pinch-close
+ * @todo rotate on pinch-close
+ */
+
+/**
  * On down, if there's only one pointer and the last gesture (1) happened within
  * TIME_DOUBLE_TAP, (2) within DIST_DOUBLE_TAP, and (3) was not a drag, flag a
  * double-tap. On up, if the gesture was not a drag, trigger the double-tap.
@@ -58,6 +68,9 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	downHandler = this.handleDown.bind(this);
 	moveHandler = this.handleMove.bind(this);
 	outHandler = this.handleUp.bind(this);
+
+	imgSize = new Point();
+	rectBounds: DOMRectReadOnly;
 
 	init() {
 		this.width = parseInt(this.$element.getAttribute("width"));
@@ -259,6 +272,85 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			this.scaleStatic = 1;
 			navigator.vibrate?.(50);
 		}
+
+		this.updateBounds();
+		this.constrainPoint(this.ptStatic, false);
+	}
+
+	getMaxBoundsRect() {
+		if (window.innerWidth > 600) {
+			let w = window.innerWidth / 3;
+			let h = window.innerHeight / 3;
+			return new DOMRect(w, h, w, h);
+		} else {
+			return new DOMRect(0, 0, window.innerWidth, window.innerHeight);
+		}
+	}
+
+	/**
+	 * @todo use innerBounds and outerBounds?
+	 */
+	updateBounds() {
+		this.imgSize.set(
+			this.elImg.offsetWidth * this.scaleStatic * this.scaleDelta,
+			this.elImg.offsetHeight * this.scaleStatic * this.scaleDelta
+		);
+
+		let r2 = this.elImgWrap.getBoundingClientRect();
+		let r3 = this.getMaxBoundsRect();
+
+		let bt = Math.min(
+			r2.top,
+			r2.bottom - this.imgSize.y,
+			r3.bottom - this.imgSize.y
+		);
+
+		let br = Math.max(
+			r2.right,
+			r2.left + this.imgSize.x,
+			r3.left + this.imgSize.x
+		);
+
+		let bb = Math.max(
+			r2.bottom,
+			r2.top + this.imgSize.y,
+			r3.top + this.imgSize.y
+		);
+
+		let bl = Math.min(
+			r2.left,
+			r2.right - this.imgSize.x,
+			r3.right - this.imgSize.x
+		);
+
+		this.rectBounds = new DOMRectReadOnly(bl, bt, br - bl, bb - bt);
+	}
+
+	getOverdrag(amount: number) {
+		let limit = 150;
+		return (amount * limit) / (amount + limit);
+	}
+
+	constrainPoint(p: Point, overdrag = true) {
+		let r2 = this.rectBounds;
+		let dt = r2.top - p.y;
+		let dl = r2.left - p.x;
+		let dr = p.x + this.imgSize.x - r2.right;
+		let db = p.y + this.imgSize.y - r2.bottom;
+
+		if (overdrag) {
+			if (dt > 0) p.y = r2.top - this.getOverdrag(dt);
+			if (dl > 0) p.x = r2.left - this.getOverdrag(dl);
+			if (dr > 0) p.x = r2.right - this.imgSize.x + this.getOverdrag(dr);
+			if (db > 0) p.y = r2.bottom - this.imgSize.y + this.getOverdrag(db);
+		} else {
+			if (dt > 0) p.y = r2.top;
+			if (dl > 0) p.x = r2.left;
+			if (dr > 0) p.x = r2.right - this.imgSize.x;
+			if (db > 0) p.y = r2.bottom - this.imgSize.y;
+		}
+
+		p.set(p.x, p.y);
 	}
 
 	render() {
@@ -266,6 +358,9 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			this.ptStatic.x + this.ptDelta.x - this.ptPull.x,
 			this.ptStatic.y + this.ptDelta.y - this.ptPull.y
 		);
+
+		this.updateBounds();
+		this.constrainPoint(this.ptRender);
 
 		this.elImg.style.transform = `translate(${
 			this.ptRender.x - this.ptOffset.x
