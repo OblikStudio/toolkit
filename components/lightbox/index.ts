@@ -55,6 +55,9 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	isDoubleTap: boolean;
 	lastTapUp: PointerEvent;
 
+	isSwipeDownClose: boolean;
+	swipeDown: number;
+
 	ptrs: Pointer[] = [];
 	ptrDistStatic = 0;
 
@@ -167,13 +170,16 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 		this.elBox.addEventListener("pointermove", this.moveHandler);
 		this.elBox.classList.add("is-moved");
+
+		this.isSwipeDownClose =
+			this.rectBounds.bottom === this.ptRender.y + this.imgSize.y;
 	}
 
 	handleDown(e: PointerEvent) {
 		e.preventDefault();
 
-		if (this.ptrs.length === 0) {
-			this.gestureStart(e);
+		if (this.swipeDown > 25) {
+			return;
 		}
 
 		this.ptrs.push({
@@ -184,6 +190,14 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 		this.pointersChange();
 		this.render();
+
+		if (this.ptrs.length === 1) {
+			this.gestureStart(e);
+		}
+
+		if (this.ptrs.length > 1) {
+			this.isSwipeDownClose = false;
+		}
 	}
 
 	handleMove(e: PointerEvent) {
@@ -273,8 +287,17 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			navigator.vibrate?.(50);
 		}
 
-		this.updateBounds();
-		this.constrainPoint(this.ptStatic, false);
+		if (this.isSwipeDownClose && this.swipeDown > 100) {
+			this.close();
+		}
+
+		if (this.elImg) {
+			// not closed by one of the conditions above
+			this.updateBounds();
+			this.constrainPoint(this.ptStatic, false);
+		}
+
+		this.swipeDown = 0;
 	}
 
 	getMaxBoundsRect() {
@@ -283,45 +306,24 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			let h = window.innerHeight / 3;
 			return new DOMRect(w, h, w, h);
 		} else {
-			return new DOMRect(0, 0, window.innerWidth, window.innerHeight);
+			let h = Math.min(this.imgSize.y, window.innerHeight);
+			return new DOMRect(0, (window.innerHeight - h) / 2, window.innerWidth, h);
 		}
 	}
 
-	/**
-	 * @todo use innerBounds and outerBounds?
-	 */
 	updateBounds() {
 		this.imgSize.set(
 			this.elImg.offsetWidth * this.scaleStatic * this.scaleDelta,
 			this.elImg.offsetHeight * this.scaleStatic * this.scaleDelta
 		);
 
-		let r2 = this.elImgWrap.getBoundingClientRect();
 		let r3 = this.getMaxBoundsRect();
-
-		let bt = Math.min(
-			r2.top,
-			r2.bottom - this.imgSize.y,
-			r3.bottom - this.imgSize.y
-		);
-
-		let br = Math.max(
-			r2.right,
-			r2.left + this.imgSize.x,
-			r3.left + this.imgSize.x
-		);
-
-		let bb = Math.max(
-			r2.bottom,
-			r2.top + this.imgSize.y,
-			r3.top + this.imgSize.y
-		);
-
-		let bl = Math.min(
-			r2.left,
-			r2.right - this.imgSize.x,
-			r3.right - this.imgSize.x
-		);
+		let w = Math.max(this.imgSize.x, r3.width);
+		let h = Math.max(this.imgSize.y, r3.height);
+		let bt = r3.bottom - h;
+		let br = r3.left + w;
+		let bb = r3.top + h;
+		let bl = r3.right - w;
 
 		this.rectBounds = new DOMRectReadOnly(bl, bt, br - bl, bb - bt);
 	}
@@ -342,7 +344,13 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			if (dt > 0) p.y = r2.top - this.getOverdrag(dt);
 			if (dl > 0) p.x = r2.left - this.getOverdrag(dl);
 			if (dr > 0) p.x = r2.right - this.imgSize.x + this.getOverdrag(dr);
-			if (db > 0) p.y = r2.bottom - this.imgSize.y + this.getOverdrag(db);
+			if (db > 0) {
+				if (!this.isSwipeDownClose) {
+					p.y = r2.bottom - this.imgSize.y + this.getOverdrag(db);
+				} else {
+					this.swipeDown = db;
+				}
+			}
 		} else {
 			if (dt > 0) p.y = r2.top;
 			if (dl > 0) p.x = r2.left;
