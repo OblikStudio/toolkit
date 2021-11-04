@@ -1,8 +1,8 @@
 import { Component } from "../../core/component";
-import { Point } from "../../utils/math";
+import { clamp, Point } from "../../utils/math";
 
 /**
- * @todo refactor bound constraints
+ * @todo swipe up to close
  * @todo scale overdrag, not allowing to scale past a point
  * @todo drag inertia
  * @todo lightbox closed when drag starts outside of image
@@ -56,7 +56,14 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	lastTapUp: PointerEvent;
 
 	isSwipeDownClose: boolean;
-	swipeDown: number;
+	swipeDown = 0;
+	swipeDownCoef = 0;
+
+	/**
+	 * If delta is > 0, the user is continuing with the gesture, otherwise he's
+	 * reversing it.
+	 */
+	swipeDownDelta = 0;
 
 	ptrs: Pointer[] = [];
 	ptrDistStatic = 0;
@@ -116,7 +123,11 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			}
 		});
 
-		this.ptOffset.set(this.elImg.offsetLeft, this.elImg.offsetTop);
+		// Using client rect, rather than offsetTop/Left because elImgWrap has
+		// transform, causing elBox to no longer be the offsetParent.
+		let r = this.elImg.getBoundingClientRect();
+		this.ptOffset.set(r.left, r.top);
+
 		this.ptStatic.set(this.ptOffset);
 		this.scaleStatic = 1;
 		this.scaleDelta = 1;
@@ -287,7 +298,10 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			navigator.vibrate?.(50);
 		}
 
-		if (this.isSwipeDownClose && this.swipeDown > 100) {
+		if (
+			this.isSwipeDownClose &&
+			(this.swipeDownCoef === 1 || this.swipeDownDelta > 0)
+		) {
 			this.close();
 		}
 
@@ -298,6 +312,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		}
 
 		this.swipeDown = 0;
+		this.swipeDownDelta = 0;
 	}
 
 	getMaxBoundsRect() {
@@ -340,6 +355,8 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		let dr = p.x + this.imgSize.x - r2.right;
 		let db = p.y + this.imgSize.y - r2.bottom;
 
+		this.swipeDown = 0;
+
 		if (overdrag) {
 			if (dt > 0) p.y = r2.top - this.getOverdrag(dt);
 			if (dl > 0) p.x = r2.left - this.getOverdrag(dl);
@@ -369,6 +386,14 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 		this.updateBounds();
 		this.constrainPoint(this.ptRender);
+
+		let swipeDownMax = window.innerHeight / 2;
+		let lastSwipeDownCoef = this.swipeDownCoef;
+		this.swipeDownCoef = clamp(this.swipeDown / swipeDownMax, 0, 1);
+		this.swipeDownDelta = this.swipeDownCoef - lastSwipeDownCoef;
+
+		let opacity = 1 - this.swipeDownCoef;
+		this.elBox.style.setProperty("--opacity", opacity.toString());
 
 		this.elImg.style.transform = `translate(${
 			this.ptRender.x - this.ptOffset.x

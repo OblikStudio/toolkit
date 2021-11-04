@@ -7,7 +7,7 @@
 	justify-content: center;
 	width: 100%;
 	height: 100%;
-	background-color: rgba(0, 0, 0, 0.6);
+	background-color: rgba(0, 0, 0, calc(var(--opacity, 1) * 0.8));
 	touch-action: none;
 
 	[data-img] {
@@ -17,7 +17,11 @@
 }
 
 .b-lightbox.is-open {
-	transition: opacity 0.3s ease;
+	transition: background-color 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+
+	[data-img-wrap] {
+		transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+	}
 
 	[data-img] {
 		transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
@@ -62,9 +66,19 @@
 }
 
 .b-lightbox.is-moved {
+	transition: none;
+
+	[data-img-wrap] {
+		transition: none;
+	}
+
 	[data-img] {
 		transition: none;
 	}
+}
+
+.b-lightbox [data-img-wrap] {
+	transform: scale(calc(1 - calc(1 - var(--opacity, 1)) * 0.25));
 }
 
 .b-lightbox [data-box] {
