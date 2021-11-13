@@ -2,7 +2,6 @@ import { Component } from "../../core/component";
 import { clamp, Point } from "../../utils/math";
 
 /**
- * @todo swipe up to close
  * @todo scale overdrag, not allowing to scale past a point
  * @todo drag inertia
  * @todo lightbox closed when drag starts outside of image
@@ -273,7 +272,12 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 		if (this.isDoubleTap) {
 			if (this.scaleStatic > 1) {
-				this.ptStatic.set(this.elImg.offsetLeft, this.elImg.offsetTop);
+				let dx = this.lastTapUp.clientX - this.ptStatic.x;
+				let dy = this.lastTapUp.clientY - this.ptStatic.y;
+				let r = 1 - 1 / this.scaleStatic;
+
+				this.ptStatic.x += dx * r;
+				this.ptStatic.y += dy * r;
 				this.scaleStatic = 1;
 			} else {
 				let scale = this.width / this.elImg.offsetWidth;
