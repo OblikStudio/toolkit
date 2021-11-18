@@ -2,6 +2,7 @@ import { Component } from "../../core/component";
 import { clamp, Point } from "../../utils/math";
 
 /**
+ * @todo fix not able to initially swipe down to close
  * @todo scale overdrag, not allowing to scale past a point
  * @todo drag inertia
  * @todo lightbox closed when drag starts outside of image
@@ -320,14 +321,17 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	}
 
 	getMaxBoundsRect() {
-		if (window.innerWidth > 600) {
-			let w = window.innerWidth / 3;
-			let h = window.innerHeight / 3;
-			return new DOMRect(w, h, w, h);
-		} else {
-			let h = Math.min(this.imgSize.y, window.innerHeight);
-			return new DOMRect(0, (window.innerHeight - h) / 2, window.innerWidth, h);
-		}
+		let r = this.elWrap.getBoundingClientRect();
+		let w = Math.min(this.imgSize.x, r.width);
+		let h = Math.min(this.imgSize.y, r.height);
+
+		return new DOMRect(
+			// `window.innerWidth` not used because it doesn't include scrollbar
+			(document.body.clientWidth - w) / 2,
+			(window.innerHeight - h) / 2,
+			w,
+			h
+		);
 	}
 
 	updateBounds() {
