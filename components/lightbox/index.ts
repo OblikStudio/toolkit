@@ -2,7 +2,6 @@ import { Component } from "../../core/component";
 import { clamp, Point } from "../../utils/math";
 
 /**
- * @todo fix not able to initially swipe down to close
  * @todo scale overdrag, not allowing to scale past a point
  * @todo drag inertia
  * @todo lightbox closed when drag starts outside of image
@@ -123,14 +122,12 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			}
 		});
 
-		// Using client rect, rather than offsetTop/Left because elImgWrap has
-		// transform, causing elBox to no longer be the offsetParent.
-		let r = this.elImg.getBoundingClientRect();
-		this.ptOffset.set(r.left, r.top);
-
-		this.ptStatic.set(this.ptOffset);
 		this.scaleStatic = 1;
 		this.scaleDelta = 1;
+
+		this.updateBounds();
+		this.ptOffset.set(this.rectBounds.x, this.rectBounds.y);
+		this.ptStatic.set(this.ptOffset);
 
 		this.elBox.addEventListener("pointerdown", this.downHandler);
 		this.elBox.addEventListener("pointerup", this.outHandler);
