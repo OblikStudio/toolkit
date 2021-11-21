@@ -48,7 +48,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	ptRender = new Point();
 
 	scaleStatic = 1;
-	scaleDelta = 1;
+	scalePointerChange = 1;
 
 	isPinchToClose: boolean;
 	isDoubleTap: boolean;
@@ -123,7 +123,6 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		});
 
 		this.scaleStatic = 1;
-		this.scaleDelta = 1;
 
 		this.updateBounds();
 		this.ptOffset.set(this.rectBounds.x, this.rectBounds.y);
@@ -155,8 +154,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		this.ptPull.set(0, 0);
 
 		this.ptrDistStatic = this.getAverageDistance();
-		this.scaleStatic *= this.scaleDelta;
-		this.scaleDelta = 1;
+		this.scalePointerChange = this.scaleStatic;
 	}
 
 	gestureStart(e: PointerEvent) {
@@ -218,16 +216,18 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 		let avgDist = this.getAverageDistance();
 		if (avgDist && this.ptrDistStatic) {
-			this.scaleDelta = avgDist / this.ptrDistStatic;
+			this.scaleStatic =
+				(avgDist / this.ptrDistStatic) * this.scalePointerChange;
 
-			if (this.scaleDelta > 1) {
+			if (this.scaleStatic > 1) {
 				this.isPinchToClose = false;
 			}
 		}
 
+		let scaleDelta = this.scaleStatic / this.scalePointerChange;
 		this.ptPull.set(
-			(this.scaleDelta - 1) * (this.ptDown.x - this.ptStatic.x),
-			(this.scaleDelta - 1) * (this.ptDown.y - this.ptStatic.y)
+			(scaleDelta - 1) * (this.ptDown.x - this.ptStatic.x),
+			(scaleDelta - 1) * (this.ptDown.y - this.ptStatic.y)
 		);
 
 		this.render();
@@ -333,8 +333,8 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 	updateBounds() {
 		this.imgSize.set(
-			this.elImg.offsetWidth * this.scaleStatic * this.scaleDelta,
-			this.elImg.offsetHeight * this.scaleStatic * this.scaleDelta
+			this.elImg.offsetWidth * this.scaleStatic,
+			this.elImg.offsetHeight * this.scaleStatic
 		);
 
 		let r3 = this.getMaxBoundsRect();
@@ -402,9 +402,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 		this.elImg.style.transform = `translate(${
 			this.ptRender.x - this.ptOffset.x
-		}px, ${this.ptRender.y - this.ptOffset.y}px) scale(${
-			this.scaleStatic * this.scaleDelta
-		})`;
+		}px, ${this.ptRender.y - this.ptOffset.y}px) scale(${this.scaleStatic})`;
 	}
 
 	getAverageDistance() {
