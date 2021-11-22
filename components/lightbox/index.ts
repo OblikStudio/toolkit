@@ -2,7 +2,10 @@ import { Component } from "../../core/component";
 import { clamp, Point } from "../../utils/math";
 
 /**
- * @todo scale overdrag, not allowing to scale past a point
+ * @todo scale overdrag end from between fingers
+ *  1. Store effective drag point (point between fingers when pinching)
+ *  2. If last pointer's delta is lower than X, consider that the gesture end is
+ *     the point from (1), rather than the actual pointerup point.
  * @todo drag inertia
  * @todo lightbox closed when drag starts outside of image
  * @todo smooth open/close transitions
@@ -49,6 +52,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 	scaleStatic = 1;
 	scalePointerChange = 1;
+	scaleLimit = 7;
 
 	isPinchToClose: boolean;
 	isDoubleTap: boolean;
@@ -218,6 +222,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		if (avgDist && this.ptrDistStatic) {
 			this.scaleStatic =
 				(avgDist / this.ptrDistStatic) * this.scalePointerChange;
+			this.scaleStatic = this.constrainScale(this.scaleStatic);
 
 			if (this.scaleStatic > 1) {
 				this.isPinchToClose = false;
@@ -231,6 +236,21 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		);
 
 		this.render();
+	}
+
+	constrainScale(scale: number) {
+		let limit = this.scaleLimit;
+		let overLimit = scale - limit;
+
+		if (overLimit > 0) {
+			scale = limit + this.getScaleOverLimit(overLimit, limit);
+		}
+
+		return scale;
+	}
+
+	getScaleOverLimit(amount: number, limit: number) {
+		return (amount * limit) / (amount + limit);
 	}
 
 	handleUp(e: PointerEvent) {
@@ -297,6 +317,15 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		} else if (this.scaleStatic < 1) {
 			this.ptStatic.set(this.elImg.offsetLeft, this.elImg.offsetTop);
 			this.scaleStatic = 1;
+			navigator.vibrate?.(50);
+		} else if (this.scaleStatic > this.scaleLimit) {
+			let dx = e.clientX - this.ptStatic.x;
+			let dy = e.clientY - this.ptStatic.y;
+			let r = 1 - this.scaleLimit / this.scaleStatic;
+
+			this.ptStatic.x += dx * r;
+			this.ptStatic.y += dy * r;
+			this.scaleStatic = this.scaleLimit;
 			navigator.vibrate?.(50);
 		}
 
