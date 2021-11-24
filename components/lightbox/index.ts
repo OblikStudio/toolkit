@@ -2,10 +2,10 @@ import { Component } from "../../core/component";
 import { clamp, Point } from "../../utils/math";
 
 /**
- * @todo scale overdrag end from between fingers
- *  1. Store effective drag point (point between fingers when pinching)
- *  2. If last pointer's delta is lower than X, consider that the gesture end is
- *     the point from (1), rather than the actual pointerup point.
+ * @todo fix scale snap when:
+ * 1. pinch-zoom beyond limit
+ * 2. let one finger go
+ * 3. continue pinching with another finger again
  * @todo drag inertia
  * @todo lightbox closed when drag starts outside of image
  * @todo smooth open/close transitions
@@ -20,6 +20,8 @@ import { clamp, Point } from "../../utils/math";
  */
 const DIST_DOUBLE_TAP = 50;
 const TIME_DOUBLE_TAP = 400;
+
+const DIST_LAST_FOCUS = 10;
 
 interface Options {
 	template: HTMLTemplateElement;
@@ -49,6 +51,13 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	ptDelta = new Point();
 	ptPull = new Point();
 	ptRender = new Point();
+
+	/**
+	 * Last effective point of focus, computed from the average of all pointers.
+	 * Updated on pointerup only if the movement since last pointerup was
+	 * greater than X.
+	 */
+	ptLastFocus = new Point();
 
 	scaleStatic = 1;
 	scalePointerChange = 1;
@@ -261,6 +270,10 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			return;
 		}
 
+		if (!this.ptLastFocus || this.ptDelta.dist() > DIST_LAST_FOCUS) {
+			this.ptLastFocus = avgPoint(this.ptrs);
+		}
+
 		this.ptrs.splice(this.ptrs.indexOf(ptr), 1);
 
 		/**
@@ -319,8 +332,8 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			this.scaleStatic = 1;
 			navigator.vibrate?.(50);
 		} else if (this.scaleStatic > this.scaleLimit) {
-			let dx = e.clientX - this.ptStatic.x;
-			let dy = e.clientY - this.ptStatic.y;
+			let dx = this.ptLastFocus.x - this.ptStatic.x;
+			let dy = this.ptLastFocus.y - this.ptStatic.y;
 			let r = 1 - this.scaleLimit / this.scaleStatic;
 
 			this.ptStatic.x += dx * r;
