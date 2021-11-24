@@ -47,8 +47,16 @@ export class Point {
 		return this;
 	}
 
-	dist(p: Point) {
-		return Math.hypot(Math.abs(this.x - p.x), Math.abs(this.y - p.y));
+	dist(p?: Point) {
+		let x = this.x;
+		let y = this.y;
+
+		if (p) {
+			x -= p.x;
+			y -= p.y;
+		}
+
+		return Math.hypot(Math.abs(x), Math.abs(y));
 	}
 
 	to(input: Point) {
