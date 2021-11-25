@@ -2,10 +2,6 @@ import { Component } from "../../core/component";
 import { clamp, Point } from "../../utils/math";
 
 /**
- * @todo fix scale snap when:
- * 1. pinch-zoom beyond limit
- * 2. let one finger go
- * 3. continue pinching with another finger again
  * @todo drag inertia
  * @todo lightbox closed when drag starts outside of image
  * @todo smooth open/close transitions
@@ -62,6 +58,17 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	scaleStatic = 1;
 	scalePointerChange = 1;
 	scaleLimit = 7;
+
+	/**
+	 * Unconstrained scale, as defined by the user's gestures.
+	 */
+	scaleGesture: number;
+
+	/**
+	 * Unconstrained scale, as defined by the user's gestures, at the time of a
+	 * pointer change.
+	 */
+	scaleGesturePointerChange: number;
 
 	isPinchToClose: boolean;
 	isDoubleTap: boolean;
@@ -168,9 +175,11 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 		this.ptrDistStatic = this.getAverageDistance();
 		this.scalePointerChange = this.scaleStatic;
+		this.scaleGesturePointerChange = this.scaleGesture;
 	}
 
 	gestureStart(e: PointerEvent) {
+		this.scaleGesture = this.scaleStatic;
 		this.isPinchToClose = this.scaleStatic === 1;
 
 		if (
@@ -229,14 +238,15 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 		let avgDist = this.getAverageDistance();
 		if (avgDist && this.ptrDistStatic) {
-			this.scaleStatic =
-				(avgDist / this.ptrDistStatic) * this.scalePointerChange;
-			this.scaleStatic = this.constrainScale(this.scaleStatic);
+			this.scaleGesture =
+				(avgDist / this.ptrDistStatic) * this.scaleGesturePointerChange;
 
 			if (this.scaleStatic > 1) {
 				this.isPinchToClose = false;
 			}
 		}
+
+		this.scaleStatic = this.constrainScale(this.scaleGesture);
 
 		let scaleDelta = this.scaleStatic / this.scalePointerChange;
 		this.ptPull.set(
