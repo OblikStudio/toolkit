@@ -1,5 +1,6 @@
 import { Component } from "../../core/component";
-import { clamp, Point } from "../../utils/math";
+import { ticker } from "../../core/ticker";
+import { clamp, Point, Vector } from "../../utils/math";
 
 /**
  * @todo drag inertia
@@ -47,6 +48,8 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	ptDelta = new Point();
 	ptPull = new Point();
 	ptRender = new Point();
+	ptTick: Point;
+	vcSpeed: Vector;
 
 	/**
 	 * Last effective point of focus, computed from the average of all pointers.
@@ -97,6 +100,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	downHandler = this.handleDown.bind(this);
 	moveHandler = this.handleMove.bind(this);
 	outHandler = this.handleUp.bind(this);
+	tickHandler = this.handleTick.bind(this);
 
 	imgSize = new Point();
 	rectBounds: DOMRectReadOnly;
@@ -201,6 +205,21 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 		this.isSwipeDownClose =
 			this.rectBounds.bottom === this.ptRender.y + this.imgSize.y;
+
+		this.ptTick = null;
+		this.vcSpeed = null;
+		ticker.on("tick", this.tickHandler);
+	}
+
+	handleTick(delta: number) {
+		if (this.ptTick) {
+			this.vcSpeed = this.ptTick.to(this.ptRender);
+			this.vcSpeed.magnitude *= 1000 / delta;
+			this.ptTick.set(this.ptRender);
+			console.log(this.vcSpeed.magnitude);
+		} else {
+			this.ptTick = this.ptRender.copy();
+		}
 	}
 
 	handleDown(e: PointerEvent) {
@@ -308,6 +327,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	}
 
 	gestureEnd(e: PointerEvent) {
+		ticker.off("tick", this.tickHandler);
 		this.elBox.removeEventListener("pointermove", this.moveHandler);
 		this.elBox.classList.remove("is-moved");
 
