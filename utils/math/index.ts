@@ -74,6 +74,13 @@ export class Vector {
 		}
 	}
 
+	copy() {
+		let v = new Vector();
+		v.magnitude = this.magnitude;
+		v.direction = this.direction;
+		return v;
+	}
+
 	set(p1: Point, p2?: Point) {
 		let x = p1.x;
 		let y = p1.y;
