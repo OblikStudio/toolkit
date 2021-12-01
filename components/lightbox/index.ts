@@ -500,7 +500,18 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		);
 
 		this.updateBounds();
-		this.constrainPoint(this.ptRender);
+
+		if (this.isSliding) {
+			let cp = this.ptRender.copy();
+			this.constrainPoint(cp, false);
+
+			let vec = this.ptRender.to(cp);
+			vec.magnitude *= 0.3;
+			this.ptDelta.add(vec);
+			this.ptRender.add(vec);
+		} else {
+			this.constrainPoint(this.ptRender);
+		}
 
 		let swipeDownMax = window.innerHeight / 2;
 		let lastSwipeDownCoef = this.swipeDownCoef;
