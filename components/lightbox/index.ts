@@ -50,6 +50,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	ptRender = new Point();
 	ptTick: Point;
 	vcSpeed: Vector;
+	isSliding = false;
 
 	/**
 	 * Last effective point of focus, computed from the average of all pointers.
@@ -208,15 +209,37 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 		this.ptTick = null;
 		this.vcSpeed = null;
+		this.isSliding = false;
 		ticker.on("tick", this.tickHandler);
 	}
 
 	handleTick(delta: number) {
+		if (this.isSliding) {
+			let vcDelta = this.vcSpeed.copy();
+			vcDelta.magnitude /= 1000 / delta;
+
+			if (vcDelta.magnitude < 0.1) {
+				ticker.off("tick", this.tickHandler);
+				this.elBox.classList.remove("is-moved");
+				this.isSliding = false;
+			}
+
+			this.ptDelta.add(vcDelta);
+			this.vcSpeed.magnitude *= 0.95;
+
+			/**
+			 * @todo add push in the opposite direction of the movement, based
+			 * on the amount of overdrag.
+			 */
+
+			this.render();
+			return;
+		}
+
 		if (this.ptTick) {
 			this.vcSpeed = this.ptTick.to(this.ptRender);
 			this.vcSpeed.magnitude *= 1000 / delta;
 			this.ptTick.set(this.ptRender);
-			console.log(this.vcSpeed.magnitude);
 		} else {
 			this.ptTick = this.ptRender.copy();
 		}
@@ -327,9 +350,8 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	}
 
 	gestureEnd(e: PointerEvent) {
-		ticker.off("tick", this.tickHandler);
 		this.elBox.removeEventListener("pointermove", this.moveHandler);
-		this.elBox.classList.remove("is-moved");
+		this.isSliding = this.vcSpeed.magnitude > 100;
 
 		if (this.isDoubleTap) {
 			if (this.scaleStatic > 1) {
@@ -353,14 +375,17 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 			this.isDoubleTap = false;
 			this.lastTapUp = null;
+			this.isSliding = false;
 		}
 
 		if (this.isPinchToClose && this.scaleStatic < 1) {
 			this.close();
+			this.isSliding = false;
 		} else if (this.scaleStatic < 1) {
 			this.ptStatic.set(this.elImg.offsetLeft, this.elImg.offsetTop);
 			this.scaleStatic = 1;
 			navigator.vibrate?.(50);
+			this.isSliding = false;
 		} else if (this.scaleStatic > this.scaleLimit) {
 			let dx = this.ptLastFocus.x - this.ptStatic.x;
 			let dy = this.ptLastFocus.y - this.ptStatic.y;
@@ -370,6 +395,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			this.ptStatic.y += dy * r;
 			this.scaleStatic = this.scaleLimit;
 			navigator.vibrate?.(50);
+			this.isSliding = false;
 		}
 
 		if (
@@ -377,12 +403,24 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			(this.swipeDownCoef === 1 || this.swipeDownDelta > 0)
 		) {
 			this.close();
+			this.isSliding = false;
+		}
+
+		if (!this.isSliding) {
+			if (this.elBox) {
+				this.elBox.classList.remove("is-moved");
+			}
+
+			ticker.off("tick", this.tickHandler);
 		}
 
 		if (this.elImg) {
 			// not closed by one of the conditions above
 			this.updateBounds();
-			this.constrainPoint(this.ptStatic, false);
+
+			if (!this.isSliding) {
+				this.constrainPoint(this.ptStatic, false);
+			}
 		}
 
 		this.swipeDown = 0;
