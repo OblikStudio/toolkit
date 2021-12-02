@@ -157,6 +157,8 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		this.elBox.addEventListener("pointerup", this.outHandler);
 		this.elBox.addEventListener("pointerleave", this.outHandler);
 		this.elBox.addEventListener("pointercancel", this.outHandler);
+
+		(window as any).lb = this;
 	}
 
 	close() {
@@ -224,13 +226,16 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 				this.isSliding = false;
 			}
 
-			this.ptDelta.add(vcDelta);
-			this.vcSpeed.magnitude *= 0.95;
+			this.ptStatic.add(vcDelta);
+			this.vcSpeed.magnitude *= 0.9;
 
-			/**
-			 * @todo add push in the opposite direction of the movement, based
-			 * on the amount of overdrag.
-			 */
+			let cp = this.ptRender.copy();
+			this.constrainPoint(cp, false);
+
+			let vec = this.ptRender.to(cp);
+			vec.magnitude *= 0.2;
+			this.ptStatic.add(vec);
+			this.ptRender.add(vec);
 
 			this.render();
 			return;
@@ -420,6 +425,10 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 			if (!this.isSliding) {
 				this.constrainPoint(this.ptStatic, false);
+			} else {
+				// ptRender is already constrained, so later in the tick loop,
+				// ptStatic is incremented from a constrained value
+				this.ptStatic = this.ptRender.copy();
 			}
 		}
 
@@ -501,15 +510,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 		this.updateBounds();
 
-		if (this.isSliding) {
-			let cp = this.ptRender.copy();
-			this.constrainPoint(cp, false);
-
-			let vec = this.ptRender.to(cp);
-			vec.magnitude *= 0.3;
-			this.ptDelta.add(vec);
-			this.ptRender.add(vec);
-		} else {
+		if (!this.isSliding) {
 			this.constrainPoint(this.ptRender);
 		}
 
