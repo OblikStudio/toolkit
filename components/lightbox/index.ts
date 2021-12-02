@@ -3,11 +3,17 @@ import { ticker } from "../../core/ticker";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
- * @todo drag inertia
+ * @todo simplify current logic (remove ptPull and ptDelta?)
+ * @todo fix mobile flicker after pointerup
  * @todo lightbox closed when drag starts outside of image
  * @todo smooth open/close transitions
  * @todo gradual opacity change on pinch-close
  * @todo rotate on pinch-close
+ * @todo add object-fit support for open/close transitions
+ * @todo add window resize handlers
+ * @todo the cloned lightbox should be a separate component to avoid mixing states
+ * @todo no-op when expanded image is the same size as the thumbnail
+ * @todo close on escape key
  */
 
 /**
