@@ -3,8 +3,7 @@ import { ticker } from "../../core/ticker";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
- * @todo fix inertia after pointerup during pinch-zoom
- * @todo render on tick, even during mousemove for better perf?
+ * @todo if swipe down starts from overdrag of already pulling down, set isSwipeDownClose to true
  * @todo fix mobile flicker after pointerup
  * @todo fix no scale transition when swipe-close and pulled back with intertia
  * @todo lightbox closed when drag starts outside of image
@@ -177,6 +176,11 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 				(this.ptDown.x - this.ptRender.x) / r.width,
 				(this.ptDown.y - this.ptRender.y) / r.height
 			);
+
+			// Reset the tick position, otherwise the speed will be inaccurate
+			// since pointers change and gesturePoint makes a big jump.
+			this.ptTick = null;
+			this.vcSpeed = null;
 		} else {
 			this.ptDown = null;
 			this.pullRatio = null;
@@ -208,8 +212,6 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		this.isSwipeDownClose =
 			this.rectBounds.bottom === this.ptRender.y + this.imgSize.y;
 
-		this.ptTick = null;
-		this.vcSpeed = null;
 		this.isSliding = false;
 		ticker.on("tick", this.tickHandler);
 	}
@@ -236,11 +238,12 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			}
 		} else {
 			if (this.ptTick) {
-				this.vcSpeed = this.ptTick.to(this.ptRender);
+				let lastTickPoint = this.ptTick.copy();
+				this.ptTick.set(this.gesturePoint);
+				this.vcSpeed = lastTickPoint.to(this.ptTick);
 				this.vcSpeed.magnitude *= TIME_SCALE / delta;
-				this.ptTick.set(this.ptRender);
 			} else {
-				this.ptTick = this.ptRender.copy();
+				this.ptTick = this.gesturePoint.copy();
 			}
 		}
 
