@@ -3,6 +3,7 @@ import { ticker } from "../../core/ticker";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
+ * @todo fix inertia after pointerup during pinch-zoom
  * @todo render on tick, even during mousemove for better perf?
  * @todo fix mobile flicker after pointerup
  * @todo fix no scale transition when swipe-close and pulled back with intertia
@@ -233,18 +234,17 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 				this.elBox.classList.remove("is-moved");
 				this.isSliding = false;
 			}
-
-			this.render();
-			return;
-		}
-
-		if (this.ptTick) {
-			this.vcSpeed = this.ptTick.to(this.ptRender);
-			this.vcSpeed.magnitude *= TIME_SCALE / delta;
-			this.ptTick.set(this.ptRender);
 		} else {
-			this.ptTick = this.ptRender.copy();
+			if (this.ptTick) {
+				this.vcSpeed = this.ptTick.to(this.ptRender);
+				this.vcSpeed.magnitude *= TIME_SCALE / delta;
+				this.ptTick.set(this.ptRender);
+			} else {
+				this.ptTick = this.ptRender.copy();
+			}
 		}
+
+		this.render();
 	}
 
 	handleDown(e: PointerEvent) {
@@ -261,7 +261,6 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		});
 
 		this.pointersChange();
-		this.render();
 
 		if (this.ptrs.length === 1) {
 			this.gestureStart(e);
@@ -315,8 +314,6 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 		this.ptRender = this.ptStatic.copy();
 		this.constrainPoint(this.ptRender);
-
-		this.render();
 	}
 
 	constrainScale(scale: number) {
@@ -363,10 +360,6 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 		if (this.ptrs.length === 0) {
 			this.gestureEnd(e);
-		}
-
-		if (this.elBox) {
-			this.render();
 		}
 	}
 
@@ -427,20 +420,21 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			this.isSliding = false;
 		}
 
-		if (!this.isSliding) {
-			if (this.elBox) {
-				this.elBox.classList.remove("is-moved");
-			}
-
-			ticker.off("tick", this.tickHandler);
-		}
-
 		if (this.elImg) {
 			// not closed by one of the conditions above
 			this.updateBounds();
 
 			if (!this.isSliding) {
 				this.constrainPoint(this.ptRender, false);
+			}
+		}
+
+		if (!this.isSliding) {
+			ticker.off("tick", this.tickHandler);
+
+			if (this.elBox) {
+				this.elBox.classList.remove("is-moved");
+				this.render();
 			}
 		}
 
