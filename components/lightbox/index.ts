@@ -3,6 +3,7 @@ import { ticker } from "../../core/ticker";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
+ * @todo render on tick, even during mousemove for better perf?
  * @todo fix mobile flicker after pointerup
  * @todo fix no scale transition when swipe-close and pulled back with intertia
  * @todo lightbox closed when drag starts outside of image
@@ -213,24 +214,24 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 	handleTick(delta: number) {
 		if (this.isSliding) {
+			this.vcSpeed.magnitude *= Math.pow(0.05, delta / 1000);
+
 			let vcDelta = this.vcSpeed.copy();
 			vcDelta.magnitude /= 1000 / delta;
-
-			if (vcDelta.magnitude < 0.1) {
-				ticker.off("tick", this.tickHandler);
-				this.elBox.classList.remove("is-moved");
-				this.isSliding = false;
-			}
-
 			this.ptRender.add(vcDelta);
-			this.vcSpeed.magnitude *= 0.9;
 
 			let cp = this.ptRender.copy();
 			this.constrainPoint(cp, false);
 
 			let vec = this.ptRender.to(cp);
-			vec.magnitude *= 0.2;
+			vec.magnitude *= 1 - Math.pow(0.05, delta / 1000);
 			this.ptRender.add(vec);
+
+			if (vcDelta.magnitude < 0.1 && vec.magnitude < 0.1) {
+				ticker.off("tick", this.tickHandler);
+				this.elBox.classList.remove("is-moved");
+				this.isSliding = false;
+			}
 
 			this.render();
 			return;
@@ -460,6 +461,9 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		);
 	}
 
+	/**
+	 * @todo only needs to be called when image scale or window size changes.
+	 */
 	updateBounds() {
 		this.imgSize.set(
 			this.elImg.offsetWidth * this.scaleStatic,
