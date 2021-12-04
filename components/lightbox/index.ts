@@ -3,8 +3,8 @@ import { ticker } from "../../core/ticker";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
- * @todo simplify current logic (remove ptPull and ptDelta?)
  * @todo fix mobile flicker after pointerup
+ * @todo fix no scale transition when swipe-close and pulled back with intertia
  * @todo lightbox closed when drag starts outside of image
  * @todo smooth open/close transitions
  * @todo gradual opacity change on pinch-close
@@ -14,6 +14,7 @@ import { clamp, Point, Vector } from "../../utils/math";
  * @todo the cloned lightbox should be a separate component to avoid mixing states
  * @todo no-op when expanded image is the same size as the thumbnail
  * @todo close on escape key
+ * @todo zoom with mouse wheel on desktop
  */
 
 /**
@@ -51,8 +52,6 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	ptOffset = new Point();
 	ptStatic = new Point();
 	ptDown = new Point();
-	ptDelta = new Point();
-	ptPull = new Point();
 	ptRender = new Point();
 	ptTick: Point;
 	vcSpeed: Vector;
@@ -66,19 +65,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	ptLastFocus = new Point();
 
 	scaleStatic = 1;
-	scalePointerChange = 1;
 	scaleLimit = 7;
-
-	/**
-	 * Unconstrained scale, as defined by the user's gestures.
-	 */
-	scaleGesture: number;
-
-	/**
-	 * Unconstrained scale, as defined by the user's gestures, at the time of a
-	 * pointer change.
-	 */
-	scaleGesturePointerChange: number;
 
 	isPinchToClose: boolean;
 	isDoubleTap: boolean;
@@ -95,7 +82,6 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	swipeDownDelta = 0;
 
 	ptrs: Pointer[] = [];
-	ptrDistStatic = 0;
 
 	elBox: HTMLElement;
 	elImgWrap: HTMLElement;
@@ -157,7 +143,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 		this.updateBounds();
 		this.ptOffset.set(this.rectBounds.x, this.rectBounds.y);
-		this.ptStatic.set(this.ptOffset);
+		this.ptRender.set(this.ptOffset);
 
 		this.elBox.addEventListener("pointerdown", this.downHandler);
 		this.elBox.addEventListener("pointerup", this.outHandler);
@@ -175,24 +161,28 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		this.elImg = null;
 	}
 
+	pullRatio: Point;
+
 	pointersChange() {
 		if (this.ptrs.length) {
 			this.ptDown = avgPoint(this.ptrs);
+			this.gesturePoint = this.ptDown.copy();
+			this.avgDist = this.getAverageDistance();
+
+			let r = this.elImg.getBoundingClientRect();
+			this.pullRatio = new Point(
+				(this.ptDown.x - this.ptRender.x) / r.width,
+				(this.ptDown.y - this.ptRender.y) / r.height
+			);
 		} else {
 			this.ptDown = null;
+			this.pullRatio = null;
 		}
-
-		this.ptStatic.add(this.ptDelta).subtract(this.ptPull);
-		this.ptDelta.set(0, 0);
-		this.ptPull.set(0, 0);
-
-		this.ptrDistStatic = this.getAverageDistance();
-		this.scalePointerChange = this.scaleStatic;
-		this.scaleGesturePointerChange = this.scaleGesture;
 	}
 
 	gestureStart(e: PointerEvent) {
-		this.scaleGesture = this.scaleStatic;
+		this.ptStatic.set(this.ptRender);
+		this.gestureScale = this.scaleStatic;
 		this.isPinchToClose = this.scaleStatic === 1;
 
 		if (
@@ -232,7 +222,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 				this.isSliding = false;
 			}
 
-			this.ptStatic.add(vcDelta);
+			this.ptRender.add(vcDelta);
 			this.vcSpeed.magnitude *= 0.9;
 
 			let cp = this.ptRender.copy();
@@ -240,7 +230,6 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 			let vec = this.ptRender.to(cp);
 			vec.magnitude *= 0.2;
-			this.ptStatic.add(vec);
 			this.ptRender.add(vec);
 
 			this.render();
@@ -281,31 +270,49 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		}
 	}
 
+	avgDist: number;
+	gestureScale: number;
+	gesturePoint: Point;
+
 	handleMove(e: PointerEvent) {
 		this.ptrs
 			.find((p) => p.id === e.pointerId)
 			?.point.set(e.clientX, e.clientY);
 
-		let avg = avgPoint(this.ptrs);
-		this.ptDelta.set(avg.x - this.ptDown.x, avg.y - this.ptDown.y);
+		let lastGesturePoint = this.gesturePoint;
+		this.gesturePoint = avgPoint(this.ptrs);
 
-		let avgDist = this.getAverageDistance();
-		if (avgDist && this.ptrDistStatic) {
-			this.scaleGesture =
-				(avgDist / this.ptrDistStatic) * this.scaleGesturePointerChange;
+		if (lastGesturePoint) {
+			let delta = this.gesturePoint.copy().subtract(lastGesturePoint);
+			this.ptStatic.add(delta);
+		}
+
+		let lastAvgDist = this.avgDist;
+		this.avgDist = this.getAverageDistance();
+
+		if (lastAvgDist && this.avgDist) {
+			let distRatio = this.avgDist / lastAvgDist;
+			this.gestureScale *= distRatio;
+
+			let lastScale = this.scaleStatic;
+			this.scaleStatic = this.constrainScale(this.gestureScale);
+
+			let r = this.elImg.getBoundingClientRect();
+			let scaleRatio = this.scaleStatic / lastScale;
+			let pullx = (scaleRatio - 1) * this.pullRatio.x * r.width;
+			let pully = (scaleRatio - 1) * this.pullRatio.y * r.height;
+			this.ptStatic.x -= pullx;
+			this.ptStatic.y -= pully;
 
 			if (this.scaleStatic > 1) {
 				this.isPinchToClose = false;
 			}
 		}
 
-		this.scaleStatic = this.constrainScale(this.scaleGesture);
+		this.updateBounds();
 
-		let scaleDelta = this.scaleStatic / this.scalePointerChange;
-		this.ptPull.set(
-			(scaleDelta - 1) * (this.ptDown.x - this.ptStatic.x),
-			(scaleDelta - 1) * (this.ptDown.y - this.ptStatic.y)
-		);
+		this.ptRender = this.ptStatic.copy();
+		this.constrainPoint(this.ptRender);
 
 		this.render();
 	}
@@ -333,7 +340,8 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			return;
 		}
 
-		if (!this.ptLastFocus || this.ptDelta.dist() > DIST_LAST_FOCUS) {
+		let delta = this.gesturePoint.copy().subtract(this.ptDown);
+		if (!this.ptLastFocus || delta.dist() > DIST_LAST_FOCUS) {
 			this.ptLastFocus = avgPoint(this.ptrs);
 		}
 
@@ -362,25 +370,25 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 	gestureEnd(e: PointerEvent) {
 		this.elBox.removeEventListener("pointermove", this.moveHandler);
-		this.isSliding = this.vcSpeed.magnitude > 100;
+		this.isSliding = this.vcSpeed?.magnitude > 100;
 
 		if (this.isDoubleTap) {
 			if (this.scaleStatic > 1) {
-				let dx = this.lastTapUp.clientX - this.ptStatic.x;
-				let dy = this.lastTapUp.clientY - this.ptStatic.y;
+				let dx = this.lastTapUp.clientX - this.ptRender.x;
+				let dy = this.lastTapUp.clientY - this.ptRender.y;
 				let r = 1 - 1 / this.scaleStatic;
 
-				this.ptStatic.x += dx * r;
-				this.ptStatic.y += dy * r;
+				this.ptRender.x += dx * r;
+				this.ptRender.y += dy * r;
 				this.scaleStatic = 1;
 			} else {
 				let scale = this.width / this.elImg.offsetWidth;
 				let pull = new Point(
-					(scale - 1) * (e.clientX - this.ptStatic.x),
-					(scale - 1) * (e.clientY - this.ptStatic.y)
+					(scale - 1) * (e.clientX - this.ptRender.x),
+					(scale - 1) * (e.clientY - this.ptRender.y)
 				);
 
-				this.ptStatic.subtract(pull);
+				this.ptRender.subtract(pull);
 				this.scaleStatic = scale;
 			}
 
@@ -393,17 +401,17 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			this.close();
 			this.isSliding = false;
 		} else if (this.scaleStatic < 1) {
-			this.ptStatic.set(this.elImg.offsetLeft, this.elImg.offsetTop);
+			this.ptRender.set(this.elImg.offsetLeft, this.elImg.offsetTop);
 			this.scaleStatic = 1;
 			navigator.vibrate?.(50);
 			this.isSliding = false;
 		} else if (this.scaleStatic > this.scaleLimit) {
-			let dx = this.ptLastFocus.x - this.ptStatic.x;
-			let dy = this.ptLastFocus.y - this.ptStatic.y;
+			let dx = this.ptLastFocus.x - this.ptRender.x;
+			let dy = this.ptLastFocus.y - this.ptRender.y;
 			let r = 1 - this.scaleLimit / this.scaleStatic;
 
-			this.ptStatic.x += dx * r;
-			this.ptStatic.y += dy * r;
+			this.ptRender.x += dx * r;
+			this.ptRender.y += dy * r;
 			this.scaleStatic = this.scaleLimit;
 			navigator.vibrate?.(50);
 			this.isSliding = false;
@@ -430,11 +438,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			this.updateBounds();
 
 			if (!this.isSliding) {
-				this.constrainPoint(this.ptStatic, false);
-			} else {
-				// ptRender is already constrained, so later in the tick loop,
-				// ptStatic is incremented from a constrained value
-				this.ptStatic = this.ptRender.copy();
+				this.constrainPoint(this.ptRender, false);
 			}
 		}
 
@@ -509,17 +513,6 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	}
 
 	render() {
-		this.ptRender.set(
-			this.ptStatic.x + this.ptDelta.x - this.ptPull.x,
-			this.ptStatic.y + this.ptDelta.y - this.ptPull.y
-		);
-
-		this.updateBounds();
-
-		if (!this.isSliding) {
-			this.constrainPoint(this.ptRender);
-		}
-
 		let swipeDownMax = window.innerHeight / 2;
 		let lastSwipeDownCoef = this.swipeDownCoef;
 		this.swipeDownCoef = clamp(this.swipeDown / swipeDownMax, 0, 1);
