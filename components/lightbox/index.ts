@@ -27,6 +27,7 @@ const DIST_DOUBLE_TAP = 50;
 const TIME_DOUBLE_TAP = 400;
 
 const DIST_LAST_FOCUS = 10;
+const TIME_SCALE = 1000;
 
 interface Options {
 	template: HTMLTemplateElement;
@@ -214,17 +215,17 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 	handleTick(delta: number) {
 		if (this.isSliding) {
-			this.vcSpeed.magnitude *= Math.pow(0.05, delta / 1000);
+			this.vcSpeed.magnitude *= Math.pow(0.001, delta / TIME_SCALE);
 
 			let vcDelta = this.vcSpeed.copy();
-			vcDelta.magnitude /= 1000 / delta;
+			vcDelta.magnitude /= TIME_SCALE / delta;
 			this.ptRender.add(vcDelta);
 
 			let cp = this.ptRender.copy();
 			this.constrainPoint(cp, false);
 
 			let vec = this.ptRender.to(cp);
-			vec.magnitude *= 1 - Math.pow(0.05, delta / 1000);
+			vec.magnitude *= 1 - Math.pow(0.001, delta / TIME_SCALE);
 			this.ptRender.add(vec);
 
 			if (vcDelta.magnitude < 0.1 && vec.magnitude < 0.1) {
@@ -239,7 +240,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 		if (this.ptTick) {
 			this.vcSpeed = this.ptTick.to(this.ptRender);
-			this.vcSpeed.magnitude *= 1000 / delta;
+			this.vcSpeed.magnitude *= TIME_SCALE / delta;
 			this.ptTick.set(this.ptRender);
 		} else {
 			this.ptTick = this.ptRender.copy();
