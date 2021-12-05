@@ -12,6 +12,7 @@ import { clamp, Point, Vector } from "../../utils/math";
  * @todo smooth open/close transitions
  * @todo gradual opacity change on pinch-close
  * @todo rotate on pinch-close
+ * @todo add is-moving class only after move event, not on down
  * @todo add object-fit support for open/close transitions
  * @todo add window resize handlers
  * @todo the cloned lightbox should be a separate component to avoid mixing states
