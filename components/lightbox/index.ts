@@ -88,7 +88,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	ptrs: Pointer[] = [];
 
 	elBox: HTMLElement;
-	elImgWrap: HTMLElement;
+	elFigure: HTMLElement;
 	elImg: HTMLImageElement;
 	elWrap: HTMLElement;
 	width: number;
@@ -115,8 +115,8 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		let target = this.$options.template.content.firstElementChild;
 
 		this.elBox = target.cloneNode(true) as HTMLElement;
-		this.elWrap = this.elBox.querySelector("[data-box]");
-		this.elImgWrap = this.elBox.querySelector("[data-img-wrap]");
+		this.elWrap = this.elBox.querySelector("[data-wrap]");
+		this.elFigure = this.elBox.querySelector("[data-figure]");
 		this.elImg = this.elBox.querySelector("[data-img]") as HTMLImageElement;
 		this.elImg.width = this.width;
 		this.elImg.height = this.height;
@@ -161,7 +161,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		document.body.removeChild(this.elBox);
 		this.elBox = null;
 		this.elWrap = null;
-		this.elImgWrap = null;
+		this.elFigure = null;
 		this.elImg = null;
 	}
 
