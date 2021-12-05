@@ -11,7 +11,10 @@
 	touch-action: none;
 
 	[data-img] {
-		will-change: transform; /* fixes trailing dead pixels on iOS */
+		/* Fixes trailing dead pixels on iOS and significantly improves
+		performance due to no repaints, but causes extra large images to be
+		blurry on iOS. */
+		will-change: transform;
 		transform-origin: left top;
 		user-select: none;
 	}
