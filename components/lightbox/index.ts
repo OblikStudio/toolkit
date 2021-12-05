@@ -4,9 +4,7 @@ import { clamp, Point, Vector } from "../../utils/math";
 
 /**
  * @todo if swipe down starts from overdrag of already pulling down, set isSwipeDownClose to true
- * @todo remove img-wrap; swipe down close should animate img directly
- * @todo do not transform <img>, use <div> instead
- * @todo fix double-tap not working on iOS (caused by [data-img] transition?)
+ * @todo fix swipe-down close transform animation
  * @todo fix no scale transition when swipe-close and pulled back with intertia
  * @todo lightbox closed when drag starts outside of image
  * @todo smooth open/close transitions
@@ -159,6 +157,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	}
 
 	close() {
+		ticker.off("tick", this.tickHandler);
 		document.body.removeChild(this.elBox);
 		this.elBox = null;
 		this.elWrap = null;
@@ -174,7 +173,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			this.gesturePoint = this.ptDown.copy();
 			this.avgDist = this.getAverageDistance();
 
-			let r = this.elImg.getBoundingClientRect();
+			let r = this.elFigure.getBoundingClientRect();
 			this.pullRatio = new Point(
 				(this.ptDown.x - this.ptRender.x) / r.width,
 				(this.ptDown.y - this.ptRender.y) / r.height
@@ -304,7 +303,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			let lastScale = this.scaleStatic;
 			this.scaleStatic = this.constrainScale(this.gestureScale);
 
-			let r = this.elImg.getBoundingClientRect();
+			let r = this.elFigure.getBoundingClientRect();
 			let scaleRatio = this.scaleStatic / lastScale;
 			let pullx = (scaleRatio - 1) * this.pullRatio.x * r.width;
 			let pully = (scaleRatio - 1) * this.pullRatio.y * r.height;
@@ -383,7 +382,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 				this.ptRender.y += dy * r;
 				this.scaleStatic = 1;
 			} else {
-				let scale = this.width / this.elImg.offsetWidth;
+				let scale = this.width / this.elFigure.offsetWidth;
 				let pull = new Point(
 					(scale - 1) * (e.clientX - this.ptRender.x),
 					(scale - 1) * (e.clientY - this.ptRender.y)
@@ -402,7 +401,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			this.close();
 			this.isSliding = false;
 		} else if (this.scaleStatic < 1) {
-			this.ptRender.set(this.elImg.offsetLeft, this.elImg.offsetTop);
+			this.ptRender.set(this.elFigure.offsetLeft, this.elFigure.offsetTop);
 			this.scaleStatic = 1;
 			navigator.vibrate?.(50);
 			this.isSliding = false;
@@ -426,7 +425,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			this.isSliding = false;
 		}
 
-		if (this.elImg) {
+		if (this.elBox) {
 			// not closed by one of the conditions above
 			this.updateBounds();
 
@@ -467,8 +466,8 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	 */
 	updateBounds() {
 		this.imgSize.set(
-			this.elImg.offsetWidth * this.scaleStatic,
-			this.elImg.offsetHeight * this.scaleStatic
+			this.elFigure.offsetWidth * this.scaleStatic,
+			this.elFigure.offsetHeight * this.scaleStatic
 		);
 
 		let r3 = this.getMaxBoundsRect();
@@ -530,7 +529,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		 * Using `matrix()` to prevent flicker on iOS.
 		 * @see https://stackoverflow.com/q/70233672/3130281
 		 */
-		this.elImg.style.transform = `matrix(${this.scaleStatic}, 0, 0, ${
+		this.elFigure.style.transform = `matrix(${this.scaleStatic}, 0, 0, ${
 			this.scaleStatic
 		}, ${this.ptRender.x - this.ptOffset.x}, ${
 			this.ptRender.y - this.ptOffset.y

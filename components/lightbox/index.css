@@ -24,26 +24,20 @@
 	}
 
 	[data-figure] {
-		transform: scale(calc(1 - calc(1 - var(--opacity, 1)) * 0.25));
-	}
-
-	[data-img] {
 		/* Fixes trailing dead pixels on iOS and significantly improves
 		performance due to no repaints, but causes extra large images to be
 		blurry on iOS. */
 		will-change: transform;
 		transform-origin: left top;
-		user-select: none;
-	}
-
-	[data-figure],
-	[data-img] {
 		transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 	}
 
+	[data-img] {
+		user-select: none;
+	}
+
 	&.is-moved {
-		[data-figure],
-		[data-img] {
+		[data-figure] {
 			transition: none;
 		}
 	}
