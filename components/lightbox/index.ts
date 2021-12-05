@@ -4,7 +4,8 @@ import { clamp, Point, Vector } from "../../utils/math";
 
 /**
  * @todo if swipe down starts from overdrag of already pulling down, set isSwipeDownClose to true
- * @todo fix mobile flicker after pointerup (test with <div>)
+ * @todo remove img-wrap; swipe down close should animate img directly
+ * @todo do not transform <img>, use <div> instead
  * @todo fix double-tap not working on iOS (caused by [data-img] transition?)
  * @todo fix no scale transition when swipe-close and pulled back with intertia
  * @todo lightbox closed when drag starts outside of image
@@ -524,9 +525,15 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		let opacity = 1 - this.swipeDownCoef;
 		this.elBox.style.setProperty("--opacity", opacity.toString());
 
-		this.elImg.style.transform = `translate(${
-			this.ptRender.x - this.ptOffset.x
-		}px, ${this.ptRender.y - this.ptOffset.y}px) scale(${this.scaleStatic})`;
+		/**
+		 * Using `matrix()` to prevent flicker on iOS.
+		 * @see https://stackoverflow.com/q/70233672/3130281
+		 */
+		this.elImg.style.transform = `matrix(${this.scaleStatic}, 0, 0, ${
+			this.scaleStatic
+		}, ${this.ptRender.x - this.ptOffset.x}, ${
+			this.ptRender.y - this.ptOffset.y
+		})`;
 	}
 
 	getAverageDistance() {
