@@ -4,7 +4,8 @@ import { clamp, Point, Vector } from "../../utils/math";
 
 /**
  * @todo if swipe down starts from overdrag of already pulling down, set isSwipeDownClose to true
- * @todo fix mobile flicker after pointerup
+ * @todo fix mobile flicker after pointerup (test with <div>)
+ * @todo fix double-tap not working on iOS (caused by [data-img] transition?)
  * @todo fix no scale transition when swipe-close and pulled back with intertia
  * @todo lightbox closed when drag starts outside of image
  * @todo smooth open/close transitions

@@ -11,6 +11,7 @@
 	touch-action: none;
 
 	[data-img] {
+		will-change: transform; /* fixes trailing dead pixels on iOS */
 		transform-origin: left top;
 		user-select: none;
 	}
