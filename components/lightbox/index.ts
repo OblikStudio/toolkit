@@ -4,7 +4,6 @@ import { easeInOutQuad } from "../../utils/easings";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
- * @todo make swipe-down relative to finger?
  * @todo make swipe-down scale less when image is expanded
  * @todo fix swipe-down animation when no inertia
  * @todo if swipe down starts from overdrag of already pulling down, set isSwipeDownClose to true
@@ -195,7 +194,6 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			this.vcSpeed = null;
 		} else {
 			this.ptDown = null;
-			this.pullRatio = null;
 		}
 	}
 
@@ -266,7 +264,10 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			ratio = easeInOutQuad(ratio);
 
 			this.animScale = 1 - ratio * 0.25;
-			this.animOffset.set((1 - this.animScale) * this.imgSize.x * 0.5, 0);
+			this.animOffset.set(
+				(1 - this.animScale) * this.imgSize.x * this.pullRatio.x,
+				0
+			);
 		}
 
 		this.render();
