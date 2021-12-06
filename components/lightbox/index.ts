@@ -3,10 +3,9 @@ import { ticker } from "../../core/ticker";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
- * @todo if swipe down starts from overdrag of already pulling down, set isSwipeDownClose to true
  * @todo fix swipe-down close transform animation
  * @todo fix no scale transition when swipe-close and pulled back with intertia
- * @todo lightbox closed when drag starts outside of image
+ * @todo if swipe down starts from overdrag of already pulling down, set isSwipeDownClose to true
  * @todo smooth open/close transitions
  * @todo gradual opacity change on pinch-close
  * @todo rotate on pinch-close
@@ -79,6 +78,12 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	swipeDownCoef = 0;
 
 	/**
+	 * Whether a click outside the figure will close the lightbox. Set to false
+	 * once the user moves a pointer, i.e. is gesturing.
+	 */
+	isCanClickClose: boolean;
+
+	/**
 	 * If delta is > 0, the user is continuing with the gesture, otherwise he's
 	 * reversing it.
 	 */
@@ -137,7 +142,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		document.body.appendChild(this.elBox);
 		this.elBox.classList.add("is-open");
 		this.elBox.addEventListener("click", (e) => {
-			if (e.target !== this.elImg) {
+			if (e.target !== this.elImg && this.isCanClickClose) {
 				this.close();
 			}
 		});
@@ -253,6 +258,8 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	}
 
 	handleDown(e: PointerEvent) {
+		this.isCanClickClose = true;
+
 		e.preventDefault();
 
 		if (this.swipeDown > 25) {
@@ -281,6 +288,8 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	gesturePoint: Point;
 
 	handleMove(e: PointerEvent) {
+		this.isCanClickClose = false;
+
 		this.ptrs
 			.find((p) => p.id === e.pointerId)
 			?.point.set(e.clientX, e.clientY);
