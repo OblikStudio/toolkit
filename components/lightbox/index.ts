@@ -1,10 +1,12 @@
 import { Component } from "../../core/component";
 import { ticker } from "../../core/ticker";
+import { easeInOutQuad } from "../../utils/easings";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
- * @todo fix swipe-down close transform animation
- * @todo fix no scale transition when swipe-close and pulled back with intertia
+ * @todo make swipe-down relative to finger?
+ * @todo make swipe-down scale less when image is expanded
+ * @todo fix swipe-down animation when no inertia
  * @todo if swipe down starts from overdrag of already pulling down, set isSwipeDownClose to true
  * @todo smooth open/close transitions
  * @todo gradual opacity change on pinch-close
@@ -76,6 +78,9 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	isSwipeDownClose: boolean;
 	swipeDown = 0;
 	swipeDownCoef = 0;
+
+	animScale = 1;
+	animOffset = new Point();
 
 	/**
 	 * Whether a click outside the figure will close the lightbox. Set to false
@@ -252,6 +257,16 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			} else {
 				this.ptTick = this.gesturePoint.copy();
 			}
+		}
+
+		if (this.isSwipeDownClose) {
+			let bleed = this.getBleed(this.ptRender).bottom;
+			let ratio = bleed / (window.innerHeight / 2);
+			ratio = clamp(ratio, 0, 1);
+			ratio = easeInOutQuad(ratio);
+
+			this.animScale = 1 - ratio * 0.25;
+			this.animOffset.set((1 - this.animScale) * this.imgSize.x * 0.5, 0);
 		}
 
 		this.render();
@@ -495,6 +510,17 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		return (amount * limit) / (amount + limit);
 	}
 
+	getBleed(p: Point) {
+		let r2 = this.rectBounds;
+
+		return {
+			top: r2.top - p.y,
+			left: r2.left - p.x,
+			right: p.x + this.imgSize.x - r2.right,
+			bottom: p.y + this.imgSize.y - r2.bottom,
+		};
+	}
+
 	constrainPoint(p: Point, overdrag = true) {
 		let r2 = this.rectBounds;
 		let dt = r2.top - p.y;
@@ -534,15 +560,15 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		let opacity = 1 - this.swipeDownCoef;
 		this.elBox.style.setProperty("--opacity", opacity.toString());
 
+		let s = this.scaleStatic * this.animScale;
+		let x = this.ptRender.x - this.ptOffset.x + this.animOffset.x;
+		let y = this.ptRender.y - this.ptOffset.y + this.animOffset.y;
+
 		/**
 		 * Using `matrix()` to prevent flicker on iOS.
 		 * @see https://stackoverflow.com/q/70233672/3130281
 		 */
-		this.elFigure.style.transform = `matrix(${this.scaleStatic}, 0, 0, ${
-			this.scaleStatic
-		}, ${this.ptRender.x - this.ptOffset.x}, ${
-			this.ptRender.y - this.ptOffset.y
-		})`;
+		this.elFigure.style.transform = `matrix(${s}, 0, 0, ${s}, ${x}, ${y})`;
 	}
 
 	getAverageDistance() {
