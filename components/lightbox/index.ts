@@ -4,7 +4,7 @@ import { easeInOutQuad } from "../../utils/easings";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
- * @todo make swipe-down scale less when image is expanded
+ * @todo remove swipeDownCoef and swipeDownDelta
  * @todo fix swipe-down animation when no inertia
  * @todo if swipe down starts from overdrag of already pulling down, set isSwipeDownClose to true
  * @todo smooth open/close transitions
@@ -78,6 +78,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	swipeDown = 0;
 	swipeDownCoef = 0;
 
+	animRatio: number;
 	animScale = 1;
 	animOffset = new Point();
 
@@ -259,14 +260,14 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 		if (this.isSwipeDownClose) {
 			let bleed = this.getBleed(this.ptRender).bottom;
-			let ratio = bleed / (window.innerHeight / 2);
+			let ratio = bleed / (window.innerHeight * 0.75);
 			ratio = clamp(ratio, 0, 1);
-			ratio = easeInOutQuad(ratio);
 
-			this.animScale = 1 - ratio * 0.25;
+			this.animRatio = easeInOutQuad(ratio);
+			this.animScale = 1 - ratio * 0.3;
 			this.animOffset.set(
 				(1 - this.animScale) * this.imgSize.x * this.pullRatio.x,
-				0
+				(1 - this.animScale) * this.imgSize.y * this.pullRatio.y
 			);
 		}
 
@@ -396,6 +397,10 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	gestureEnd(e: PointerEvent) {
 		this.elBox.removeEventListener("pointermove", this.moveHandler);
 		this.isSliding = this.vcSpeed?.magnitude > 100;
+
+		this.animRatio = 0;
+		this.animScale = 1;
+		this.animOffset.set(0, 0);
 
 		if (this.isDoubleTap) {
 			if (this.scaleStatic > 1) {
@@ -558,7 +563,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		this.swipeDownCoef = clamp(this.swipeDown / swipeDownMax, 0, 1);
 		this.swipeDownDelta = this.swipeDownCoef - lastSwipeDownCoef;
 
-		let opacity = 1 - this.swipeDownCoef;
+		let opacity = 1 - this.animRatio;
 		this.elBox.style.setProperty("--opacity", opacity.toString());
 
 		let s = this.scaleStatic * this.animScale;
