@@ -4,7 +4,6 @@ import { easeInOutQuad } from "../../utils/easings";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
- * @todo remove swipeDownCoef and swipeDownDelta
  * @todo fix swipe-down animation when no inertia
  * @todo if swipe down starts from overdrag of already pulling down, set isSwipeDownClose to true
  * @todo smooth open/close transitions
@@ -75,8 +74,6 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	lastTapUp: PointerEvent;
 
 	isSwipeDownClose: boolean;
-	swipeDown = 0;
-	swipeDownCoef = 0;
 
 	animRatio: number;
 	animScale = 1;
@@ -87,12 +84,6 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	 * once the user moves a pointer, i.e. is gesturing.
 	 */
 	isCanClickClose: boolean;
-
-	/**
-	 * If delta is > 0, the user is continuing with the gesture, otherwise he's
-	 * reversing it.
-	 */
-	swipeDownDelta = 0;
 
 	ptrs: Pointer[] = [];
 
@@ -279,7 +270,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 		e.preventDefault();
 
-		if (this.swipeDown > 25) {
+		if (this.isSwipeDownClose && this.animRatio > 0.1) {
 			return;
 		}
 
@@ -398,6 +389,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		this.elBox.removeEventListener("pointermove", this.moveHandler);
 		this.isSliding = this.vcSpeed?.magnitude > 100;
 
+		let animRatio = this.animRatio;
 		this.animRatio = 0;
 		this.animScale = 1;
 		this.animOffset.set(0, 0);
@@ -449,7 +441,8 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 		if (
 			this.isSwipeDownClose &&
-			(this.swipeDownCoef === 1 || this.swipeDownDelta > 0)
+			animRatio > 0 &&
+			Math.sin(this.vcSpeed.direction) > 0
 		) {
 			this.close();
 			this.isSliding = false;
@@ -472,9 +465,6 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 				this.render();
 			}
 		}
-
-		this.swipeDown = 0;
-		this.swipeDownDelta = 0;
 	}
 
 	getMaxBoundsRect() {
@@ -534,8 +524,6 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		let dr = p.x + this.imgSize.x - r2.right;
 		let db = p.y + this.imgSize.y - r2.bottom;
 
-		this.swipeDown = 0;
-
 		if (overdrag) {
 			if (dt > 0) p.y = r2.top - this.getOverdrag(dt);
 			if (dl > 0) p.x = r2.left - this.getOverdrag(dl);
@@ -543,8 +531,6 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			if (db > 0) {
 				if (!this.isSwipeDownClose) {
 					p.y = r2.bottom - this.imgSize.y + this.getOverdrag(db);
-				} else {
-					this.swipeDown = db;
 				}
 			}
 		} else {
@@ -558,11 +544,6 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	}
 
 	render() {
-		let swipeDownMax = window.innerHeight / 2;
-		let lastSwipeDownCoef = this.swipeDownCoef;
-		this.swipeDownCoef = clamp(this.swipeDown / swipeDownMax, 0, 1);
-		this.swipeDownDelta = this.swipeDownCoef - lastSwipeDownCoef;
-
 		let opacity = 1 - this.animRatio;
 		this.elBox.style.setProperty("--opacity", opacity.toString());
 
