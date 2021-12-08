@@ -446,7 +446,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 		if (
 			this.isSwipeDownClose &&
-			animRatio > 0 &&
+			animRatio > 0.06 &&
 			Math.sin(this.vcMovement.direction) > 0
 		) {
 			this.close();
