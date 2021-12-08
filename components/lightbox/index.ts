@@ -5,7 +5,7 @@ import { clamp, Point, Vector } from "../../utils/math";
 
 /**
  * @todo fix swipe-down animation when no inertia
- * @todo if swipe down starts from overdrag of already pulling down, set isSwipeDownClose to true
+ * @todo improve swipe-down toggling after initial touch
  * @todo smooth open/close transitions
  * @todo gradual opacity change on pinch-close
  * @todo rotate on pinch-close
@@ -57,6 +57,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	ptRender = new Point();
 	ptTick: Point;
 	vcSpeed: Vector;
+	vcMovement: Vector;
 	isSliding = false;
 
 	/**
@@ -289,6 +290,8 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		if (this.ptrs.length > 1) {
 			this.isSwipeDownClose = false;
 		}
+
+		this.vcMovement = new Vector();
 	}
 
 	avgDist: number;
@@ -306,8 +309,12 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		this.gesturePoint = avgPoint(this.ptrs);
 
 		if (lastGesturePoint) {
-			let delta = this.gesturePoint.copy().subtract(lastGesturePoint);
+			let delta = lastGesturePoint.to(this.gesturePoint);
 			this.ptStatic.add(delta);
+
+			delta.magnitude = Math.pow(delta.magnitude, 3);
+			this.vcMovement.magnitude *= 0.75;
+			this.vcMovement.add(delta);
 		}
 
 		let lastAvgDist = this.avgDist;
@@ -442,7 +449,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		if (
 			this.isSwipeDownClose &&
 			animRatio > 0 &&
-			Math.sin(this.vcSpeed.direction) > 0
+			Math.sin(this.vcMovement.direction) > 0
 		) {
 			this.close();
 			this.isSliding = false;
