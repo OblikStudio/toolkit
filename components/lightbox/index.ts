@@ -5,7 +5,6 @@ import { clamp, Point, Vector } from "../../utils/math";
 
 /**
  * @todo fix swipe-down animation when no inertia
- * @todo improve swipe-down toggling after initial touch
  * @todo smooth open/close transitions
  * @todo gradual opacity change on pinch-close
  * @todo rotate on pinch-close
@@ -212,8 +211,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		this.elBox.addEventListener("pointermove", this.moveHandler);
 		this.elBox.classList.add("is-moved");
 
-		this.isSwipeDownClose =
-			this.rectBounds.bottom === this.ptRender.y + this.imgSize.y;
+		this.isSwipeDownClose = Math.abs(this.getBleed(this.ptRender).bottom) < 20;
 
 		this.isSliding = false;
 		ticker.on("tick", this.tickHandler);
