@@ -68,6 +68,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 	scaleStatic = 1;
 	scaleLimit = 7;
+	naturalScale: number;
 
 	isPinchToClose: boolean;
 	isDoubleTap: boolean;
@@ -144,6 +145,8 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		});
 
 		this.scaleStatic = 1;
+		this.naturalScale = this.width / this.elFigure.offsetWidth;
+		this.scaleLimit = Math.max(this.naturalScale, this.scaleLimit);
 
 		this.updateBounds();
 		this.ptOffset.set(this.rectBounds.x, this.rectBounds.y);
@@ -409,14 +412,13 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 				this.ptRender.y += dy * r;
 				this.scaleStatic = 1;
 			} else {
-				let scale = this.width / this.elFigure.offsetWidth;
 				let pull = new Point(
-					(scale - 1) * (e.clientX - this.ptRender.x),
-					(scale - 1) * (e.clientY - this.ptRender.y)
+					(this.naturalScale - 1) * (e.clientX - this.ptRender.x),
+					(this.naturalScale - 1) * (e.clientY - this.ptRender.y)
 				);
 
 				this.ptRender.subtract(pull);
-				this.scaleStatic = scale;
+				this.scaleStatic = this.naturalScale;
 			}
 
 			this.isDoubleTap = false;
