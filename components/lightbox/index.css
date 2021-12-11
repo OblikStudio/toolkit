@@ -30,18 +30,23 @@
 		blurry on iOS. */
 		will-change: transform;
 		transform-origin: left top;
-		transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+		transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 	}
 
 	[data-img] {
 		user-select: none;
 	}
 
+	&:not(.is-open),
 	&.is-moved {
 		transition: none;
 
 		[data-figure] {
 			transition: none;
 		}
+	}
+
+	&.is-opening [data-figure] {
+		opacity: var(--opacity);
 	}
 }

@@ -136,7 +136,6 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		}
 
 		document.body.appendChild(this.elBox);
-		this.elBox.classList.add("is-open");
 		this.elBox.addEventListener("click", (e) => {
 			if (e.target !== this.elImg && this.isCanClickClose) {
 				this.close();
@@ -156,7 +155,27 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		this.elBox.addEventListener("pointerleave", this.outHandler);
 		this.elBox.addEventListener("pointercancel", this.outHandler);
 
-		(window as any).lb = this;
+		let r1 = this.$element.getBoundingClientRect();
+		let r2 = this.elImg.getBoundingClientRect();
+
+		let sw = r1.width / r2.width;
+		let sh = r1.height / r2.height;
+		let sx = r1.left - r2.left;
+		let sy = r1.top - r2.top;
+		let flipTransform = `translate(${sx}px, ${sy}px) scale(${sw}, ${sh})`;
+
+		this.elFigure.style.transform = flipTransform;
+		this.elBox.style.setProperty("--opacity", "0");
+		this.elBox.classList.add("is-opening");
+		this.elBox.addEventListener("transitionend", () => {
+			this.elBox.classList.remove("is-opening");
+		});
+
+		window.requestAnimationFrame(() => {
+			this.elBox.classList.add("is-open");
+			this.elBox.style.setProperty("--opacity", "1");
+			this.elFigure.style.transform = "";
+		});
 	}
 
 	close() {
