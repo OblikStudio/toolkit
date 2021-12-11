@@ -8,6 +8,7 @@
 	width: 100%;
 	height: 100%;
 	background-color: rgba(0, 0, 0, calc(var(--opacity, 1) * 0.8));
+	transition: background-color 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 	touch-action: none;
 
 	[data-wrap] {
@@ -37,6 +38,8 @@
 	}
 
 	&.is-moved {
+		transition: none;
+
 		[data-figure] {
 			transition: none;
 		}

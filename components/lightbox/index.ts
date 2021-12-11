@@ -4,7 +4,6 @@ import { easeInOutQuad } from "../../utils/easings";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
- * @todo fix swipe-down animation when no inertia
  * @todo smooth open/close transitions
  * @todo gradual opacity change on pinch-close
  * @todo rotate on pinch-close
