@@ -4,6 +4,10 @@ import { easeInOutQuad } from "../../utils/easings";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
+ * @todo inertia incorrectly calculated when overdragging
+ * @todo grab jump when image beyond overdrag due to intertia
+ * @todo replace with loaded image only after open transition has finished
+ * @todo fix opacity glitch when grabbing right after opening transition
  * @todo smooth open/close transitions
  * @todo gradual opacity change on pinch-close
  * @todo rotate on pinch-close
@@ -115,9 +119,11 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		let target = this.$options.template.content.firstElementChild;
 
 		this.elBox = target.cloneNode(true) as HTMLElement;
-		this.elWrap = this.elBox.querySelector("[data-wrap]");
-		this.elFigure = this.elBox.querySelector("[data-figure]");
-		this.elImg = this.elBox.querySelector("[data-img]") as HTMLImageElement;
+		this.elWrap = this.elBox.querySelector("[data-lightbox-wrap]");
+		this.elFigure = this.elBox.querySelector("[data-lightbox-figure]");
+		this.elImg = this.elBox.querySelector(
+			"[data-lightbox-img]"
+		) as HTMLImageElement;
 		this.elImg.width = this.width;
 		this.elImg.height = this.height;
 

@@ -1,4 +1,4 @@
-.b-lightbox {
+[data-lightbox] {
 	position: fixed;
 	top: 0;
 	left: 0;
@@ -11,42 +11,42 @@
 	transition: background-color 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 	touch-action: none;
 
-	[data-wrap] {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 100%;
-		height: 100%;
-
-		@screen md {
-			width: 80%;
-			height: 80%;
-		}
-	}
-
-	[data-figure] {
-		/* Fixes trailing dead pixels on iOS and significantly improves
-		performance due to no repaints, but causes extra large images to be
-		blurry on iOS. */
-		will-change: transform;
-		transform-origin: left top;
-		transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-	}
-
-	[data-img] {
-		user-select: none;
-	}
-
 	&:not(.is-open),
 	&.is-moved {
 		transition: none;
 
-		[data-figure] {
+		[data-lightbox-figure] {
 			transition: none;
 		}
 	}
 
-	&.is-opening [data-figure] {
+	&.is-opening [data-lightbox-figure] {
 		opacity: var(--opacity);
 	}
+}
+
+[data-lightbox-wrap] {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	height: 100%;
+
+	@screen md {
+		width: 80%;
+		height: 80%;
+	}
+}
+
+[data-lightbox-figure] {
+	/* Fixes trailing dead pixels on iOS and significantly improves
+	performance due to no repaints, but causes extra large images to be
+	blurry on iOS. */
+	will-change: transform;
+	transform-origin: left top;
+	transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-lightbox-img] {
+	user-select: none;
 }
