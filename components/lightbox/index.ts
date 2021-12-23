@@ -79,7 +79,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 	isSwipeDownClose: boolean;
 
-	animRatio: number;
+	animRatio = 0;
 	animScale = 1;
 	animOffset = new Point();
 
