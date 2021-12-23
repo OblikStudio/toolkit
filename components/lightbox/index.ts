@@ -532,8 +532,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		this.rectBounds = new DOMRectReadOnly(bl, bt, br - bl, bb - bt);
 	}
 
-	getOverdrag(amount: number) {
-		let limit = 150;
+	getOverdrag(amount: number, limit: number) {
 		return (amount * limit) / (amount + limit);
 	}
 
@@ -556,12 +555,19 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		let db = p.y + this.imgSize.y - r2.bottom;
 
 		if (overdrag) {
-			if (dt > 0) p.y = r2.top - this.getOverdrag(dt);
-			if (dl > 0) p.x = r2.left - this.getOverdrag(dl);
-			if (dr > 0) p.x = r2.right - this.imgSize.x + this.getOverdrag(dr);
+			if (dt > 0) p.y = r2.top - this.getOverdrag(dt, window.innerHeight / 3);
+			if (dl > 0) p.x = r2.left - this.getOverdrag(dl, window.innerWidth / 3);
+			if (dr > 0)
+				p.x =
+					r2.right -
+					this.imgSize.x +
+					this.getOverdrag(dr, window.innerWidth / 3);
 			if (db > 0) {
 				if (!this.isSwipeDownClose) {
-					p.y = r2.bottom - this.imgSize.y + this.getOverdrag(db);
+					p.y =
+						r2.bottom -
+						this.imgSize.y +
+						this.getOverdrag(db, window.innerHeight / 3);
 				}
 			}
 		} else {
