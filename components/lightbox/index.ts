@@ -256,7 +256,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			this.constrainPoint(cp, false);
 
 			let vec = this.ptRender.to(cp);
-			vec.magnitude *= 1 - Math.pow(0.001, delta / TIME_SCALE);
+			vec.magnitude *= 1 - Math.pow(0.00001, delta / TIME_SCALE);
 			this.ptRender.add(vec);
 
 			if (vcDelta.magnitude < 0.1 && vec.magnitude < 0.1) {
