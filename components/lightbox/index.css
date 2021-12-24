@@ -23,6 +23,18 @@
 	&.is-opening [data-lightbox-figure] {
 		opacity: var(--opacity);
 	}
+
+	&.is-expandable [data-lightbox-figure] {
+		cursor: zoom-in;
+	}
+
+	&.is-expanded [data-lightbox-figure] {
+		cursor: grab;
+	}
+
+	&.is-dragging [data-lightbox-figure] {
+		cursor: grabbing;
+	}
 }
 
 [data-lightbox-wrap] {

@@ -83,6 +83,8 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	animScale = 1;
 	animOffset = new Point();
 
+	isMobile = window.matchMedia("(max-width: 599px)");
+
 	/**
 	 * Whether a click outside the figure will close the lightbox. Set to false
 	 * once the user moves a pointer, i.e. is gesturing.
@@ -182,6 +184,10 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			this.elBox.style.setProperty("--opacity", "1");
 			this.elFigure.style.transform = "";
 		});
+
+		if (this.scaleStatic === 1 && this.scaleLimit > 1) {
+			this.elBox.classList.add("is-expandable");
+		}
 	}
 
 	close() {
@@ -236,7 +242,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		}
 
 		this.elBox.addEventListener("pointermove", this.moveHandler);
-		this.elBox.classList.add("is-moved");
+		this.elBox.classList.add("is-moved", "is-dragging");
 
 		this.isSwipeDownClose = Math.abs(this.getBleed(this.ptRender).bottom) < 20;
 
@@ -418,6 +424,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	}
 
 	gestureEnd(e: PointerEvent) {
+		this.elBox.classList.remove("is-dragging");
 		this.elBox.removeEventListener("pointermove", this.moveHandler);
 		this.isSliding = this.vcSpeed?.magnitude > 100;
 
@@ -427,27 +434,12 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		this.animOffset.set(0, 0);
 
 		if (this.isDoubleTap) {
-			if (this.scaleStatic > 1) {
-				let dx = this.lastTapUp.clientX - this.ptRender.x;
-				let dy = this.lastTapUp.clientY - this.ptRender.y;
-				let r = 1 - 1 / this.scaleStatic;
-
-				this.ptRender.x += dx * r;
-				this.ptRender.y += dy * r;
-				this.scaleStatic = 1;
-			} else {
-				let pull = new Point(
-					(this.naturalScale - 1) * (e.clientX - this.ptRender.x),
-					(this.naturalScale - 1) * (e.clientY - this.ptRender.y)
-				);
-
-				this.ptRender.subtract(pull);
-				this.scaleStatic = this.naturalScale;
-			}
-
+			this.clickZoom();
 			this.isDoubleTap = false;
 			this.lastTapUp = null;
 			this.isSliding = false;
+		} else if (!this.isMobile.matches && this.lastTapUp === e) {
+			this.clickZoom();
 		}
 
 		if (this.isPinchToClose && this.scaleStatic < 1) {
@@ -496,6 +488,38 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 				this.render();
 			}
 		}
+	}
+
+	clickZoom() {
+		if (this.scaleStatic > 1) {
+			this.elBox.classList.remove("is-expanded");
+			this.elBox.classList.add("is-expandable");
+			this.contract();
+		} else {
+			this.elBox.classList.remove("is-expandable");
+			this.elBox.classList.add("is-expanded");
+			this.expand();
+		}
+	}
+
+	contract() {
+		let dx = this.lastTapUp.clientX - this.ptRender.x;
+		let dy = this.lastTapUp.clientY - this.ptRender.y;
+		let r = 1 - 1 / this.scaleStatic;
+
+		this.ptRender.x += dx * r;
+		this.ptRender.y += dy * r;
+		this.scaleStatic = 1;
+	}
+
+	expand() {
+		let pull = new Point(
+			(this.naturalScale - 1) * (this.lastTapUp.clientX - this.ptRender.x),
+			(this.naturalScale - 1) * (this.lastTapUp.clientY - this.ptRender.y)
+		);
+
+		this.ptRender.subtract(pull);
+		this.scaleStatic = this.naturalScale;
 	}
 
 	getMaxBoundsRect() {
