@@ -4,17 +4,15 @@ import { easeInOutQuad } from "../../utils/easings";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
+ * @todo the cloned lightbox should be a separate component to avoid mixing states!
  * @todo inertia incorrectly calculated when overdragging
  * @todo grab jump when image beyond overdrag due to intertia
  * @todo replace with loaded image only after open transition has finished
- * @todo fix opacity glitch when grabbing right after opening transition
- * @todo smooth open/close transitions
  * @todo gradual opacity change on pinch-close
  * @todo rotate on pinch-close
  * @todo add is-moving class only after move event, not on down
  * @todo add object-fit support for open/close transitions
  * @todo add window resize handlers
- * @todo the cloned lightbox should be a separate component to avoid mixing states
  * @todo no-op when expanded image is the same size as the thumbnail
  * @todo close on escape key
  * @todo zoom with mouse wheel on desktop
@@ -84,6 +82,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	animOffset = new Point();
 
 	isMobile = window.matchMedia("(max-width: 599px)");
+	isClosed = false;
 
 	/**
 	 * Whether a click outside the figure will close the lightbox. Set to false
@@ -95,6 +94,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 	elBox: HTMLElement;
 	elFigure: HTMLElement;
+	elFigureWrap: HTMLElement;
 	elImg: HTMLImageElement;
 	elWrap: HTMLElement;
 	width: number;
@@ -123,6 +123,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		this.elBox = target.cloneNode(true) as HTMLElement;
 		this.elWrap = this.elBox.querySelector("[data-lightbox-wrap]");
 		this.elFigure = this.elBox.querySelector("[data-lightbox-figure]");
+		this.elFigureWrap = this.elBox.querySelector("[data-lightbox-figure-wrap]");
 		this.elImg = this.elBox.querySelector(
 			"[data-lightbox-img]"
 		) as HTMLImageElement;
@@ -175,9 +176,6 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		this.elFigure.style.transform = flipTransform;
 		this.elBox.style.setProperty("--opacity", "0");
 		this.elBox.classList.add("is-opening");
-		this.elBox.addEventListener("transitionend", () => {
-			this.elBox.classList.remove("is-opening");
-		});
 
 		window.requestAnimationFrame(() => {
 			this.elBox.classList.add("is-open");
@@ -188,15 +186,38 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		if (this.scaleStatic === 1 && this.scaleLimit > 1) {
 			this.elBox.classList.add("is-expandable");
 		}
+
+		this.isClosed = false;
 	}
 
 	close() {
+		this.isClosed = true;
+
 		ticker.off("tick", this.tickHandler);
-		document.body.removeChild(this.elBox);
-		this.elBox = null;
-		this.elWrap = null;
-		this.elFigure = null;
-		this.elImg = null;
+
+		this.elBox.classList.remove("is-moved");
+		this.elBox.classList.add("is-closing");
+
+		let r1 = this.$element.getBoundingClientRect();
+		let r2 = this.elFigureWrap.getBoundingClientRect();
+
+		let sw = r1.width / r2.width;
+		let sh = r1.height / r2.height;
+		let sx = r1.left - r2.left;
+		let sy = r1.top - r2.top;
+
+		this.elFigure.style.transform = `translate(${sx}px, ${sy}px) scale(${sw}, ${sh})`;
+		this.elBox.style.setProperty("--opacity", "0");
+
+		let box = this.elBox;
+		let handler = () => {
+			if (box.parentElement) {
+				document.body.removeChild(box);
+			}
+		};
+
+		this.elBox.addEventListener("transitionend", handler);
+		this.elBox.addEventListener("transitioncancel", handler);
 	}
 
 	pullRatio: Point;
@@ -242,6 +263,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		}
 
 		this.elBox.addEventListener("pointermove", this.moveHandler);
+		this.elBox.classList.remove("is-opening");
 		this.elBox.classList.add("is-moved", "is-dragging");
 
 		this.isSwipeDownClose = Math.abs(this.getBleed(this.ptRender).bottom) < 20;
@@ -483,7 +505,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		if (!this.isSliding) {
 			ticker.off("tick", this.tickHandler);
 
-			if (this.elBox) {
+			if (!this.isClosed) {
 				this.elBox.classList.remove("is-moved");
 				this.render();
 			}

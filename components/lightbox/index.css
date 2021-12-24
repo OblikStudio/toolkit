@@ -20,8 +20,13 @@
 		}
 	}
 
-	&.is-opening [data-lightbox-figure] {
+	&.is-opening [data-lightbox-figure],
+	&.is-closing [data-lightbox-figure] {
 		opacity: var(--opacity);
+	}
+
+	&.is-closing {
+		pointer-events: none;
 	}
 
 	&.is-expandable [data-lightbox-figure] {
