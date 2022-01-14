@@ -1,10 +1,8 @@
-import { Component } from "../../core/component";
 import { ticker } from "../../core/ticker";
 import { easeInOutQuad } from "../../utils/easings";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
- * @todo the cloned lightbox should be a separate component to avoid mixing states!
  * @todo inertia incorrectly calculated when overdragging
  * @todo grab jump when image beyond overdrag due to intertia
  * @todo replace with loaded image only after open transition has finished
@@ -29,9 +27,93 @@ const TIME_DOUBLE_TAP = 400;
 const DIST_LAST_FOCUS = 10;
 const TIME_SCALE = 1000;
 
-interface Options {
-	template: HTMLTemplateElement;
+const SHADOW_HTML = `
+<style>
+:host {
+	position: fixed;
+	top: 0;
+	left: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	height: 100%;
+	background-color: rgba(0, 0, 0, calc(var(--opacity, 1) * 0.8));
+	transition: background-color 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+	touch-action: none;
 }
+
+:host(:not(.is-open)),
+:host(.is-moved) {
+	transition: none;
+}
+
+:host(:not(.is-open)) .figure,
+:host(.is-moved) .figure {
+	transition: none;
+}
+
+:host(.is-opening) .figure,
+:host(.is-closing) .figure {
+	opacity: var(--opacity);
+}
+
+:host(.is-closing) {
+	pointer-events: none;
+}
+
+:host(.is-expandable) .figure {
+	cursor: zoom-in;
+}
+
+:host(.is-expanded) .figure {
+	cursor: grab;
+}
+
+:host(.is-dragging) .figure {
+	cursor: grabbing;
+}
+
+.wrapper {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	height: 100%;
+}
+
+@media (min-width: 600px) {
+	.wrapper {
+		width: 80%;
+		height: 80%;
+	}
+}
+
+.figure {
+	/* Fixes trailing dead pixels on iOS and significantly improves
+	performance due to no repaints, but causes extra large images to be
+	blurry on iOS. */
+	will-change: transform;
+	transform-origin: left top;
+	transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.image {
+	display: block;
+	max-width: 100%;
+	height: auto;
+	user-select: none;
+}
+</style>
+
+<div class="wrapper">
+	<div class="figure-wrapper">
+		<div class="figure">
+			<img class="image">
+		</div>
+	</div>
+</div>
+`;
 
 interface Pointer {
 	id: number;
@@ -50,7 +132,7 @@ function avgPoint(points: Pointer[]) {
 	return pt;
 }
 
-export class Lightbox extends Component<HTMLImageElement, Options> {
+export class Lightbox extends HTMLElement {
 	ptOffset = new Point();
 	ptStatic = new Point();
 	ptDown = new Point();
@@ -92,7 +174,6 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 	ptrs: Pointer[] = [];
 
-	elBox: HTMLElement;
 	elFigure: HTMLElement;
 	elFigureWrap: HTMLElement;
 	elImg: HTMLImageElement;
@@ -108,35 +189,35 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	imgSize = new Point();
 	rectBounds: DOMRectReadOnly;
 
-	init() {
-		this.width = parseInt(this.$element.getAttribute("width"));
-		this.height = parseInt(this.$element.getAttribute("height"));
+	shadow: ShadowRoot;
+	opener: HTMLImageElement;
 
-		this.$element.addEventListener("click", () => {
-			this.open();
-		});
+	constructor() {
+		super();
+
+		this.shadow = this.attachShadow({ mode: "open" });
+		this.shadow.innerHTML = SHADOW_HTML;
+
+		this.elWrap = this.shadow.querySelector(".wrapper");
+		this.elFigure = this.shadow.querySelector(".figure");
+		this.elFigureWrap = this.shadow.querySelector(".figure-wrapper");
+		this.elImg = this.shadow.querySelector(".image") as HTMLImageElement;
 	}
 
-	open() {
-		let target = this.$options.template.content.firstElementChild;
+	connectedCallback() {
+		this.width = parseInt(this.opener.getAttribute("width"));
+		this.height = parseInt(this.opener.getAttribute("height"));
 
-		this.elBox = target.cloneNode(true) as HTMLElement;
-		this.elWrap = this.elBox.querySelector("[data-lightbox-wrap]");
-		this.elFigure = this.elBox.querySelector("[data-lightbox-figure]");
-		this.elFigureWrap = this.elBox.querySelector("[data-lightbox-figure-wrap]");
-		this.elImg = this.elBox.querySelector(
-			"[data-lightbox-img]"
-		) as HTMLImageElement;
 		this.elImg.width = this.width;
 		this.elImg.height = this.height;
 
 		let loader = new Image();
-		loader.src = this.$element.src;
+		loader.src = this.opener.src;
 
 		if (loader.complete) {
 			this.elImg.src = loader.src;
 		} else {
-			this.elImg.src = this.$element.currentSrc;
+			this.elImg.src = this.opener.currentSrc;
 			loader.addEventListener("load", () => {
 				if (this.elImg.naturalWidth) {
 					this.elImg.src = loader.src;
@@ -144,11 +225,13 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			});
 		}
 
-		document.body.appendChild(this.elBox);
-		this.elBox.addEventListener("click", (e) => {
-			if (e.target !== this.elImg && this.isCanClickClose) {
-				this.close();
-			}
+		this.addEventListener("click", () => {
+			this.close();
+		});
+
+		this.elImg.addEventListener("click", (e) => {
+			// Prevent click listener of host element from closing the lightbox.
+			e.stopPropagation();
 		});
 
 		this.scaleStatic = 1;
@@ -159,12 +242,12 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		this.ptOffset.set(this.rectBounds.x, this.rectBounds.y);
 		this.ptRender.set(this.ptOffset);
 
-		this.elBox.addEventListener("pointerdown", this.downHandler);
-		this.elBox.addEventListener("pointerup", this.outHandler);
-		this.elBox.addEventListener("pointerleave", this.outHandler);
-		this.elBox.addEventListener("pointercancel", this.outHandler);
+		this.addEventListener("pointerdown", this.downHandler);
+		this.addEventListener("pointerup", this.outHandler);
+		this.addEventListener("pointerleave", this.outHandler);
+		this.addEventListener("pointercancel", this.outHandler);
 
-		let r1 = this.$element.getBoundingClientRect();
+		let r1 = this.opener.getBoundingClientRect();
 		let r2 = this.elImg.getBoundingClientRect();
 
 		let sw = r1.width / r2.width;
@@ -174,17 +257,17 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		let flipTransform = `translate(${sx}px, ${sy}px) scale(${sw}, ${sh})`;
 
 		this.elFigure.style.transform = flipTransform;
-		this.elBox.style.setProperty("--opacity", "0");
-		this.elBox.classList.add("is-opening");
+		this.style.setProperty("--opacity", "0");
+		this.classList.add("is-opening");
 
 		window.requestAnimationFrame(() => {
-			this.elBox.classList.add("is-open");
-			this.elBox.style.setProperty("--opacity", "1");
+			this.classList.add("is-open");
+			this.style.setProperty("--opacity", "1");
 			this.elFigure.style.transform = "";
 		});
 
 		if (this.scaleStatic === 1 && this.scaleLimit > 1) {
-			this.elBox.classList.add("is-expandable");
+			this.classList.add("is-expandable");
 		}
 
 		this.isClosed = false;
@@ -195,10 +278,10 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 		ticker.off("tick", this.tickHandler);
 
-		this.elBox.classList.remove("is-moved");
-		this.elBox.classList.add("is-closing");
+		this.classList.remove("is-moved");
+		this.classList.add("is-closing");
 
-		let r1 = this.$element.getBoundingClientRect();
+		let r1 = this.opener.getBoundingClientRect();
 		let r2 = this.elFigureWrap.getBoundingClientRect();
 
 		let sw = r1.width / r2.width;
@@ -207,17 +290,16 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 		let sy = r1.top - r2.top;
 
 		this.elFigure.style.transform = `translate(${sx}px, ${sy}px) scale(${sw}, ${sh})`;
-		this.elBox.style.setProperty("--opacity", "0");
+		this.style.setProperty("--opacity", "0");
 
-		let box = this.elBox;
 		let handler = () => {
-			if (box.parentElement) {
-				document.body.removeChild(box);
+			if (this.parentElement) {
+				document.body.removeChild(this);
 			}
 		};
 
-		this.elBox.addEventListener("transitionend", handler);
-		this.elBox.addEventListener("transitioncancel", handler);
+		this.addEventListener("transitionend", handler);
+		this.addEventListener("transitioncancel", handler);
 	}
 
 	pullRatio: Point;
@@ -262,9 +344,9 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			}
 		}
 
-		this.elBox.addEventListener("pointermove", this.moveHandler);
-		this.elBox.classList.remove("is-opening");
-		this.elBox.classList.add("is-moved", "is-dragging");
+		this.addEventListener("pointermove", this.moveHandler);
+		this.classList.remove("is-opening");
+		this.classList.add("is-moved", "is-dragging");
 
 		this.isSwipeDownClose = Math.abs(this.getBleed(this.ptRender).bottom) < 20;
 
@@ -289,7 +371,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 			if (vcDelta.magnitude < 0.1 && vec.magnitude < 0.1) {
 				ticker.off("tick", this.tickHandler);
-				this.elBox.classList.remove("is-moved");
+				this.classList.remove("is-moved");
 				this.isSliding = false;
 			}
 		} else {
@@ -446,8 +528,8 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 	}
 
 	gestureEnd(e: PointerEvent) {
-		this.elBox.classList.remove("is-dragging");
-		this.elBox.removeEventListener("pointermove", this.moveHandler);
+		this.classList.remove("is-dragging");
+		this.removeEventListener("pointermove", this.moveHandler);
 		this.isSliding = this.vcSpeed?.magnitude > 100;
 
 		let animRatio = this.animRatio;
@@ -493,7 +575,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			this.isSliding = false;
 		}
 
-		if (this.elBox) {
+		if (this) {
 			// not closed by one of the conditions above
 			this.updateBounds();
 
@@ -506,7 +588,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			ticker.off("tick", this.tickHandler);
 
 			if (!this.isClosed) {
-				this.elBox.classList.remove("is-moved");
+				this.classList.remove("is-moved");
 				this.render();
 			}
 		}
@@ -514,12 +596,12 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 	clickZoom() {
 		if (this.scaleStatic > 1) {
-			this.elBox.classList.remove("is-expanded");
-			this.elBox.classList.add("is-expandable");
+			this.classList.remove("is-expanded");
+			this.classList.add("is-expandable");
 			this.contract();
 		} else {
-			this.elBox.classList.remove("is-expandable");
-			this.elBox.classList.add("is-expanded");
+			this.classList.remove("is-expandable");
+			this.classList.add("is-expanded");
 			this.expand();
 		}
 	}
@@ -628,7 +710,7 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 
 	render() {
 		let opacity = 1 - this.animRatio;
-		this.elBox.style.setProperty("--opacity", opacity.toString());
+		this.style.setProperty("--opacity", opacity.toString());
 
 		let s = this.scaleStatic * this.animScale;
 		let x = this.ptRender.x - this.ptOffset.x + this.animOffset.x;
@@ -658,4 +740,10 @@ export class Lightbox extends Component<HTMLImageElement, Options> {
 			return null;
 		}
 	}
+}
+
+export function createLightbox(img: HTMLImageElement) {
+	let el = document.createElement("ob-lightbox") as Lightbox;
+	el.opener = img;
+	document.body.appendChild(el);
 }
