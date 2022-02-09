@@ -3,9 +3,6 @@ import { easeInOutQuad } from "../../utils/easings";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
- * @todo inertia incorrectly calculated when overdragging
- * @todo grab jump when image beyond overdrag due to intertia
- * @todo replace with loaded image only after open transition has finished
  * @todo gradual opacity change on pinch-close
  * @todo rotate on pinch-close
  * @todo add is-moving class only after move event, not on down
@@ -165,6 +162,8 @@ export class Lightbox extends HTMLElement {
 
 	isMobile = window.matchMedia("(max-width: 599px)");
 	isClosed = false;
+	isImageLoaded = false;
+	isOpenEnd = false;
 
 	/**
 	 * Whether a click outside the figure will close the lightbox. Set to false
@@ -180,6 +179,7 @@ export class Lightbox extends HTMLElement {
 	elWrap: HTMLElement;
 	width: number;
 	height: number;
+	loader: HTMLImageElement;
 
 	downHandler = this.handleDown.bind(this);
 	moveHandler = this.handleMove.bind(this);
@@ -210,17 +210,18 @@ export class Lightbox extends HTMLElement {
 
 		this.elImg.width = this.width;
 		this.elImg.height = this.height;
+		this.elImg.src = this.opener.currentSrc;
 
-		let loader = new Image();
-		loader.src = this.opener.src;
+		this.loader = new Image();
+		this.loader.src = this.opener.src;
 
-		if (loader.complete) {
-			this.elImg.src = loader.src;
+		if (this.loader.complete) {
+			this.elImg.src = this.loader.src;
 		} else {
-			this.elImg.src = this.opener.currentSrc;
-			loader.addEventListener("load", () => {
-				if (this.elImg.naturalWidth) {
-					this.elImg.src = loader.src;
+			this.loader.addEventListener("load", () => {
+				if (this.loader.naturalWidth) {
+					this.isImageLoaded = true;
+					this.updateImageSrc();
 				}
 			});
 		}
@@ -264,6 +265,9 @@ export class Lightbox extends HTMLElement {
 			this.classList.add("is-open");
 			this.style.setProperty("--opacity", "1");
 			this.elFigure.style.transform = "";
+			this.elFigure.addEventListener("transitionend", this.onOpenEndFn, {
+				once: true,
+			});
 		});
 
 		if (this.scaleStatic === 1 && this.scaleLimit > 1) {
@@ -273,7 +277,26 @@ export class Lightbox extends HTMLElement {
 		this.isClosed = false;
 	}
 
+	updateImageSrc() {
+		if (this.isImageLoaded && this.isOpenEnd) {
+			this.elImg.src = this.loader.src;
+		}
+	}
+
+	onOpenEndFn = this.onOpenEnd.bind(this);
+	onOpenEnd() {
+		this.isOpenEnd = true;
+		this.updateImageSrc();
+		this.classList.remove("is-opening");
+	}
+
 	close() {
+		if (!this.isOpenEnd) {
+			// If open transition has not finished, prevent the closing one from
+			// triggering onOpenEnd().
+			this.elFigure.removeEventListener("transitionend", this.onOpenEndFn);
+		}
+
 		this.isClosed = true;
 
 		ticker.off("tick", this.tickHandler);
@@ -345,7 +368,6 @@ export class Lightbox extends HTMLElement {
 		}
 
 		this.addEventListener("pointermove", this.moveHandler);
-		this.classList.remove("is-opening");
 		this.classList.add("is-moved", "is-dragging");
 
 		this.isSwipeDownClose = Math.abs(this.getBleed(this.ptRender).bottom) < 20;
