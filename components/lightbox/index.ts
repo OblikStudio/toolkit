@@ -3,7 +3,6 @@ import { easeInOutQuad } from "../../utils/easings";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
- * @todo gradual opacity change on pinch-close
  * @todo rotate on pinch-close
  * @todo add is-moving class only after move event, not on down
  * @todo add object-fit support for open/close transitions
@@ -732,6 +731,12 @@ export class Lightbox extends HTMLElement {
 
 	render() {
 		let opacity = 1 - this.animRatio;
+
+		if (this.isPinchToClose) {
+			// On iPhone, opacity goes from 0 to 1 in the 30-100% image scale.
+			opacity *= clamp((this.scaleStatic - 0.3) / 0.7, 0, 1);
+		}
+
 		this.style.setProperty("--opacity", opacity.toString());
 
 		let s = this.scaleStatic * this.animScale;
