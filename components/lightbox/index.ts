@@ -165,6 +165,11 @@ export class Lightbox extends HTMLElement {
 	isOpenEnd = false;
 
 	/**
+	 * Whether the user has scaled the image below 100% during a gesture.
+	 */
+	isScaledDown: boolean;
+
+	/**
 	 * Whether a click outside the figure will close the lightbox. Set to false
 	 * once the user moves a pointer, i.e. is gesturing.
 	 */
@@ -351,6 +356,7 @@ export class Lightbox extends HTMLElement {
 		this.ptStatic.set(this.ptRender);
 		this.gestureScale = this.scaleStatic;
 		this.isPinchToClose = this.scaleStatic === 1;
+		this.isScaledDown = this.scaleStatic < 0.95;
 
 		if (
 			this.lastTapUp &&
@@ -490,7 +496,16 @@ export class Lightbox extends HTMLElement {
 			this.ptStatic.x -= pullx;
 			this.ptStatic.y -= pully;
 
-			if (this.scaleStatic > 1) {
+			if (this.scaleStatic < 0.95) {
+				this.isScaledDown = true;
+			}
+
+			/**
+			 * On iPhone, the user can only disable the pinch-to-close behavior
+			 * when zooming in. If they start with a zoom-out and _then_ zoom
+			 * in, they should remain in a pinch-to-close state.
+			 */
+			if (this.scaleStatic > 1.05 && !this.isScaledDown) {
 				this.isPinchToClose = false;
 			}
 		}
