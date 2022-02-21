@@ -541,13 +541,8 @@ export class Lightbox extends HTMLElement {
 			this.isSliding = false;
 		}
 
-		if (this) {
-			// not closed by one of the conditions above
+		if (!this.isClosed) {
 			this.updateBounds();
-
-			if (!this.isSliding) {
-				this.constrainPoint(this.ptRender, false);
-			}
 		}
 
 		if (!this.isSliding) {
@@ -555,6 +550,7 @@ export class Lightbox extends HTMLElement {
 
 			if (!this.isClosed) {
 				this.classList.remove("is-moved");
+				this.constrainPoint(this.ptRender, false);
 				this.render();
 			}
 		}
