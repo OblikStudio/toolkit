@@ -3,8 +3,6 @@ import { easeInOutQuad } from "../../utils/easings";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
- * @todo fix jump on pointerDown during overscale
- * @todo get rid of ptRender; all render calculations should be done in render()
  * @todo rotate on pinch-close
  * @todo do not close on pinch-close if user starts expanding the image and lets go
  * @todo zoom inertia?
@@ -139,15 +137,12 @@ export class Lightbox extends HTMLElement {
 	ptRender = new Point();
 	pullRatio: Point;
 	ptTick: Point;
-	ptPullScale: Point;
 	vcSpeed: Vector;
 	vcMovement: Vector;
 	isSliding = false;
 	avgDist: number;
 	gestureScale: number;
 	gesturePoint: Point;
-	scalePointersChange: number;
-	rectPointersChange: DOMRect;
 
 	/**
 	 * Last effective point of focus, computed from the average of all pointers.
@@ -334,21 +329,15 @@ export class Lightbox extends HTMLElement {
 	}
 
 	pointersChange() {
-		this.scalePointersChange = this.scaleStatic;
-		this.rectPointersChange = this.elFigure.getBoundingClientRect();
-
-		if (this.ptPullScale) {
-			this.ptStatic.subtract(this.ptPullScale);
-			this.ptPullScale = null;
-		}
-
 		if (this.ptrs.length) {
 			this.ptDown = avgPoint(this.ptrs);
 			this.gesturePoint = this.ptDown.copy();
 			this.avgDist = this.getAverageDistance();
+
+			let r = this.elFigure.getBoundingClientRect();
 			this.pullRatio = new Point(
-				(this.ptDown.x - this.ptRender.x) / this.rectPointersChange.width,
-				(this.ptDown.y - this.ptRender.y) / this.rectPointersChange.height
+				(this.ptDown.x - this.ptRender.x) / r.width,
+				(this.ptDown.y - this.ptRender.y) / r.height
 			);
 
 			// Reset the tick position, otherwise the speed will be inaccurate
@@ -408,18 +397,22 @@ export class Lightbox extends HTMLElement {
 			this.vcMovement.add(delta);
 		}
 
-		let dist = this.getAverageDistance();
-		if (dist && this.avgDist) {
-			this.gestureScale = dist / this.avgDist;
-			this.scaleStatic = this.constrainScale(
-				this.gestureScale * this.scalePointersChange
-			);
+		let lastAvgDist = this.avgDist;
+		this.avgDist = this.getAverageDistance();
 
-			let scaleRatio = this.scaleStatic / this.scalePointersChange;
-			this.ptPullScale = new Point(
-				(scaleRatio - 1) * this.pullRatio.x * this.rectPointersChange.width,
-				(scaleRatio - 1) * this.pullRatio.y * this.rectPointersChange.height
-			);
+		if (lastAvgDist && this.avgDist) {
+			let distRatio = this.avgDist / lastAvgDist;
+			this.gestureScale *= distRatio;
+
+			let lastScale = this.scaleStatic;
+			this.scaleStatic = this.constrainScale(this.gestureScale);
+
+			let r = this.elFigure.getBoundingClientRect();
+			let scaleRatio = this.scaleStatic / lastScale;
+			let pullx = (scaleRatio - 1) * this.pullRatio.x * r.width;
+			let pully = (scaleRatio - 1) * this.pullRatio.y * r.height;
+			this.ptStatic.x -= pullx;
+			this.ptStatic.y -= pully;
 
 			if (this.scaleStatic < 0.95) {
 				this.isScaledDown = true;
@@ -438,11 +431,6 @@ export class Lightbox extends HTMLElement {
 		this.updateBounds();
 
 		this.ptRender = this.ptStatic.copy();
-
-		if (this.ptPullScale) {
-			this.ptRender.subtract(this.ptPullScale);
-		}
-
 		this.constrainPoint(this.ptRender);
 	}
 
