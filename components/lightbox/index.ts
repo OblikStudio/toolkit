@@ -134,7 +134,6 @@ export class Lightbox extends HTMLElement {
 	ptOffset = new Point();
 	ptStatic = new Point();
 	ptDown = new Point();
-	ptRender = new Point();
 	pullRatio: Point;
 	ptTick: Point;
 	vcSpeed: Vector;
@@ -162,8 +161,6 @@ export class Lightbox extends HTMLElement {
 	isSwipeDownClose: boolean;
 
 	animRatio = 0;
-	animScale = 1;
-	animOffset = new Point();
 
 	isMobile = window.matchMedia("(max-width: 599px)");
 	isClosed = false;
@@ -251,7 +248,7 @@ export class Lightbox extends HTMLElement {
 
 		this.updateBounds();
 		this.ptOffset.set(this.rectBounds.x, this.rectBounds.y);
-		this.ptRender.set(this.ptOffset);
+		this.ptStatic.set(this.ptOffset);
 
 		this.addEventListener("pointerdown", this.downHandler);
 		this.addEventListener("pointerup", this.outHandler);
@@ -329,6 +326,13 @@ export class Lightbox extends HTMLElement {
 	}
 
 	pointersChange() {
+		if (this.ptDown && this.gesturePoint) {
+			let offset = this.ptDown.to(this.gesturePoint);
+			this.ptStatic.add(offset);
+			this.ptDown = null;
+			this.gesturePoint = null;
+		}
+
 		if (this.ptrs.length) {
 			this.ptDown = avgPoint(this.ptrs);
 			this.gesturePoint = this.ptDown.copy();
@@ -336,21 +340,18 @@ export class Lightbox extends HTMLElement {
 
 			let r = this.elFigure.getBoundingClientRect();
 			this.pullRatio = new Point(
-				(this.ptDown.x - this.ptRender.x) / r.width,
-				(this.ptDown.y - this.ptRender.y) / r.height
+				(this.ptDown.x - r.x) / r.width,
+				(this.ptDown.y - r.y) / r.height
 			);
 
 			// Reset the tick position, otherwise the speed will be inaccurate
 			// since pointers change and gesturePoint makes a big jump.
 			this.ptTick = null;
 			this.vcSpeed = null;
-		} else {
-			this.ptDown = null;
 		}
 	}
 
 	gestureStart(e: PointerEvent) {
-		this.ptStatic.set(this.ptRender);
 		this.gestureScale = this.scaleStatic;
 		this.isPinchToClose = this.scaleStatic === 1;
 		this.isScaledDown = this.scaleStatic < 0.95;
@@ -372,7 +373,7 @@ export class Lightbox extends HTMLElement {
 		this.addEventListener("pointermove", this.moveHandler);
 		this.classList.add("is-moved", "is-dragging");
 
-		this.isSwipeDownClose = Math.abs(this.getBleed(this.ptRender).bottom) < 20;
+		this.isSwipeDownClose = Math.abs(this.getBleed(this.ptStatic).bottom) < 20;
 
 		this.isSliding = false;
 		ticker.on("tick", this.tickHandler);
@@ -389,9 +390,10 @@ export class Lightbox extends HTMLElement {
 		this.gesturePoint = avgPoint(this.ptrs);
 
 		if (lastGesturePoint) {
+			/**
+			 * @todo vcMovement calculations should be done on tick, not move.
+			 */
 			let delta = lastGesturePoint.to(this.gesturePoint);
-			this.ptStatic.add(delta);
-
 			delta.magnitude = Math.pow(delta.magnitude, 3);
 			this.vcMovement.magnitude *= 0.75;
 			this.vcMovement.add(delta);
@@ -429,9 +431,6 @@ export class Lightbox extends HTMLElement {
 		}
 
 		this.updateBounds();
-
-		this.ptRender = this.ptStatic.copy();
-		this.constrainPoint(this.ptRender);
 	}
 
 	constrainScale(scale: number) {
@@ -488,8 +487,6 @@ export class Lightbox extends HTMLElement {
 
 		let animRatio = this.animRatio;
 		this.animRatio = 0;
-		this.animScale = 1;
-		this.animOffset.set(0, 0);
 
 		if (this.isDoubleTap) {
 			this.clickZoom();
@@ -504,17 +501,17 @@ export class Lightbox extends HTMLElement {
 			this.close();
 			this.isSliding = false;
 		} else if (this.scaleStatic < 1) {
-			this.ptRender.set(this.elFigure.offsetLeft, this.elFigure.offsetTop);
+			this.ptStatic.set(this.elFigure.offsetLeft, this.elFigure.offsetTop);
 			this.scaleStatic = 1;
 			navigator.vibrate?.(50);
 			this.isSliding = false;
 		} else if (this.scaleStatic > this.scaleLimit) {
-			let dx = this.ptLastFocus.x - this.ptRender.x;
-			let dy = this.ptLastFocus.y - this.ptRender.y;
+			let dx = this.ptLastFocus.x - this.ptStatic.x;
+			let dy = this.ptLastFocus.y - this.ptStatic.y;
 			let r = 1 - this.scaleLimit / this.scaleStatic;
 
-			this.ptRender.x += dx * r;
-			this.ptRender.y += dy * r;
+			this.ptStatic.x += dx * r;
+			this.ptStatic.y += dy * r;
 			this.scaleStatic = this.scaleLimit;
 			navigator.vibrate?.(50);
 			this.isSliding = false;
@@ -538,7 +535,7 @@ export class Lightbox extends HTMLElement {
 
 			if (!this.isClosed) {
 				this.classList.remove("is-moved");
-				this.constrainPoint(this.ptRender, false);
+				this.constrainPoint(this.ptStatic, false);
 				this.render();
 			}
 		}
@@ -550,12 +547,12 @@ export class Lightbox extends HTMLElement {
 			this.classList.add("is-expandable");
 
 			// contract
-			let dx = this.lastTapUp.clientX - this.ptRender.x;
-			let dy = this.lastTapUp.clientY - this.ptRender.y;
+			let dx = this.lastTapUp.clientX - this.ptStatic.x;
+			let dy = this.lastTapUp.clientY - this.ptStatic.y;
 			let r = 1 - 1 / this.scaleStatic;
 
-			this.ptRender.x += dx * r;
-			this.ptRender.y += dy * r;
+			this.ptStatic.x += dx * r;
+			this.ptStatic.y += dy * r;
 			this.scaleStatic = 1;
 		} else {
 			this.classList.remove("is-expandable");
@@ -563,11 +560,11 @@ export class Lightbox extends HTMLElement {
 
 			// expand
 			let pull = new Point(
-				(this.naturalScale - 1) * (this.lastTapUp.clientX - this.ptRender.x),
-				(this.naturalScale - 1) * (this.lastTapUp.clientY - this.ptRender.y)
+				(this.naturalScale - 1) * (this.lastTapUp.clientX - this.ptStatic.x),
+				(this.naturalScale - 1) * (this.lastTapUp.clientY - this.ptStatic.y)
 			);
 
-			this.ptRender.subtract(pull);
+			this.ptStatic.subtract(pull);
 			this.scaleStatic = this.naturalScale;
 		}
 	}
@@ -578,14 +575,14 @@ export class Lightbox extends HTMLElement {
 
 			let vcDelta = this.vcSpeed.copy();
 			vcDelta.magnitude /= TIME_SCALE / delta;
-			this.ptRender.add(vcDelta);
+			this.ptStatic.add(vcDelta);
 
-			let cp = this.ptRender.copy();
+			let cp = this.ptStatic.copy();
 			this.constrainPoint(cp, false);
 
-			let vec = this.ptRender.to(cp);
+			let vec = this.ptStatic.to(cp);
 			vec.magnitude *= 1 - Math.pow(0.00001, delta / TIME_SCALE);
-			this.ptRender.add(vec);
+			this.ptStatic.add(vec);
 
 			if (vcDelta.magnitude < 0.1 && vec.magnitude < 0.1) {
 				ticker.off("tick", this.tickHandler);
@@ -601,19 +598,6 @@ export class Lightbox extends HTMLElement {
 			} else {
 				this.ptTick = this.gesturePoint.copy();
 			}
-		}
-
-		if (this.isSwipeDownClose) {
-			let bleed = this.getBleed(this.ptRender).bottom;
-			let ratio = bleed / (window.innerHeight * 0.75);
-			ratio = clamp(ratio, 0, 1);
-
-			this.animRatio = easeInOutQuad(ratio);
-			this.animScale = 1 - ratio * 0.3;
-			this.animOffset.set(
-				(1 - this.animScale) * this.imgSize.x * this.pullRatio.x,
-				(1 - this.animScale) * this.imgSize.y * this.pullRatio.y
-			);
 		}
 
 		this.render();
@@ -653,6 +637,30 @@ export class Lightbox extends HTMLElement {
 	}
 
 	render() {
+		let render = this.ptStatic.copy();
+		let s = this.scaleStatic;
+
+		if (this.ptDown && this.gesturePoint) {
+			let offset = this.ptDown.to(this.gesturePoint);
+			render.add(offset);
+			this.constrainPoint(render);
+		}
+
+		if (this.isSwipeDownClose) {
+			let bleed = this.getBleed(render).bottom;
+			let ratio = bleed / (window.innerHeight * 0.75);
+			ratio = clamp(ratio, 0, 1);
+
+			this.animRatio = easeInOutQuad(ratio);
+
+			let animScale = 1 - ratio * 0.3;
+			s *= animScale;
+			render.add(
+				(1 - animScale) * this.imgSize.x * this.pullRatio.x,
+				(1 - animScale) * this.imgSize.y * this.pullRatio.y
+			);
+		}
+
 		let opacity = 1 - this.animRatio;
 
 		if (this.isPinchToClose) {
@@ -662,9 +670,8 @@ export class Lightbox extends HTMLElement {
 
 		this.style.setProperty("--opacity", opacity.toString());
 
-		let s = this.scaleStatic * this.animScale;
-		let x = this.ptRender.x - this.ptOffset.x + this.animOffset.x;
-		let y = this.ptRender.y - this.ptOffset.y + this.animOffset.y;
+		let x = render.x - this.ptOffset.x;
+		let y = render.y - this.ptOffset.y;
 
 		/**
 		 * Using `matrix()` to prevent flicker on iOS.
