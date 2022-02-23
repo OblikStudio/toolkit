@@ -543,30 +543,36 @@ export class Lightbox extends HTMLElement {
 
 	clickZoom() {
 		if (this.scaleStatic > 1) {
-			this.classList.remove("is-expanded");
-			this.classList.add("is-expandable");
-
-			// contract
-			let dx = this.lastTapUp.clientX - this.ptStatic.x;
-			let dy = this.lastTapUp.clientY - this.ptStatic.y;
-			let r = 1 - 1 / this.scaleStatic;
-
-			this.ptStatic.x += dx * r;
-			this.ptStatic.y += dy * r;
-			this.scaleStatic = 1;
+			this.zoomOut();
 		} else {
-			this.classList.remove("is-expandable");
-			this.classList.add("is-expanded");
-
-			// expand
-			let pull = new Point(
-				(this.naturalScale - 1) * (this.lastTapUp.clientX - this.ptStatic.x),
-				(this.naturalScale - 1) * (this.lastTapUp.clientY - this.ptStatic.y)
-			);
-
-			this.ptStatic.subtract(pull);
-			this.scaleStatic = this.naturalScale;
+			this.zoomIn();
 		}
+	}
+
+	zoomOut() {
+		this.classList.remove("is-expanded");
+		this.classList.add("is-expandable");
+
+		let dx = this.lastTapUp.clientX - this.ptStatic.x;
+		let dy = this.lastTapUp.clientY - this.ptStatic.y;
+		let r = 1 - 1 / this.scaleStatic;
+
+		this.ptStatic.x += dx * r;
+		this.ptStatic.y += dy * r;
+		this.scaleStatic = 1;
+	}
+
+	zoomIn() {
+		this.classList.remove("is-expandable");
+		this.classList.add("is-expanded");
+
+		let pull = new Point(
+			(this.naturalScale - 1) * (this.lastTapUp.clientX - this.ptStatic.x),
+			(this.naturalScale - 1) * (this.lastTapUp.clientY - this.ptStatic.y)
+		);
+
+		this.ptStatic.subtract(pull);
+		this.scaleStatic = this.naturalScale;
 	}
 
 	handleTick(delta: number) {
