@@ -140,8 +140,14 @@ export class Lightbox extends HTMLElement {
 	vcMovement: Vector;
 	isSliding = false;
 	avgDist: number;
-	gestureScale: number;
+	avgDistStart: number;
 	gesturePoint: Point;
+
+	/**
+	 * @todo avoid having to getBoundingClientRect() because it can be computed
+	 * with ptStatic and scaleStatic.
+	 */
+	rectStart: DOMRect;
 
 	/**
 	 * Last effective point of focus, computed from the average of all pointers.
@@ -333,15 +339,37 @@ export class Lightbox extends HTMLElement {
 			this.gesturePoint = null;
 		}
 
+		/**
+		 * @todo avoid this entire code block by incrementing ptStatic in render().
+		 */
+		if (this.avgDistStart && this.avgDist && this.pullRatio && this.rectStart) {
+			let gestureScale = this.avgDist / this.avgDistStart;
+			let renderScale = this.scaleStatic * gestureScale;
+			let constrainedScale = this.constrainScale(renderScale);
+			let r = constrainedScale / renderScale;
+			let pull = new Point(
+				(gestureScale * r - 1) * this.pullRatio.x * this.rectStart.width,
+				(gestureScale * r - 1) * this.pullRatio.y * this.rectStart.height
+			);
+
+			this.scaleStatic = constrainedScale;
+			this.ptStatic.subtract(pull);
+			this.avgDistStart = null;
+			this.avgDist = null;
+			this.pullRatio = null;
+			this.rectStart = null;
+		}
+
 		if (this.ptrs.length) {
 			this.ptDown = avgPoint(this.ptrs);
 			this.gesturePoint = this.ptDown.copy();
-			this.avgDist = this.getAverageDistance();
+			this.avgDistStart = this.getAverageDistance();
+			this.avgDist = this.avgDistStart;
 
-			let r = this.elFigure.getBoundingClientRect();
+			this.rectStart = this.elFigure.getBoundingClientRect();
 			this.pullRatio = new Point(
-				(this.ptDown.x - r.x) / r.width,
-				(this.ptDown.y - r.y) / r.height
+				(this.ptDown.x - this.rectStart.x) / this.rectStart.width,
+				(this.ptDown.y - this.rectStart.y) / this.rectStart.height
 			);
 
 			// Reset the tick position, otherwise the speed will be inaccurate
@@ -352,7 +380,6 @@ export class Lightbox extends HTMLElement {
 	}
 
 	gestureStart(e: PointerEvent) {
-		this.gestureScale = this.scaleStatic;
 		this.isPinchToClose = this.scaleStatic === 1;
 		this.isScaledDown = this.scaleStatic < 0.95;
 
@@ -399,38 +426,7 @@ export class Lightbox extends HTMLElement {
 			this.vcMovement.add(delta);
 		}
 
-		let lastAvgDist = this.avgDist;
 		this.avgDist = this.getAverageDistance();
-
-		if (lastAvgDist && this.avgDist) {
-			let distRatio = this.avgDist / lastAvgDist;
-			this.gestureScale *= distRatio;
-
-			let lastScale = this.scaleStatic;
-			this.scaleStatic = this.constrainScale(this.gestureScale);
-
-			let r = this.elFigure.getBoundingClientRect();
-			let scaleRatio = this.scaleStatic / lastScale;
-			let pullx = (scaleRatio - 1) * this.pullRatio.x * r.width;
-			let pully = (scaleRatio - 1) * this.pullRatio.y * r.height;
-			this.ptStatic.x -= pullx;
-			this.ptStatic.y -= pully;
-
-			if (this.scaleStatic < 0.95) {
-				this.isScaledDown = true;
-			}
-
-			/**
-			 * On iPhone, the user can only disable the pinch-to-close behavior
-			 * when zooming in. If they start with a zoom-out and _then_ zoom
-			 * in, they should remain in a pinch-to-close state.
-			 */
-			if (this.scaleStatic > 1.05 && !this.isScaledDown) {
-				this.isPinchToClose = false;
-			}
-		}
-
-		this.updateBounds();
 	}
 
 	constrainScale(scale: number) {
@@ -646,6 +642,35 @@ export class Lightbox extends HTMLElement {
 		let render = this.ptStatic.copy();
 		let s = this.scaleStatic;
 
+		if (this.avgDistStart && this.avgDist && this.pullRatio && this.rectStart) {
+			let gestureScale = this.avgDist / this.avgDistStart;
+			let renderScale = s * gestureScale;
+			s = this.constrainScale(renderScale);
+			let diff = s / renderScale;
+
+			let pull = new Point(
+				(gestureScale * diff - 1) * this.pullRatio.x * this.rectStart.width,
+				(gestureScale * diff - 1) * this.pullRatio.y * this.rectStart.height
+			);
+
+			render.subtract(pull);
+
+			if (s < 0.95) {
+				this.isScaledDown = true;
+			}
+
+			/**
+			 * On iPhone, the user can only disable the pinch-to-close behavior
+			 * when zooming in. If they start with a zoom-out and _then_ zoom
+			 * in, they should remain in a pinch-to-close state.
+			 */
+			if (s > 1.05 && !this.isScaledDown) {
+				this.isPinchToClose = false;
+			}
+		}
+
+		this.updateBounds(s);
+
 		if (this.ptDown && this.gesturePoint) {
 			let offset = this.ptDown.to(this.gesturePoint);
 			render.add(offset);
@@ -671,7 +696,7 @@ export class Lightbox extends HTMLElement {
 
 		if (this.isPinchToClose) {
 			// On iPhone, opacity goes from 0 to 1 in the 30-100% image scale.
-			opacity *= clamp((this.scaleStatic - 0.3) / 0.7, 0, 1);
+			opacity *= clamp((s - 0.3) / 0.7, 0, 1);
 		}
 
 		this.style.setProperty("--opacity", opacity.toString());
@@ -724,10 +749,10 @@ export class Lightbox extends HTMLElement {
 	/**
 	 * @todo only needs to be called when image scale or window size changes.
 	 */
-	updateBounds() {
+	updateBounds(scale?: number) {
 		this.imgSize.set(
-			this.elFigure.offsetWidth * this.scaleStatic,
-			this.elFigure.offsetHeight * this.scaleStatic
+			this.elFigure.offsetWidth * (scale || this.scaleStatic),
+			this.elFigure.offsetHeight * (scale || this.scaleStatic)
 		);
 
 		let r3 = this.getMaxBoundsRect();
