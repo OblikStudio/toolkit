@@ -3,7 +3,6 @@ import { easeInOutQuad } from "../../utils/easings";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
- * @todo remove the need for pullRatio by using current x/y - ptDown x/y
  * @todo rotate on pinch-close
  * @todo do not close on pinch-close if user starts expanding the image and lets go
  * @todo zoom inertia?
@@ -135,7 +134,6 @@ export class Lightbox extends HTMLElement {
 	ptOffset = new Point();
 	ptStatic = new Point();
 	ptDown = new Point();
-	ptUpdate: Point;
 	pullRatio: Point;
 	ptTick: Point;
 	vcSpeed: Vector;
@@ -331,7 +329,6 @@ export class Lightbox extends HTMLElement {
 		if (this.ptrs.length) {
 			this.ptDown = avgPoint(this.ptrs);
 			this.gesturePoint = this.ptDown.copy();
-			this.ptUpdate = this.gesturePoint.copy();
 			this.avgDist = this.getAverageDistance();
 			this.pullRatio = new Point(
 				(this.ptDown.x - this.ptStatic.x) / this.imgSize.x,
@@ -384,10 +381,9 @@ export class Lightbox extends HTMLElement {
 		this.gesturePoint = avgPoint(this.ptrs);
 
 		if (lastGesturePoint) {
-			/**
-			 * @todo vcMovement calculations should be done on tick, not move.
-			 */
 			let delta = lastGesturePoint.to(this.gesturePoint);
+			this.ptStatic.add(delta);
+
 			delta.magnitude = Math.pow(delta.magnitude, 3);
 			this.vcMovement.magnitude *= 0.75;
 			this.vcMovement.add(delta);
@@ -615,12 +611,6 @@ export class Lightbox extends HTMLElement {
 	}
 
 	updatePosition() {
-		if (this.ptUpdate && this.gesturePoint) {
-			let delta = this.ptUpdate.to(this.gesturePoint);
-			this.ptStatic.add(delta);
-			this.ptUpdate = this.gesturePoint;
-		}
-
 		if (typeof this.gestureScale === "number") {
 			let lastScale = this.scaleStatic;
 			this.scaleStatic = this.constrainScale(this.gestureScale);
