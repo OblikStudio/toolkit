@@ -394,6 +394,18 @@ export class Lightbox extends HTMLElement {
 
 		if (lastDist && this.avgDist) {
 			this.gestureScale *= this.avgDist / lastDist;
+
+			let lastScale = this.scaleStatic;
+			this.scaleStatic = this.constrainScale(this.gestureScale);
+			this.updateBounds();
+
+			let diff = this.scaleStatic / lastScale;
+			let pull = new Point(
+				(diff - 1) * this.pullRatio.x * this.imgSize.x,
+				(diff - 1) * this.pullRatio.y * this.imgSize.y
+			);
+
+			this.ptStatic.subtract(pull);
 		}
 	}
 
@@ -449,7 +461,6 @@ export class Lightbox extends HTMLElement {
 		this.removeEventListener("pointermove", this.moveHandler);
 		this.isSliding = this.vcSpeed?.magnitude > 100;
 
-		this.updatePosition();
 		this.gestureScale = null;
 		this.gesturePoint = null;
 
@@ -610,26 +621,7 @@ export class Lightbox extends HTMLElement {
 		p.set(p.x, p.y);
 	}
 
-	updatePosition() {
-		if (typeof this.gestureScale === "number") {
-			let lastScale = this.scaleStatic;
-			this.scaleStatic = this.constrainScale(this.gestureScale);
-
-			let diff = this.scaleStatic / lastScale;
-			let pull = new Point(
-				(diff - 1) * this.pullRatio.x * this.imgSize.x,
-				(diff - 1) * this.pullRatio.y * this.imgSize.y
-			);
-
-			this.ptStatic.subtract(pull);
-		}
-
-		this.updateBounds();
-	}
-
 	render() {
-		this.updatePosition();
-
 		let render = this.ptStatic.copy();
 		let s = this.scaleStatic;
 
