@@ -23,7 +23,6 @@ const DIST_DOUBLE_TAP = 50;
 const TIME_DOUBLE_TAP = 400;
 
 const DIST_LAST_FOCUS = 10;
-const TIME_SCALE = 1000;
 
 const SHADOW_HTML = `
 <style>
@@ -142,6 +141,7 @@ export class Lightbox extends HTMLElement {
 	avgDist: number;
 	gesturePoint: Point;
 	gestureScale: number;
+	timeScale = 1;
 
 	/**
 	 * Last effective point of focus, computed from the average of all pointers.
@@ -459,7 +459,7 @@ export class Lightbox extends HTMLElement {
 	gestureEnd(e: PointerEvent) {
 		this.classList.remove("is-dragging");
 		this.removeEventListener("pointermove", this.moveHandler);
-		this.isSliding = this.vcSpeed?.magnitude > 100;
+		this.isSliding = this.vcSpeed?.magnitude * this.timeScale > 5;
 
 		this.gestureScale = null;
 		this.gesturePoint = null;
@@ -555,21 +555,20 @@ export class Lightbox extends HTMLElement {
 	}
 
 	handleTick(delta: number) {
+		this.timeScale = delta / 16.66;
+
 		if (this.isSliding) {
-			this.vcSpeed.magnitude *= Math.pow(0.001, delta / TIME_SCALE);
+			this.vcSpeed.magnitude *= Math.pow(0.9, this.timeScale);
 
-			let vcDelta = this.vcSpeed.copy();
-			vcDelta.magnitude /= TIME_SCALE / delta;
-			this.ptStatic.add(vcDelta);
+			let ptConstrained = this.ptStatic.copy();
+			this.constrainPoint(ptConstrained);
 
-			let cp = this.ptStatic.copy();
-			this.constrainPoint(cp, false);
+			let step = this.ptStatic.to(ptConstrained);
+			step.add(this.vcSpeed);
 
-			let vec = this.ptStatic.to(cp);
-			vec.magnitude *= 1 - Math.pow(0.00001, delta / TIME_SCALE);
-			this.ptStatic.add(vec);
+			this.ptStatic.add(step);
 
-			if (vcDelta.magnitude < 0.1 && vec.magnitude < 0.1) {
+			if (this.vcSpeed.magnitude < 0.1 && step.magnitude < 0.1) {
 				ticker.off("tick", this.tickHandler);
 				this.classList.remove("is-moved");
 				this.isSliding = false;
@@ -579,7 +578,6 @@ export class Lightbox extends HTMLElement {
 				let lastTickPoint = this.ptTick.copy();
 				this.ptTick.set(this.gesturePoint);
 				this.vcSpeed = lastTickPoint.to(this.ptTick);
-				this.vcSpeed.magnitude *= TIME_SCALE / delta;
 			} else {
 				this.ptTick = this.gesturePoint.copy();
 			}
