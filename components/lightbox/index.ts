@@ -242,6 +242,7 @@ export class Lightbox extends HTMLElement {
 			e.stopPropagation();
 		});
 
+		this.rotation = 0;
 		this.scaleStatic = 1;
 		this.naturalScale = this.width / this.elFigure.offsetWidth;
 		this.scaleLimit = Math.max(this.naturalScale, this.scaleLimit);
@@ -325,15 +326,40 @@ export class Lightbox extends HTMLElement {
 		this.vcMovement = new Vector();
 	}
 
+	gestureAngle: Vector;
+	gestureOffset: Vector;
+	rotation: number;
+	distDown: number;
+
+	ptPull: Point;
+	vcPull: Vector;
+
 	pointersChange() {
+		let tr = this.getGestureTransform();
+		this.ptStatic = tr.point;
+		this.scaleStatic = tr.scale;
+		this.rotation = tr.angle;
+		this.gestureScale = null;
+		this.gestureOffset = null;
+		this.angle = null;
+		this.ptPull = null;
+		this.vcPull = null;
+
 		if (this.ptrs.length) {
 			this.ptDown = avgPoint(this.ptrs);
 			this.gesturePoint = this.ptDown.copy();
 			this.avgDist = this.getAverageDistance();
+			this.distDown = this.avgDist;
 			this.pullRatio = new Point(
 				(this.ptDown.x - this.ptStatic.x) / this.imgSize.x,
 				(this.ptDown.y - this.ptStatic.y) / this.imgSize.y
 			);
+			this.ptPull = new Point(
+				this.ptDown.x - this.ptStatic.x,
+				this.ptDown.y - this.ptStatic.y
+			);
+			this.vcPull = this.ptDown.to(this.ptStatic);
+			this.gestureAngle = this.getPointersAngle();
 
 			// Reset the tick position, otherwise the speed will be inaccurate
 			// since pointers change and gesturePoint makes a big jump.
@@ -343,7 +369,6 @@ export class Lightbox extends HTMLElement {
 	}
 
 	gestureStart(e: PointerEvent) {
-		this.gestureScale = this.scaleStatic;
 		this.isPinchToClose = this.scaleStatic === 1;
 		this.isScaledDown = this.scaleStatic < 0.95;
 
@@ -370,6 +395,20 @@ export class Lightbox extends HTMLElement {
 		ticker.on("tick", this.tickHandler);
 	}
 
+	getPointersAngle() {
+		if (this.ptrs.length > 1) {
+			let v = new Vector();
+
+			for (let i = 1; i < this.ptrs.length; i++) {
+				v.add(this.ptrs[i - 1].point.to(this.ptrs[i].point));
+			}
+
+			return v;
+		}
+	}
+
+	angle: number;
+
 	handleMove(e: PointerEvent) {
 		this.isCanClickClose = false;
 
@@ -379,33 +418,23 @@ export class Lightbox extends HTMLElement {
 
 		let lastGesturePoint = this.gesturePoint;
 		this.gesturePoint = avgPoint(this.ptrs);
+		this.gestureOffset = this.ptDown.to(this.gesturePoint);
 
 		if (lastGesturePoint) {
 			let delta = lastGesturePoint.to(this.gesturePoint);
-			this.ptStatic.add(delta);
-
 			delta.magnitude = Math.pow(delta.magnitude, 3);
 			this.vcMovement.magnitude *= 0.75;
 			this.vcMovement.add(delta);
 		}
 
-		let lastDist = this.avgDist;
-		this.avgDist = this.getAverageDistance();
+		if (this.distDown) {
+			let dist = this.getAverageDistance();
+			this.gestureScale = dist / this.distDown;
+		}
 
-		if (lastDist && this.avgDist) {
-			this.gestureScale *= this.avgDist / lastDist;
-
-			let lastScale = this.scaleStatic;
-			this.scaleStatic = this.constrainScale(this.gestureScale);
-			this.updateBounds();
-
-			let diff = this.scaleStatic / lastScale;
-			let pull = new Point(
-				(diff - 1) * this.pullRatio.x * this.imgSize.x,
-				(diff - 1) * this.pullRatio.y * this.imgSize.y
-			);
-
-			this.ptStatic.subtract(pull);
+		let ang = this.getPointersAngle();
+		if (ang && this.gestureAngle) {
+			this.angle = ang.direction - this.gestureAngle.direction;
 		}
 	}
 
@@ -461,6 +490,7 @@ export class Lightbox extends HTMLElement {
 		this.removeEventListener("pointermove", this.moveHandler);
 		this.isSliding = this.vcSpeed?.magnitude * this.timeScale > 5;
 
+		this.rotation = 0;
 		this.gestureScale = null;
 		this.gesturePoint = null;
 
@@ -619,12 +649,61 @@ export class Lightbox extends HTMLElement {
 		p.set(p.x, p.y);
 	}
 
+	getGestureTransform() {
+		let point = this.ptStatic.copy();
+		let scale = this.scaleStatic;
+		let angle = this.rotation;
+
+		if (this.gestureScale) {
+			scale *= this.gestureScale;
+		}
+
+		if (this.gestureOffset) {
+			point.add(this.gestureOffset);
+		}
+
+		if (this.ptPull) {
+			let diff = scale / this.scaleStatic;
+			let pull = new Point(
+				(diff - 1) * this.ptPull.x,
+				(diff - 1) * this.ptPull.y
+			);
+
+			point.subtract(pull);
+		}
+
+		if (this.angle) {
+			angle += this.angle;
+		}
+
+		if (this.vcPull) {
+			let v1 = this.vcPull.copy();
+			v1.magnitude *= this.gestureScale;
+
+			let v2 = v1.copy();
+			v2.direction += this.angle;
+			v1.direction -= Math.PI;
+			v2.add(v1);
+			point.add(v2);
+		}
+
+		return {
+			point,
+			scale,
+			angle,
+		};
+	}
+
 	render() {
-		let render = this.ptStatic.copy();
-		let s = this.scaleStatic;
+		let gesture = this.getGestureTransform();
+		let render = gesture.point;
+		let s = gesture.scale;
 
 		if (!this.isSliding) {
-			this.constrainPoint(render);
+			/**
+			 * @todo do not constrain if not rotating
+			 */
+			// this.constrainPoint(render);
 		}
 
 		if (s < 0.95) {
@@ -671,7 +750,7 @@ export class Lightbox extends HTMLElement {
 		 * Using `matrix()` to prevent flicker on iOS.
 		 * @see https://stackoverflow.com/q/70233672/3130281
 		 */
-		this.elFigure.style.transform = `matrix(${s}, 0, 0, ${s}, ${x}, ${y})`;
+		this.elFigure.style.transform = `matrix(${s}, 0, 0, ${s}, ${x}, ${y}) rotate(${gesture.angle}rad)`;
 	}
 
 	close() {
