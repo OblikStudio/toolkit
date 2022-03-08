@@ -133,7 +133,6 @@ export class Lightbox extends HTMLElement {
 	ptOffset = new Point();
 	ptStatic = new Point();
 	ptDown = new Point();
-	pullRatio: Point;
 	ptTick: Point;
 	vcSpeed: Vector;
 	vcMovement: Vector;
@@ -342,7 +341,6 @@ export class Lightbox extends HTMLElement {
 		this.gestureScale = null;
 		this.gestureOffset = null;
 		this.angle = null;
-		this.ptPull = null;
 		this.vcPull = null;
 
 		if (this.ptrs.length) {
@@ -350,10 +348,6 @@ export class Lightbox extends HTMLElement {
 			this.gesturePoint = this.ptDown.copy();
 			this.avgDist = this.getAverageDistance();
 			this.distDown = this.avgDist;
-			this.pullRatio = new Point(
-				(this.ptDown.x - this.ptStatic.x) / this.imgSize.x,
-				(this.ptDown.y - this.ptStatic.y) / this.imgSize.y
-			);
 			this.ptPull = new Point(
 				this.ptDown.x - this.ptStatic.x,
 				this.ptDown.y - this.ptStatic.y
@@ -662,7 +656,7 @@ export class Lightbox extends HTMLElement {
 			point.add(this.gestureOffset);
 		}
 
-		if (this.ptPull) {
+		if (scale !== this.scaleStatic) {
 			let diff = scale / this.scaleStatic;
 			let pull = new Point(
 				(diff - 1) * this.ptPull.x,
@@ -729,8 +723,8 @@ export class Lightbox extends HTMLElement {
 			let animScale = 1 - ratio * 0.3;
 			s *= animScale;
 			render.add(
-				(1 - animScale) * this.imgSize.x * this.pullRatio.x,
-				(1 - animScale) * this.imgSize.y * this.pullRatio.y
+				(1 - animScale) * this.ptPull.x,
+				(1 - animScale) * this.ptPull.y
 			);
 		}
 
