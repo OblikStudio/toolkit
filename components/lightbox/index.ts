@@ -400,7 +400,7 @@ export class Lightbox extends HTMLElement {
 			let v = new Vector();
 
 			for (let i = 1; i < this.ptrs.length; i++) {
-				v.add(this.ptrs[i - 1].point.to(this.ptrs[i].point));
+				v.add(this.ptrs[0].point.to(this.ptrs[i].point));
 			}
 
 			return v;
