@@ -4,7 +4,7 @@ import { clamp, Point, Vector } from "../../utils/math";
 
 /**
  * @todo readd drag constraints
- * @todo rotate on pinch-close
+ * @todo readd scale overdrag
  * @todo do not close on pinch-close if user starts expanding the image and lets go
  * @todo zoom inertia?
  * @todo add is-moving class only after move event, not on down
@@ -326,6 +326,7 @@ export class Lightbox extends HTMLElement {
 		this.vcMovement = new Vector();
 	}
 
+	isRotate: boolean;
 	gestureAngle: Vector;
 	gestureOffset: Vector;
 	rotation: number;
@@ -341,6 +342,7 @@ export class Lightbox extends HTMLElement {
 		this.rotation = tr.angle;
 		this.gestureScale = null;
 		this.gestureOffset = null;
+		this.gestureAngle = null;
 		this.angle = null;
 		this.vcPull = null;
 
@@ -354,7 +356,6 @@ export class Lightbox extends HTMLElement {
 				this.ptDown.y - this.ptStatic.y
 			);
 			this.vcPull = this.ptDown.to(this.ptStatic);
-			this.gestureAngle = this.getPointersAngle();
 
 			// Reset the tick position, otherwise the speed will be inaccurate
 			// since pointers change and gesturePoint makes a big jump.
@@ -366,6 +367,7 @@ export class Lightbox extends HTMLElement {
 	gestureStart(e: PointerEvent) {
 		this.isPinchToClose = this.scaleStatic === 1;
 		this.isScaledDown = this.scaleStatic < 0.95;
+		this.isRotate = this.isPinchToClose && this.isScaledDown;
 
 		if (
 			this.lastTapUp &&
@@ -427,9 +429,13 @@ export class Lightbox extends HTMLElement {
 			this.gestureScale = dist / this.distDown;
 		}
 
-		let ang = this.getPointersAngle();
-		if (ang && this.gestureAngle) {
-			this.angle = ang.direction - this.gestureAngle.direction;
+		if (this.isRotate) {
+			let angle = this.getPointersAngle();
+			if (this.gestureAngle) {
+				this.angle = angle.direction - this.gestureAngle.direction;
+			} else {
+				this.gestureAngle = angle;
+			}
 		}
 	}
 
@@ -713,6 +719,10 @@ export class Lightbox extends HTMLElement {
 		 */
 		if (s > 1.05 && !this.isScaledDown) {
 			this.isPinchToClose = false;
+		}
+
+		if (this.isScaledDown && this.isPinchToClose) {
+			this.isRotate = true;
 		}
 
 		if (this.isSwipeDownClose) {
