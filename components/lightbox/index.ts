@@ -3,6 +3,7 @@ import { easeInOutQuad } from "../../utils/easings";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
+ * @todo readd drag constraints
  * @todo rotate on pinch-close
  * @todo do not close on pinch-close if user starts expanding the image and lets go
  * @todo zoom inertia?
@@ -582,17 +583,18 @@ export class Lightbox extends HTMLElement {
 		this.timeScale = delta / 16.66;
 
 		if (this.isSliding) {
-			this.vcSpeed.magnitude *= Math.pow(0.9, this.timeScale);
+			this.vcSpeed.magnitude *= Math.pow(0.85, this.timeScale);
+			this.ptStatic.add(this.vcSpeed);
+			this.constrainPoint(this.ptStatic);
 
-			let ptConstrained = this.ptStatic.copy();
-			this.constrainPoint(ptConstrained);
+			let ptIdeal = this.ptStatic.copy();
+			this.constrainPoint(ptIdeal, false);
 
-			let step = this.ptStatic.to(ptConstrained);
-			step.add(this.vcSpeed);
+			let vcPush = this.ptStatic.to(ptIdeal);
+			vcPush.magnitude *= 1 - Math.pow(0.9, this.timeScale);
+			this.ptStatic.add(vcPush);
 
-			this.ptStatic.add(step);
-
-			if (this.vcSpeed.magnitude < 0.1 && step.magnitude < 0.1) {
+			if (this.vcSpeed.magnitude < 0.1 && vcPush.magnitude < 0.1) {
 				ticker.off("tick", this.tickHandler);
 				this.classList.remove("is-moved");
 				this.isSliding = false;
