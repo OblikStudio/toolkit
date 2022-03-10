@@ -4,7 +4,6 @@ import { clamp, Point, Vector } from "../../utils/math";
 
 /**
  * @todo readd drag constraints
- * @todo readd scale overdrag
  * @todo do not close on pinch-close if user starts expanding the image and lets go
  * @todo zoom inertia?
  * @todo add is-moving class only after move event, not on down
@@ -657,7 +656,7 @@ export class Lightbox extends HTMLElement {
 		let angle = this.rotation;
 
 		if (this.gestureScale) {
-			scale *= this.gestureScale;
+			scale = this.constrainScale(scale * this.gestureScale);
 		}
 
 		if (this.gestureOffset) {
