@@ -3,7 +3,9 @@ import { easeInOutQuad } from "../../utils/easings";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
- * @todo readd drag constraints
+ * @todo fix scale overdrag jump on pointerup
+ * @todo scale overdrag on shrink when not rotating, ~0.5 limit
+ * @todo calculate speed from actual render delta, rather than pointer change
  * @todo do not close on pinch-close if user starts expanding the image and lets go
  * @todo zoom inertia?
  * @todo add is-moving class only after move event, not on down
@@ -700,13 +702,6 @@ export class Lightbox extends HTMLElement {
 		let render = gesture.point;
 		let s = gesture.scale;
 
-		if (!this.isSliding) {
-			/**
-			 * @todo do not constrain if not rotating
-			 */
-			// this.constrainPoint(render);
-		}
-
 		if (s < 0.95) {
 			this.isScaledDown = true;
 		}
@@ -722,6 +717,14 @@ export class Lightbox extends HTMLElement {
 
 		if (this.isScaledDown && this.isPinchToClose) {
 			this.isRotate = true;
+		}
+
+		if (!this.isSliding && !this.isRotate) {
+			if (s !== this.scaleStatic) {
+				this.updateBounds(s);
+			}
+
+			this.constrainPoint(render);
 		}
 
 		if (this.isSwipeDownClose) {
@@ -796,10 +799,10 @@ export class Lightbox extends HTMLElement {
 	/**
 	 * @todo only needs to be called when image scale or window size changes.
 	 */
-	updateBounds() {
+	updateBounds(scale = this.scaleStatic) {
 		this.imgSize.set(
-			this.elFigure.offsetWidth * this.scaleStatic,
-			this.elFigure.offsetHeight * this.scaleStatic
+			this.elFigure.offsetWidth * scale,
+			this.elFigure.offsetHeight * scale
 		);
 
 		let r3 = this.getMaxBoundsRect();
