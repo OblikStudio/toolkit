@@ -3,11 +3,8 @@ import { easeInOutQuad } from "../../utils/easings";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
- * @todo fix scale overdrag jump on pointerup
- * @todo scale overdrag on shrink when not rotating, ~0.5 limit
  * @todo calculate speed from actual render delta, rather than pointer change
  * @todo do not close on pinch-close if user starts expanding the image and lets go
- * @todo zoom inertia?
  * @todo add is-moving class only after move event, not on down
  * @todo add object-fit support for open/close transitions
  * @todo add window resize handlers
@@ -152,7 +149,8 @@ export class Lightbox extends HTMLElement {
 	ptLastFocus = new Point();
 
 	scaleStatic = 1;
-	scaleLimit = 7;
+	scaleMin = 1;
+	scaleMax = 7;
 	naturalScale: number;
 
 	isPinchToClose: boolean;
@@ -246,7 +244,7 @@ export class Lightbox extends HTMLElement {
 		this.rotation = 0;
 		this.scaleStatic = 1;
 		this.naturalScale = this.width / this.elFigure.offsetWidth;
-		this.scaleLimit = Math.max(this.naturalScale, this.scaleLimit);
+		this.scaleMax = Math.max(this.naturalScale, this.scaleMax);
 
 		this.updateBounds();
 		this.ptOffset.set(this.rectBounds.x, this.rectBounds.y);
@@ -279,7 +277,7 @@ export class Lightbox extends HTMLElement {
 			});
 		});
 
-		if (this.scaleStatic === 1 && this.scaleLimit > 1) {
+		if (this.scaleStatic === 1 && this.scaleMax > 1) {
 			this.classList.add("is-expandable");
 		}
 
@@ -441,11 +439,17 @@ export class Lightbox extends HTMLElement {
 	}
 
 	constrainScale(scale: number) {
-		let limit = this.scaleLimit;
-		let overLimit = scale - limit;
+		let min = this.scaleMin;
+		let max = this.scaleMax;
+		let minExtra = min - scale;
+		let maxExtra = scale - max;
 
-		if (overLimit > 0) {
-			scale = limit + this.getScaleOverLimit(overLimit, limit);
+		if (maxExtra > 0) {
+			scale = max + this.getScaleOverLimit(maxExtra, max);
+		}
+
+		if (!this.isRotate && minExtra > 0) {
+			scale = min - this.getScaleOverLimit(minExtra, min);
 		}
 
 		return scale;
@@ -516,14 +520,14 @@ export class Lightbox extends HTMLElement {
 			this.scaleStatic = 1;
 			navigator.vibrate?.(50);
 			this.isSliding = false;
-		} else if (this.scaleStatic > this.scaleLimit) {
+		} else if (this.scaleStatic > this.scaleMax) {
 			let dx = this.ptLastFocus.x - this.ptStatic.x;
 			let dy = this.ptLastFocus.y - this.ptStatic.y;
-			let r = 1 - this.scaleLimit / this.scaleStatic;
+			let r = 1 - this.scaleMax / this.scaleStatic;
 
 			this.ptStatic.x += dx * r;
 			this.ptStatic.y += dy * r;
-			this.scaleStatic = this.scaleLimit;
+			this.scaleStatic = this.scaleMax;
 			navigator.vibrate?.(50);
 			this.isSliding = false;
 		}
