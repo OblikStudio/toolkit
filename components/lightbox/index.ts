@@ -3,7 +3,6 @@ import { easeInOutQuad } from "../../utils/easings";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
- * @todo do not close on pinch-close if user starts expanding the image and lets go
  * @todo add is-moving class only after move event, not on down
  * @todo add object-fit support for open/close transitions
  * @todo add window resize handlers
@@ -135,6 +134,7 @@ export class Lightbox extends HTMLElement {
 	ptRender: Point;
 	vcSpeed: Vector;
 	vcMovement: Vector;
+	scaleDirection: number;
 	isSliding = false;
 	avgDist: number;
 	gesturePoint: Point;
@@ -367,6 +367,7 @@ export class Lightbox extends HTMLElement {
 		this.isPinchToClose = this.scaleStatic === 1;
 		this.isScaledDown = this.scaleStatic < 0.95;
 		this.isRotate = this.isPinchToClose && this.isScaledDown;
+		this.scaleDirection = 0;
 
 		if (
 			this.lastTapUp &&
@@ -425,7 +426,14 @@ export class Lightbox extends HTMLElement {
 
 		if (this.distDown) {
 			let dist = this.getAverageDistance();
+			let lastGestureScale = this.gestureScale;
 			this.gestureScale = dist / this.distDown;
+
+			if (lastGestureScale) {
+				let diff = this.gestureScale / lastGestureScale;
+				this.scaleDirection += Math.pow(diff, 10) - 1;
+				this.scaleDirection *= 0.9;
+			}
 		}
 
 		if (this.isRotate) {
@@ -512,7 +520,7 @@ export class Lightbox extends HTMLElement {
 			this.clickZoom();
 		}
 
-		if (this.isPinchToClose && this.scaleStatic < 1) {
+		if (this.isPinchToClose && this.scaleDirection < 0) {
 			this.close();
 			this.isSliding = false;
 		} else if (this.scaleStatic < 1) {
