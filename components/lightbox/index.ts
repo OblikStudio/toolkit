@@ -3,7 +3,6 @@ import { easeInOutQuad } from "../../utils/easings";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
- * @todo calculate speed from actual render delta, rather than pointer change
  * @todo do not close on pinch-close if user starts expanding the image and lets go
  * @todo add is-moving class only after move event, not on down
  * @todo add object-fit support for open/close transitions
@@ -133,6 +132,7 @@ export class Lightbox extends HTMLElement {
 	ptStatic = new Point();
 	ptDown = new Point();
 	ptTick: Point;
+	ptRender: Point;
 	vcSpeed: Vector;
 	vcMovement: Vector;
 	isSliding = false;
@@ -494,7 +494,7 @@ export class Lightbox extends HTMLElement {
 	gestureEnd(e: PointerEvent) {
 		this.classList.remove("is-dragging");
 		this.removeEventListener("pointermove", this.moveHandler);
-		this.isSliding = this.vcSpeed?.magnitude * this.timeScale > 5;
+		this.isSliding = this.vcSpeed?.magnitude > 5;
 
 		this.rotation = 0;
 		this.gestureScale = null;
@@ -595,7 +595,10 @@ export class Lightbox extends HTMLElement {
 
 		if (this.isSliding) {
 			this.vcSpeed.magnitude *= Math.pow(0.85, this.timeScale);
-			this.ptStatic.add(this.vcSpeed);
+
+			let vcStep = this.vcSpeed.copy();
+			vcStep.magnitude *= this.timeScale;
+			this.ptStatic.add(vcStep);
 			this.constrainPoint(this.ptStatic);
 
 			let ptIdeal = this.ptStatic.copy();
@@ -610,13 +613,14 @@ export class Lightbox extends HTMLElement {
 				this.classList.remove("is-moved");
 				this.isSliding = false;
 			}
-		} else {
+		} else if (this.ptRender) {
 			if (this.ptTick) {
 				let lastTickPoint = this.ptTick.copy();
-				this.ptTick.set(this.gesturePoint);
+				this.ptTick.set(this.ptRender);
 				this.vcSpeed = lastTickPoint.to(this.ptTick);
+				this.vcSpeed.magnitude /= this.timeScale;
 			} else {
-				this.ptTick = this.gesturePoint.copy();
+				this.ptTick = this.ptRender.copy();
 			}
 		}
 
@@ -763,6 +767,7 @@ export class Lightbox extends HTMLElement {
 		 * @see https://stackoverflow.com/q/70233672/3130281
 		 */
 		this.elFigure.style.transform = `matrix(${s}, 0, 0, ${s}, ${x}, ${y}) rotate(${gesture.angle}rad)`;
+		this.ptRender = new Point(x, y);
 	}
 
 	close() {
