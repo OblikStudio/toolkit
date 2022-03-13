@@ -3,7 +3,6 @@ import { easeInOutQuad } from "../../utils/easings";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
- * @todo add is-moving class only after move event, not on down
  * @todo add object-fit support for open/close transitions
  * @todo add window resize handlers
  * @todo no-op when expanded image is the same size as the thumbnail
@@ -368,6 +367,7 @@ export class Lightbox extends HTMLElement {
 		this.isScaledDown = this.scaleStatic < 0.95;
 		this.isRotate = this.isPinchToClose && this.isScaledDown;
 		this.scaleDirection = 0;
+		this.isMoved = false;
 
 		if (
 			this.lastTapUp &&
@@ -384,7 +384,7 @@ export class Lightbox extends HTMLElement {
 		}
 
 		this.addEventListener("pointermove", this.moveHandler);
-		this.classList.add("is-moved", "is-dragging");
+		this.classList.add("is-dragging");
 
 		this.isSwipeDownClose = Math.abs(this.getBleed(this.ptStatic).bottom) < 20;
 
@@ -405,6 +405,7 @@ export class Lightbox extends HTMLElement {
 	}
 
 	angle: number;
+	isMoved: boolean;
 
 	handleMove(e: PointerEvent) {
 		this.isCanClickClose = false;
@@ -443,6 +444,11 @@ export class Lightbox extends HTMLElement {
 			} else {
 				this.gestureAngle = angle;
 			}
+		}
+
+		if (!this.isMoved) {
+			this.isMoved = true;
+			this.classList.add("is-moved");
 		}
 	}
 
