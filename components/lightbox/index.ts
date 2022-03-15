@@ -4,10 +4,11 @@ import { clamp, Point, Vector } from "../../utils/math";
 
 /**
  * @todo add object-fit support for open/close transitions
- * @todo add window resize handlers
  * @todo no-op when expanded image is the same size as the thumbnail
  * @todo close on escape key
  * @todo zoom with mouse wheel on desktop
+ * @todo do not expand on desktop after even a single move event, anything other
+ * than a left button click, or a prolonged button press
  */
 
 /**
@@ -242,11 +243,9 @@ export class Lightbox extends HTMLElement {
 
 		this.rotation = 0;
 		this.scaleStatic = 1;
-		this.naturalScale = this.width / this.elFigure.offsetWidth;
-		this.scaleMax = Math.max(this.naturalScale, this.scaleMax);
+		this.imgSize.set(this.elFigure.offsetWidth, this.elFigure.offsetHeight);
 
-		this.updateBounds();
-		this.ptOffset.set(this.rectBounds.x, this.rectBounds.y);
+		this.updateSize();
 		this.ptStatic.set(this.ptOffset);
 
 		this.addEventListener("pointerdown", this.downHandler);
@@ -281,6 +280,26 @@ export class Lightbox extends HTMLElement {
 		}
 
 		this.isClosed = false;
+
+		window.addEventListener("resize", () => {
+			this.updateSize();
+			this.render();
+		});
+	}
+
+	updateSize() {
+		this.naturalScale = this.width / this.elFigure.offsetWidth;
+		this.scaleMax = this.naturalScale * 2;
+
+		this.scaleStatic = this.imgSize.x / this.elFigure.offsetWidth;
+		this.scaleStatic = clamp(this.scaleStatic, this.scaleMin, this.scaleMax);
+
+		this.updateBounds();
+		this.constrainPoint(this.ptStatic, false);
+		this.ptOffset.set(
+			this.elFigureWrap.offsetLeft,
+			this.elFigureWrap.offsetTop
+		);
 	}
 
 	updateImageSrc() {
