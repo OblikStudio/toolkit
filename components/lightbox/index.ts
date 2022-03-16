@@ -171,12 +171,6 @@ export class Lightbox extends HTMLElement {
 	 */
 	isScaledDown: boolean;
 
-	/**
-	 * Whether a click outside the figure will close the lightbox. Set to false
-	 * once the user moves a pointer, i.e. is gesturing.
-	 */
-	isCanClickClose: boolean;
-
 	ptrs: Pointer[] = [];
 
 	elFigure: HTMLElement;
@@ -234,7 +228,7 @@ export class Lightbox extends HTMLElement {
 
 		this.addEventListener("click", () => {
 			if (!this.isMoved) {
-			this.close();
+				this.close();
 			}
 		});
 
@@ -318,8 +312,6 @@ export class Lightbox extends HTMLElement {
 	}
 
 	handleDown(e: PointerEvent) {
-		this.isCanClickClose = true;
-
 		e.preventDefault();
 
 		// On desktop:
@@ -438,8 +430,6 @@ export class Lightbox extends HTMLElement {
 	isMoved: boolean;
 
 	handleMove(e: PointerEvent) {
-		this.isCanClickClose = false;
-
 		this.ptrs
 			.find((p) => p.id === e.pointerId)
 			?.point.set(e.clientX, e.clientY);
