@@ -11,7 +11,6 @@ import { clamp, Point, Vector } from "../../utils/math";
  * @todo fix opacity glitch when image dragged before open transition ends
  * @todo remove image vertical leeway on desktop, causing unexpected swipe-down
  * behavior
- * @todo detach resize event handlers after close
  */
 
 /**
@@ -288,11 +287,7 @@ export class Lightbox extends HTMLElement {
 
 		this.isClosed = false;
 
-		window.addEventListener("resize", () => {
-			this.updateSize();
-			this.render();
-		});
-
+		window.addEventListener("resize", this.handleReiszeFn);
 		window.addEventListener("keydown", this.handleKeyDownFn);
 	}
 
@@ -301,6 +296,12 @@ export class Lightbox extends HTMLElement {
 		if (e.key === "Escape") {
 			this.close();
 		}
+	}
+
+	handleReiszeFn = this.handleResize.bind(this);
+	handleResize() {
+		this.updateSize();
+		this.render();
 	}
 
 	updateSize() {
@@ -830,6 +831,7 @@ export class Lightbox extends HTMLElement {
 	}
 
 	close() {
+		window.removeEventListener("resize", this.handleReiszeFn);
 		window.removeEventListener("keydown", this.handleKeyDownFn);
 
 		if (!this.isOpenEnd) {
