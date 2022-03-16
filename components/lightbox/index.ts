@@ -5,7 +5,6 @@ import { clamp, Point, Vector } from "../../utils/math";
 /**
  * @todo add object-fit support for open/close transitions
  * @todo no-op when expanded image is the same size as the thumbnail
- * @todo close on escape key
  * @todo zoom with mouse wheel on desktop
  * @todo remove hide triggering element, just like on iOS
  * @todo remove swipe-down on desktop?
@@ -293,6 +292,15 @@ export class Lightbox extends HTMLElement {
 			this.updateSize();
 			this.render();
 		});
+
+		window.addEventListener("keydown", this.handleKeyDownFn);
+	}
+
+	handleKeyDownFn = this.handleKeyDown.bind(this);
+	handleKeyDown(e: KeyboardEvent) {
+		if (e.key === "Escape") {
+			this.close();
+		}
 	}
 
 	updateSize() {
@@ -822,6 +830,8 @@ export class Lightbox extends HTMLElement {
 	}
 
 	close() {
+		window.removeEventListener("keydown", this.handleKeyDownFn);
+
 		if (!this.isOpenEnd) {
 			// If open transition has not finished, prevent the closing one from
 			// triggering onOpenEnd().
