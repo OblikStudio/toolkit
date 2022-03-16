@@ -9,6 +9,10 @@ import { clamp, Point, Vector } from "../../utils/math";
  * @todo zoom with mouse wheel on desktop
  * @todo remove hide triggering element, just like on iOS
  * @todo remove swipe-down on desktop?
+ * @todo fix opacity glitch when image dragged before open transition ends
+ * @todo remove image vertical leeway on desktop, causing unexpected swipe-down
+ * behavior
+ * @todo detach resize event handlers after close
  */
 
 /**
@@ -54,6 +58,14 @@ const SHADOW_HTML = `
 
 :host(.is-closing) {
 	pointer-events: none;
+}
+
+:host(.is-open) {
+	cursor: zoom-out;
+}
+
+:host(.is-moved) {
+	cursor: grabbing;
 }
 
 :host(.is-expandable) .figure {
