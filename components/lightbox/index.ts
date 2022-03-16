@@ -7,8 +7,9 @@ import { clamp, Point, Vector } from "../../utils/math";
  * @todo no-op when expanded image is the same size as the thumbnail
  * @todo close on escape key
  * @todo zoom with mouse wheel on desktop
- * @todo do not expand on desktop after even a single move event, anything other
- * than a left button click, or a prolonged button press
+ * @todo fix glitch on desktop lmb -> rmb -> lmb
+ * @todo remove hide triggering element, just like on iOS
+ * @todo remove swipe-down on desktop?
  */
 
 /**
@@ -320,6 +321,11 @@ export class Lightbox extends HTMLElement {
 
 		e.preventDefault();
 
+		// On desktop, ignore all button presses except left mouse button.
+		if (!this.isMobile.matches && e.button !== 0) {
+			return;
+		}
+
 		if (this.isSwipeDownClose && this.animRatio > 0.1) {
 			return;
 		}
@@ -390,6 +396,7 @@ export class Lightbox extends HTMLElement {
 
 		if (
 			this.lastTapUp &&
+			this.isMobile.matches &&
 			e.timeStamp - this.lastTapUp.timeStamp < TIME_DOUBLE_TAP
 		) {
 			let dist = Math.hypot(
@@ -541,7 +548,12 @@ export class Lightbox extends HTMLElement {
 			this.isDoubleTap = false;
 			this.lastTapUp = null;
 			this.isSliding = false;
-		} else if (!this.isMobile.matches && this.lastTapUp === e) {
+		} else if (
+			!this.isMobile.matches &&
+			this.lastTapUp === e &&
+			e.button === 0 &&
+			!this.isMoved
+		) {
 			this.clickZoom();
 		}
 
