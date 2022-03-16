@@ -233,7 +233,9 @@ export class Lightbox extends HTMLElement {
 		}
 
 		this.addEventListener("click", () => {
+			if (!this.isMoved) {
 			this.close();
+			}
 		});
 
 		this.elImg.addEventListener("click", (e) => {
