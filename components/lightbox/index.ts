@@ -7,7 +7,6 @@ import { clamp, Point, Vector } from "../../utils/math";
  * @todo no-op when expanded image is the same size as the thumbnail
  * @todo close on escape key
  * @todo zoom with mouse wheel on desktop
- * @todo fix glitch on desktop lmb -> rmb -> lmb
  * @todo remove hide triggering element, just like on iOS
  * @todo remove swipe-down on desktop?
  */
@@ -321,8 +320,11 @@ export class Lightbox extends HTMLElement {
 
 		e.preventDefault();
 
-		// On desktop, ignore all button presses except left mouse button.
-		if (!this.isMobile.matches && e.button !== 0) {
+		// On desktop:
+		// 1. Ignore all button presses except left mouse button.
+		// 2. Prevent a second pointer from becoming active and causing a glitch
+		//    due to LMB (hold) -> RMB -> LMB (hold).
+		if (!this.isMobile.matches && (e.button !== 0 || this.ptrs.length > 0)) {
 			return;
 		}
 
