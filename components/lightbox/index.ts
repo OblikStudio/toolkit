@@ -572,8 +572,11 @@ export class Lightbox extends HTMLElement {
 		} else if (this.scaleStatic < 1) {
 			this.ptStatic.set(this.elFigure.offsetLeft, this.elFigure.offsetTop);
 			this.scaleStatic = 1;
-			navigator.vibrate?.(50);
 			this.isSliding = false;
+
+			if (!this.isPinchToClose) {
+				navigator.vibrate?.(50);
+			}
 		} else if (this.scaleStatic > this.scaleMax) {
 			let dx = this.ptLastFocus.x - this.ptStatic.x;
 			let dy = this.ptLastFocus.y - this.ptStatic.y;
