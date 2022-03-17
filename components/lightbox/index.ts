@@ -4,13 +4,13 @@ import { clamp, Point, Vector } from "../../utils/math";
 
 /**
  * @todo add object-fit support for open/close transitions
+ * @todo remove figure and transform .image directly?
  * @todo no-op when expanded image is the same size as the thumbnail
  * @todo zoom with mouse wheel on desktop
  * @todo remove hide triggering element, just like on iOS
  * @todo remove swipe-down on desktop?
  * @todo fix opacity glitch when image dragged before open transition ends
- * @todo remove image vertical leeway on desktop, causing unexpected swipe-down
- * behavior
+ * @todo fix .is-expandable class when image can't actualy be scaled up
  */
 
 /**
@@ -104,8 +104,6 @@ const SHADOW_HTML = `
 
 .image {
 	display: block;
-	max-width: 100%;
-	height: auto;
 	user-select: none;
 }
 </style>
@@ -213,8 +211,7 @@ export class Lightbox extends HTMLElement {
 		this.width = parseInt(this.opener.getAttribute("width"));
 		this.height = parseInt(this.opener.getAttribute("height"));
 
-		this.elImg.width = this.width;
-		this.elImg.height = this.height;
+		this.updateImageSize();
 		this.elImg.src = this.opener.currentSrc;
 
 		this.loader = new Image();
@@ -286,6 +283,25 @@ export class Lightbox extends HTMLElement {
 		window.addEventListener("keydown", this.handleKeyDownFn);
 	}
 
+	updateImageSize() {
+		// Calculating widths in JS because if width and height are `auto`,
+		// getBoundingClientRect() returns width 0 and height 0 if the image is
+		// not loaded. Also, you can't transition between `auto` values for
+		// width, which is needed to make the object-fit animation work.
+		let aspect = this.width / this.height;
+		let rect = this.elWrap.getBoundingClientRect();
+		let width = Math.min(rect.width, this.width);
+		let height = width / aspect;
+
+		if (height > rect.height) {
+			height = rect.height;
+			width = height * aspect;
+		}
+
+		this.elImg.style.width = `${width}px`;
+		this.elImg.style.height = `${height}px`;
+	}
+
 	handleKeyDownFn = this.handleKeyDown.bind(this);
 	handleKeyDown(e: KeyboardEvent) {
 		if (e.key === "Escape") {
@@ -295,6 +311,7 @@ export class Lightbox extends HTMLElement {
 
 	handleReiszeFn = this.handleResize.bind(this);
 	handleResize() {
+		this.updateImageSize();
 		this.updateSize();
 		this.render();
 	}
