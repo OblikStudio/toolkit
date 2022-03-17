@@ -111,10 +111,8 @@ const SHADOW_HTML = `
 </style>
 
 <div class="wrapper">
-	<div class="figure-wrapper">
-		<div class="figure">
-			<img class="image">
-		</div>
+	<div class="figure">
+		<img class="image">
 	</div>
 </div>
 `;
@@ -183,7 +181,6 @@ export class Lightbox extends HTMLElement {
 	ptrs: Pointer[] = [];
 
 	elFigure: HTMLElement;
-	elFigureWrap: HTMLElement;
 	elImg: HTMLImageElement;
 	elWrap: HTMLElement;
 	width: number;
@@ -209,7 +206,6 @@ export class Lightbox extends HTMLElement {
 
 		this.elWrap = this.shadow.querySelector(".wrapper");
 		this.elFigure = this.shadow.querySelector(".figure");
-		this.elFigureWrap = this.shadow.querySelector(".figure-wrapper");
 		this.elImg = this.shadow.querySelector(".image") as HTMLImageElement;
 	}
 
@@ -312,10 +308,7 @@ export class Lightbox extends HTMLElement {
 
 		this.updateBounds();
 		this.constrainPoint(this.ptStatic, false);
-		this.ptOffset.set(
-			this.elFigureWrap.offsetLeft,
-			this.elFigureWrap.offsetTop
-		);
+		this.ptOffset.set(this.elFigure.offsetLeft, this.elFigure.offsetTop);
 	}
 
 	updateImageSrc() {
@@ -845,12 +838,10 @@ export class Lightbox extends HTMLElement {
 		this.classList.add("is-closing");
 
 		let r1 = this.opener.getBoundingClientRect();
-		let r2 = this.elFigureWrap.getBoundingClientRect();
-
-		let sw = r1.width / r2.width;
-		let sh = r1.height / r2.height;
-		let sx = r1.left - r2.left;
-		let sy = r1.top - r2.top;
+		let sw = r1.width / this.elFigure.offsetWidth;
+		let sh = r1.height / this.elFigure.offsetHeight;
+		let sx = r1.left - this.elFigure.offsetLeft;
+		let sy = r1.top - this.elFigure.offsetTop;
 
 		this.elFigure.style.transform = `translate(${sx}px, ${sy}px) scale(${sw}, ${sh})`;
 		this.style.setProperty("--opacity", "0");
