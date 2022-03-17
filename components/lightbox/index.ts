@@ -171,7 +171,6 @@ export class Lightbox extends HTMLElement {
 
 	animRatio = 0;
 
-	isMobile = window.matchMedia("(max-width: 599px)");
 	isClosed = false;
 	isImageLoaded = false;
 	isOpenEnd = false;
@@ -339,7 +338,7 @@ export class Lightbox extends HTMLElement {
 		// 1. Ignore all button presses except left mouse button.
 		// 2. Prevent a second pointer from becoming active and causing a glitch
 		//    due to LMB (hold) -> RMB -> LMB (hold).
-		if (!this.isMobile.matches && (e.button !== 0 || this.ptrs.length > 0)) {
+		if (e.pointerType === "mouse" && (e.button !== 0 || this.ptrs.length > 0)) {
 			return;
 		}
 
@@ -413,7 +412,7 @@ export class Lightbox extends HTMLElement {
 
 		if (
 			this.lastTapUp &&
-			this.isMobile.matches &&
+			e.pointerType === "touch" &&
 			e.timeStamp - this.lastTapUp.timeStamp < TIME_DOUBLE_TAP
 		) {
 			let dist = Math.hypot(
@@ -563,12 +562,7 @@ export class Lightbox extends HTMLElement {
 			this.isDoubleTap = false;
 			this.lastTapUp = null;
 			this.isSliding = false;
-		} else if (
-			!this.isMobile.matches &&
-			this.lastTapUp === e &&
-			e.button === 0 &&
-			!this.isMoved
-		) {
+		} else if (e.pointerType === "mouse" && !this.isMoved) {
 			this.clickZoom();
 		}
 
