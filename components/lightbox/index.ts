@@ -897,14 +897,11 @@ export class Lightbox extends HTMLElement {
 		this.elFigure.style.transform = `translate(${sx}px, ${sy}px) scale(${sw}, ${sh})`;
 		this.style.setProperty("--opacity", "0");
 
-		let handler = () => {
+		this.elFigure.addEventListener("transitionend", () => {
 			if (this.parentElement) {
 				document.body.removeChild(this);
 			}
-		};
-
-		this.elFigure.addEventListener("transitionend", handler);
-		this.elFigure.addEventListener("transitioncancel", handler);
+		});
 	}
 
 	/**
