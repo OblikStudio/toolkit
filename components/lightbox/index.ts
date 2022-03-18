@@ -3,7 +3,7 @@ import { easeInOutQuad } from "../../utils/easings";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
- * @todo add object-fit support for open/close transitions
+ * @todo fix lightbox sometimes not removed from DOM after close on mobile
  * @todo remove figure and transform .image directly?
  * @todo no-op when expanded image is the same size as the thumbnail
  * @todo zoom with mouse wheel on desktop
@@ -11,6 +11,7 @@ import { clamp, Point, Vector } from "../../utils/math";
  * @todo remove swipe-down on desktop?
  * @todo fix opacity glitch when image dragged before open transition ends
  * @todo fix .is-expandable class when image can't actualy be scaled up
+ * @todo unfix image on close transition to prevent glitchy animation?
  */
 
 /**
@@ -45,13 +46,9 @@ const SHADOW_HTML = `
 }
 
 :host(:not(.is-open)) .figure,
+:host(:not(.is-open)) .image,
 :host(.is-moved) .figure {
 	transition: none;
-}
-
-:host(.is-opening) .figure,
-:host(.is-closing) .figure {
-	opacity: var(--opacity);
 }
 
 :host(.is-closing) {
@@ -105,6 +102,11 @@ const SHADOW_HTML = `
 .image {
 	display: block;
 	user-select: none;
+}
+
+:host(.is-opening) .image,
+:host(.is-closing) .image {
+	transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 </style>
 
@@ -252,10 +254,26 @@ export class Lightbox extends HTMLElement {
 		this.addEventListener("pointercancel", this.outHandler);
 
 		let r1 = this.opener.getBoundingClientRect();
-		let r2 = this.elImg.getBoundingClientRect();
+		let openerAspect = r1.width / r1.height;
+		let rect = this.elWrap.getBoundingClientRect();
+		let width = Math.min(rect.width, this.width);
+		let height = width / openerAspect;
 
-		let sw = r1.width / r2.width;
-		let sh = r1.height / r2.height;
+		if (height > rect.height) {
+			height = rect.height;
+			width = height * openerAspect;
+		}
+
+		let styles = window.getComputedStyle(this.opener);
+		this.elImg.style.background = styles.background;
+		this.elImg.style.objectFit = styles.objectFit;
+		this.elImg.style.objectPosition = styles.objectPosition;
+		this.elImg.style.width = `${width}px`;
+		this.elImg.style.height = `${height}px`;
+
+		let r2 = this.elImg.getBoundingClientRect();
+		let sw = r1.width / width;
+		let sh = r1.height / height;
 		let sx = r1.left - r2.left;
 		let sy = r1.top - r2.top;
 		let flipTransform = `translate(${sx}px, ${sy}px) scale(${sw}, ${sh})`;
@@ -267,6 +285,7 @@ export class Lightbox extends HTMLElement {
 		window.requestAnimationFrame(() => {
 			this.classList.add("is-open");
 			this.style.setProperty("--opacity", "1");
+			this.updateImageSize();
 			this.elFigure.style.transform = "";
 			this.elFigure.addEventListener("transitionend", this.onOpenEndFn, {
 				once: true,
@@ -851,14 +870,29 @@ export class Lightbox extends HTMLElement {
 
 		ticker.off("tick", this.tickHandler);
 
+		let r1 = this.opener.getBoundingClientRect();
+		let openerAspect = r1.width / r1.height;
+		let rect = this.elWrap.getBoundingClientRect();
+		let width = Math.min(rect.width, this.width);
+		let height = width / openerAspect;
+
+		if (height > rect.height) {
+			height = rect.height;
+			width = height * openerAspect;
+		}
+
+		let sw = r1.width / width;
+		let sh = r1.height / height;
+		let widthDiff = this.elFigure.offsetWidth - width;
+		let heightDiff = this.elFigure.offsetHeight - height;
+		let sx = r1.left - this.elFigure.offsetLeft - widthDiff / 2;
+		let sy = r1.top - this.elFigure.offsetTop - heightDiff / 2;
+
 		this.classList.remove("is-moved");
 		this.classList.add("is-closing");
 
-		let r1 = this.opener.getBoundingClientRect();
-		let sw = r1.width / this.elFigure.offsetWidth;
-		let sh = r1.height / this.elFigure.offsetHeight;
-		let sx = r1.left - this.elFigure.offsetLeft;
-		let sy = r1.top - this.elFigure.offsetTop;
+		this.elImg.style.width = `${width}px`;
+		this.elImg.style.height = `${height}px`;
 
 		this.elFigure.style.transform = `translate(${sx}px, ${sy}px) scale(${sw}, ${sh})`;
 		this.style.setProperty("--opacity", "0");
