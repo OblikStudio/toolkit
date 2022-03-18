@@ -3,7 +3,6 @@ import { easeInOutQuad } from "../../utils/easings";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
- * @todo fix lightbox sometimes not removed from DOM after close on mobile
  * @todo remove figure and transform .image directly?
  * @todo no-op when expanded image is the same size as the thumbnail
  * @todo zoom with mouse wheel on desktop
@@ -12,6 +11,7 @@ import { clamp, Point, Vector } from "../../utils/math";
  * @todo fix opacity glitch when image dragged before open transition ends
  * @todo fix .is-expandable class when image can't actualy be scaled up
  * @todo unfix image on close transition to prevent glitchy animation?
+ * @todo if pointer is touch, do not check isMoved for closing - just distance
  */
 
 /**
@@ -903,8 +903,8 @@ export class Lightbox extends HTMLElement {
 			}
 		};
 
-		this.addEventListener("transitionend", handler);
-		this.addEventListener("transitioncancel", handler);
+		this.elFigure.addEventListener("transitionend", handler);
+		this.elFigure.addEventListener("transitioncancel", handler);
 	}
 
 	/**
