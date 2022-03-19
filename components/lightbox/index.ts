@@ -5,9 +5,6 @@ import { clamp, Point, Vector } from "../../utils/math";
 /**
  * @todo no-op when expanded image is the same size as the thumbnail
  * @todo zoom with mouse wheel on desktop
- * @todo remove hide triggering element, just like on iOS
- * @todo remove swipe-down on desktop?
- * @todo fix opacity glitch when image dragged before open transition ends
  * @todo fix .is-expandable class when image can't actualy be scaled up
  * @todo unfix image on close transition to prevent glitchy animation?
  * @todo if pointer is touch, do not check isMoved for closing - just distance
@@ -266,6 +263,11 @@ export class Lightbox extends HTMLElement {
 		this.style.setProperty("--opacity", "0");
 
 		window.requestAnimationFrame(() => {
+			this.opener.classList.add(
+				"ob-lightbox-is-active",
+				"ob-lightbox-is-visible"
+			);
+
 			this.classList.add("is-open");
 			this.style.setProperty("--opacity", "1");
 			this.updateImageSize();
@@ -886,10 +888,17 @@ export class Lightbox extends HTMLElement {
 
 		this.elImg.style.transform = `translate(${sx}px, ${sy}px) scale(${sw}, ${sh})`;
 		this.style.setProperty("--opacity", "0");
+		this.opener.classList.remove("ob-lightbox-is-active");
 
 		this.elImg.addEventListener("transitionend", () => {
 			if (this.parentElement) {
 				document.body.removeChild(this);
+
+				// Avoid showing the opener if another instance of the lightbox
+				// has been activated while this one was closing.
+				if (!this.opener.classList.contains("ob-lightbox-is-active")) {
+					this.opener.classList.remove("ob-lightbox-is-visible");
+				}
 			}
 		});
 	}
