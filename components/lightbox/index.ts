@@ -3,7 +3,6 @@ import { easeInOutQuad } from "../../utils/easings";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
- * @todo remove figure and transform .image directly?
  * @todo no-op when expanded image is the same size as the thumbnail
  * @todo zoom with mouse wheel on desktop
  * @todo remove hide triggering element, just like on iOS
@@ -40,41 +39,6 @@ const SHADOW_HTML = `
 	touch-action: none;
 }
 
-:host(:not(.is-open)),
-:host(.is-moved) {
-	transition: none;
-}
-
-:host(:not(.is-open)) .figure,
-:host(:not(.is-open)) .image,
-:host(.is-moved) .figure {
-	transition: none;
-}
-
-:host(.is-closing) {
-	pointer-events: none;
-}
-
-:host(.is-open) {
-	cursor: zoom-out;
-}
-
-:host(.is-moved) {
-	cursor: grabbing;
-}
-
-:host(.is-expandable) .figure {
-	cursor: zoom-in;
-}
-
-:host(.is-expanded) .figure {
-	cursor: grab;
-}
-
-:host(.is-dragging) .figure {
-	cursor: grabbing;
-}
-
 .wrapper {
 	display: flex;
 	align-items: center;
@@ -90,7 +54,10 @@ const SHADOW_HTML = `
 	}
 }
 
-.figure {
+.image {
+	display: block;
+	user-select: none;
+
 	/* Fixes trailing dead pixels on iOS and significantly improves
 	performance due to no repaints, but causes extra large images to be
 	blurry on iOS. */
@@ -99,21 +66,40 @@ const SHADOW_HTML = `
 	transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.image {
-	display: block;
-	user-select: none;
+:host(:not(.is-open)),
+:host(:not(.is-open)) .image,
+:host(.is-moved),
+:host(.is-moved) .image {
+	transition: none;
 }
 
-:host(.is-opening) .image,
-:host(.is-closing) .image {
-	transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+:host(.is-closing) {
+	pointer-events: none;
+}
+
+:host(.is-open) {
+	cursor: zoom-out;
+}
+
+:host(.is-moved) {
+	cursor: grabbing;
+}
+
+:host(.is-expandable) .image {
+	cursor: zoom-in;
+}
+
+:host(.is-expanded) .image {
+	cursor: grab;
+}
+
+:host(.is-dragging) .image {
+	cursor: grabbing;
 }
 </style>
 
 <div class="wrapper">
-	<div class="figure">
-		<img class="image">
-	</div>
+	<img class="image">
 </div>
 `;
 
@@ -180,7 +166,6 @@ export class Lightbox extends HTMLElement {
 
 	ptrs: Pointer[] = [];
 
-	elFigure: HTMLElement;
 	elImg: HTMLImageElement;
 	elWrap: HTMLElement;
 	width: number;
@@ -205,7 +190,6 @@ export class Lightbox extends HTMLElement {
 		this.shadow.innerHTML = SHADOW_HTML;
 
 		this.elWrap = this.shadow.querySelector(".wrapper");
-		this.elFigure = this.shadow.querySelector(".figure");
 		this.elImg = this.shadow.querySelector(".image") as HTMLImageElement;
 	}
 
@@ -243,7 +227,7 @@ export class Lightbox extends HTMLElement {
 
 		this.rotation = 0;
 		this.scaleStatic = 1;
-		this.imgSize.set(this.elFigure.offsetWidth, this.elFigure.offsetHeight);
+		this.imgSize.set(this.elImg.offsetWidth, this.elImg.offsetHeight);
 
 		this.updateSize();
 		this.ptStatic.set(this.ptOffset);
@@ -278,16 +262,15 @@ export class Lightbox extends HTMLElement {
 		let sy = r1.top - r2.top;
 		let flipTransform = `translate(${sx}px, ${sy}px) scale(${sw}, ${sh})`;
 
-		this.elFigure.style.transform = flipTransform;
+		this.elImg.style.transform = flipTransform;
 		this.style.setProperty("--opacity", "0");
-		this.classList.add("is-opening");
 
 		window.requestAnimationFrame(() => {
 			this.classList.add("is-open");
 			this.style.setProperty("--opacity", "1");
 			this.updateImageSize();
-			this.elFigure.style.transform = "";
-			this.elFigure.addEventListener("transitionend", this.onOpenEndFn, {
+			this.elImg.style.transform = "";
+			this.elImg.addEventListener("transitionend", this.onOpenEndFn, {
 				once: true,
 			});
 		});
@@ -330,21 +313,29 @@ export class Lightbox extends HTMLElement {
 
 	handleReiszeFn = this.handleResize.bind(this);
 	handleResize() {
+		// Needed in order to remove the width/height transition, which could
+		// lead to incorrect calculations.
+		this.elImg.style.transition = "none";
+
 		this.updateImageSize();
 		this.updateSize();
 		this.render();
+
+		window.requestAnimationFrame(() => {
+			this.elImg.style.transition = "";
+		});
 	}
 
 	updateSize() {
-		this.naturalScale = this.width / this.elFigure.offsetWidth;
+		this.naturalScale = this.width / this.elImg.offsetWidth;
 		this.scaleMax = this.naturalScale * 2;
 
-		this.scaleStatic = this.imgSize.x / this.elFigure.offsetWidth;
+		this.scaleStatic = this.imgSize.x / this.elImg.offsetWidth;
 		this.scaleStatic = clamp(this.scaleStatic, this.scaleMin, this.scaleMax);
 
 		this.updateBounds();
 		this.constrainPoint(this.ptStatic, false);
-		this.ptOffset.set(this.elFigure.offsetLeft, this.elFigure.offsetTop);
+		this.ptOffset.set(this.elImg.offsetLeft, this.elImg.offsetTop);
 	}
 
 	updateImageSrc() {
@@ -357,7 +348,6 @@ export class Lightbox extends HTMLElement {
 	onOpenEnd() {
 		this.isOpenEnd = true;
 		this.updateImageSrc();
-		this.classList.remove("is-opening");
 	}
 
 	handleDown(e: PointerEvent) {
@@ -599,7 +589,7 @@ export class Lightbox extends HTMLElement {
 			this.close();
 			this.isSliding = false;
 		} else if (this.scaleStatic < 1) {
-			this.ptStatic.set(this.elFigure.offsetLeft, this.elFigure.offsetTop);
+			this.ptStatic.set(this.elImg.offsetLeft, this.elImg.offsetTop);
 			this.scaleStatic = 1;
 			this.isSliding = false;
 
@@ -852,7 +842,7 @@ export class Lightbox extends HTMLElement {
 		 * Using `matrix()` to prevent flicker on iOS.
 		 * @see https://stackoverflow.com/q/70233672/3130281
 		 */
-		this.elFigure.style.transform = `matrix(${s}, 0, 0, ${s}, ${x}, ${y}) rotate(${gesture.angle}rad)`;
+		this.elImg.style.transform = `matrix(${s}, 0, 0, ${s}, ${x}, ${y}) rotate(${gesture.angle}rad)`;
 		this.ptRender = new Point(x, y);
 	}
 
@@ -863,7 +853,7 @@ export class Lightbox extends HTMLElement {
 		if (!this.isOpenEnd) {
 			// If open transition has not finished, prevent the closing one from
 			// triggering onOpenEnd().
-			this.elFigure.removeEventListener("transitionend", this.onOpenEndFn);
+			this.elImg.removeEventListener("transitionend", this.onOpenEndFn);
 		}
 
 		this.isClosed = true;
@@ -883,10 +873,10 @@ export class Lightbox extends HTMLElement {
 
 		let sw = r1.width / width;
 		let sh = r1.height / height;
-		let widthDiff = this.elFigure.offsetWidth - width;
-		let heightDiff = this.elFigure.offsetHeight - height;
-		let sx = r1.left - this.elFigure.offsetLeft - widthDiff / 2;
-		let sy = r1.top - this.elFigure.offsetTop - heightDiff / 2;
+		let widthDiff = this.elImg.offsetWidth - width;
+		let heightDiff = this.elImg.offsetHeight - height;
+		let sx = r1.left - this.elImg.offsetLeft - widthDiff / 2;
+		let sy = r1.top - this.elImg.offsetTop - heightDiff / 2;
 
 		this.classList.remove("is-moved");
 		this.classList.add("is-closing");
@@ -894,10 +884,10 @@ export class Lightbox extends HTMLElement {
 		this.elImg.style.width = `${width}px`;
 		this.elImg.style.height = `${height}px`;
 
-		this.elFigure.style.transform = `translate(${sx}px, ${sy}px) scale(${sw}, ${sh})`;
+		this.elImg.style.transform = `translate(${sx}px, ${sy}px) scale(${sw}, ${sh})`;
 		this.style.setProperty("--opacity", "0");
 
-		this.elFigure.addEventListener("transitionend", () => {
+		this.elImg.addEventListener("transitionend", () => {
 			if (this.parentElement) {
 				document.body.removeChild(this);
 			}
@@ -909,8 +899,8 @@ export class Lightbox extends HTMLElement {
 	 */
 	updateBounds(scale = this.scaleStatic) {
 		this.imgSize.set(
-			this.elFigure.offsetWidth * scale,
-			this.elFigure.offsetHeight * scale
+			this.elImg.offsetWidth * scale,
+			this.elImg.offsetHeight * scale
 		);
 
 		let r3 = this.getMaxBoundsRect();
