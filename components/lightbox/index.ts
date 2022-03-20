@@ -7,7 +7,6 @@ import { clamp, Point, Vector } from "../../utils/math";
  * @todo zoom with mouse wheel on desktop
  * @todo unfix image on close transition to prevent glitchy animation?
  * @todo if pointer is touch, do not check isMoved for closing - just distance
- * @todo fix image source not updated if open animation interrupted
  */
 
 /**
@@ -155,7 +154,7 @@ export class Lightbox extends HTMLElement {
 
 	isClosed = false;
 	isImageLoaded = false;
-	isOpenEnd = false;
+	isOpening = false;
 
 	/**
 	 * Whether the user has scaled the image below 100% during a gesture.
@@ -273,9 +272,8 @@ export class Lightbox extends HTMLElement {
 			this.style.setProperty("--opacity", "1");
 			this.updateImageSize();
 			this.elImg.style.transform = "";
-			this.elImg.addEventListener("transitionend", this.onOpenEndFn, {
-				once: true,
-			});
+			this.elImg.addEventListener("transitionend", this.onOpenEndFn);
+			this.isOpening = true;
 		});
 
 		this.isClosed = false;
@@ -353,15 +351,16 @@ export class Lightbox extends HTMLElement {
 	}
 
 	updateImageSrc() {
-		if (this.isImageLoaded && this.isOpenEnd) {
+		if (this.isImageLoaded && !this.isOpening) {
 			this.elImg.src = this.loader.src;
 		}
 	}
 
 	onOpenEndFn = this.onOpenEnd.bind(this);
 	onOpenEnd() {
-		this.isOpenEnd = true;
+		this.isOpening = false;
 		this.updateImageSrc();
+		this.elImg.removeEventListener("transitionend", this.onOpenEndFn);
 	}
 
 	handleDown(e: PointerEvent) {
@@ -483,6 +482,12 @@ export class Lightbox extends HTMLElement {
 	isMoved: boolean;
 
 	handleMove(e: PointerEvent) {
+		// If `handleMove()` is called while `isOpening` is `true`, then the
+		// open transition has been interrupted and should not be waited for.
+		if (this.isOpening) {
+			this.onOpenEnd();
+		}
+
 		this.ptrs
 			.find((p) => p.id === e.pointerId)
 			?.point.set(e.clientX, e.clientY);
@@ -862,10 +867,11 @@ export class Lightbox extends HTMLElement {
 		window.removeEventListener("resize", this.handleReiszeFn);
 		window.removeEventListener("keydown", this.handleKeyDownFn);
 
-		if (!this.isOpenEnd) {
+		if (this.isOpening) {
 			// If open transition has not finished, prevent the closing one from
 			// triggering onOpenEnd().
 			this.elImg.removeEventListener("transitionend", this.onOpenEndFn);
+			this.isOpening = false;
 		}
 
 		this.isClosed = true;
