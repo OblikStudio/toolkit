@@ -5,9 +5,9 @@ import { clamp, Point, Vector } from "../../utils/math";
 /**
  * @todo no-op when expanded image is the same size as the thumbnail
  * @todo zoom with mouse wheel on desktop
- * @todo fix .is-expandable class when image can't actualy be scaled up
  * @todo unfix image on close transition to prevent glitchy animation?
  * @todo if pointer is touch, do not check isMoved for closing - just distance
+ * @todo fix image source not updated if open animation interrupted
  */
 
 /**
@@ -54,6 +54,7 @@ const SHADOW_HTML = `
 .image {
 	display: block;
 	user-select: none;
+	cursor: grab;
 
 	/* Fixes trailing dead pixels on iOS and significantly improves
 	performance due to no repaints, but causes extra large images to be
@@ -277,10 +278,6 @@ export class Lightbox extends HTMLElement {
 			});
 		});
 
-		if (this.scaleStatic === 1 && this.scaleMax > 1) {
-			this.classList.add("is-expandable");
-		}
-
 		this.isClosed = false;
 
 		window.addEventListener("resize", this.handleReiszeFn);
@@ -329,8 +326,12 @@ export class Lightbox extends HTMLElement {
 	}
 
 	updateSize() {
-		this.naturalScale = this.width / this.elImg.offsetWidth;
-		this.scaleMax = this.naturalScale * 2;
+		// Avoid unexpected behavior due to the browser rounding `offsetWidth`.
+		if (Math.abs(this.width - this.elImg.offsetWidth) > 1) {
+			this.naturalScale = this.width / this.elImg.offsetWidth;
+		} else {
+			this.naturalScale = 1;
+		}
 
 		this.scaleStatic = this.imgSize.x / this.elImg.offsetWidth;
 		this.scaleStatic = clamp(this.scaleStatic, this.scaleMin, this.scaleMax);
@@ -338,6 +339,17 @@ export class Lightbox extends HTMLElement {
 		this.updateBounds();
 		this.constrainPoint(this.ptStatic, false);
 		this.ptOffset.set(this.elImg.offsetLeft, this.elImg.offsetTop);
+
+		this.classList.toggle("is-expandable", this.isExpandable());
+		this.classList.toggle("is-expanded", this.isExpanded());
+	}
+
+	isExpanded() {
+		return this.scaleStatic > 1;
+	}
+
+	isExpandable() {
+		return this.naturalScale > 1;
 	}
 
 	updateImageSrc() {
@@ -578,13 +590,15 @@ export class Lightbox extends HTMLElement {
 		let animRatio = this.animRatio;
 		this.animRatio = 0;
 
-		if (this.isDoubleTap) {
-			this.clickZoom();
-			this.isDoubleTap = false;
-			this.lastTapUp = null;
-			this.isSliding = false;
-		} else if (e.pointerType === "mouse" && !this.isMoved) {
-			this.clickZoom();
+		if (this.isExpandable()) {
+			if (this.isDoubleTap) {
+				this.clickZoom();
+				this.isDoubleTap = false;
+				this.lastTapUp = null;
+				this.isSliding = false;
+			} else if (e.pointerType === "mouse" && !this.isMoved) {
+				this.clickZoom();
+			}
 		}
 
 		if (this.isPinchToClose && this.scaleDirection < 0) {
@@ -643,9 +657,6 @@ export class Lightbox extends HTMLElement {
 	}
 
 	zoomOut() {
-		this.classList.remove("is-expanded");
-		this.classList.add("is-expandable");
-
 		let dx = this.lastTapUp.clientX - this.ptStatic.x;
 		let dy = this.lastTapUp.clientY - this.ptStatic.y;
 		let r = 1 - 1 / this.scaleStatic;
@@ -653,12 +664,10 @@ export class Lightbox extends HTMLElement {
 		this.ptStatic.x += dx * r;
 		this.ptStatic.y += dy * r;
 		this.scaleStatic = 1;
+		this.classList.remove("is-expanded");
 	}
 
 	zoomIn() {
-		this.classList.remove("is-expandable");
-		this.classList.add("is-expanded");
-
 		let pull = new Point(
 			(this.naturalScale - 1) * (this.lastTapUp.clientX - this.ptStatic.x),
 			(this.naturalScale - 1) * (this.lastTapUp.clientY - this.ptStatic.y)
@@ -666,6 +675,7 @@ export class Lightbox extends HTMLElement {
 
 		this.ptStatic.subtract(pull);
 		this.scaleStatic = this.naturalScale;
+		this.classList.add("is-expanded");
 	}
 
 	handleTick(delta: number) {
