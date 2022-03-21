@@ -5,7 +5,6 @@ import { clamp, Point, Vector } from "../../utils/math";
 /**
  * @todo no-op when expanded image is the same size as the thumbnail
  * @todo zoom with mouse wheel on desktop
- * @todo unfix image on close transition to prevent glitchy animation?
  * @todo if pointer is touch, do not check isMoved for closing - just distance
  */
 
@@ -22,17 +21,30 @@ const DIST_LAST_FOCUS = 10;
 const SHADOW_HTML = `
 <style>
 :host {
+	touch-action: none;
+}
+
+.backdrop {
 	position: fixed;
 	top: 0;
 	left: 0;
+	z-index: 50;
+	width: 100%;
+	height: 100%;
+	background-color: rgba(0, 0, 0, calc(var(--opacity, 1) * 0.8));
+	transition: background-color 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.container {
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: 60;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	width: 100%;
 	height: 100%;
-	background-color: rgba(0, 0, 0, calc(var(--opacity, 1) * 0.8));
-	transition: background-color 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-	touch-action: none;
 }
 
 .wrapper {
@@ -63,9 +75,9 @@ const SHADOW_HTML = `
 	transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-:host(:not(.is-open)),
+:host(:not(.is-open)) .backdrop,
 :host(:not(.is-open)) .image,
-:host(.is-moved),
+:host(.is-moved) .backdrop,
 :host(.is-moved) .image {
 	transition: none;
 }
@@ -95,8 +107,11 @@ const SHADOW_HTML = `
 }
 </style>
 
-<div class="wrapper">
-	<img class="image">
+<div class="backdrop"></div>
+<div class="container">
+	<div class="wrapper">
+		<img class="image">
+	</div>
 </div>
 `;
 
@@ -163,6 +178,7 @@ export class Lightbox extends HTMLElement {
 
 	ptrs: Pointer[] = [];
 
+	elContainer: HTMLDivElement;
 	elImg: HTMLImageElement;
 	elWrap: HTMLElement;
 	width: number;
@@ -186,6 +202,7 @@ export class Lightbox extends HTMLElement {
 		this.shadow = this.attachShadow({ mode: "open" });
 		this.shadow.innerHTML = SHADOW_HTML;
 
+		this.elContainer = this.shadow.querySelector(".container");
 		this.elWrap = this.shadow.querySelector(".wrapper");
 		this.elImg = this.shadow.querySelector(".image") as HTMLImageElement;
 	}
@@ -864,6 +881,15 @@ export class Lightbox extends HTMLElement {
 	}
 
 	close() {
+		this.elContainer.style.position = "absolute";
+		this.elContainer.style.top = `${document.documentElement.scrollTop}px`;
+		this.elContainer.style.left = `${document.documentElement.scrollLeft}px`;
+
+		// Some browsers (e.g. Brave) have UI elements that animate on scroll
+		// and resize the viewport, which resizes the 100% height container and
+		// ruins the animation. This makes sure the height stays the same.
+		this.elContainer.style.height = `${this.elContainer.offsetHeight}px`;
+
 		window.removeEventListener("resize", this.handleReiszeFn);
 		window.removeEventListener("keydown", this.handleKeyDownFn);
 
