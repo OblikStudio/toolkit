@@ -3,9 +3,9 @@ import { easeInOutQuad } from "../../utils/easings";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
- * @todo no-op when expanded image is the same size as the thumbnail
- * @todo zoom with mouse wheel on desktop
  * @todo if pointer is touch, do not check isMoved for closing - just distance
+ * @todo use transform origin center to avoid weird rotation transition
+ * @todo fix lightbox not opening on first tap on iOS
  */
 
 /**
@@ -158,9 +158,7 @@ export class Lightbox extends HTMLElement {
 	ptLastFocus = new Point();
 
 	scaleStatic = 1;
-	scaleMin = 1;
-	scaleMax = 7;
-	naturalScale: number;
+	scaleMax: number;
 
 	isPinchToClose: boolean;
 	isDoubleTap: boolean;
@@ -309,7 +307,7 @@ export class Lightbox extends HTMLElement {
 		// width, which is needed to make the object-fit animation work.
 		let aspect = this.width / this.height;
 		let rect = this.elWrap.getBoundingClientRect();
-		let width = Math.min(rect.width, this.width);
+		let width = rect.width;
 		let height = width / aspect;
 
 		if (height > rect.height) {
@@ -344,15 +342,24 @@ export class Lightbox extends HTMLElement {
 	}
 
 	updateSize() {
+		let imgWidth = this.elImg.offsetWidth;
+		let imgHeight = this.elImg.offsetHeight;
+		let naturalScale: number;
+
 		// Avoid unexpected behavior due to the browser rounding `offsetWidth`.
-		if (Math.abs(this.width - this.elImg.offsetWidth) > 1) {
-			this.naturalScale = this.width / this.elImg.offsetWidth;
+		if (Math.abs(this.width - imgWidth) > 1) {
+			naturalScale = this.width / imgWidth;
 		} else {
-			this.naturalScale = 1;
+			naturalScale = 1;
 		}
 
-		this.scaleStatic = this.imgSize.x / this.elImg.offsetWidth;
-		this.scaleStatic = clamp(this.scaleStatic, this.scaleMin, this.scaleMax);
+		// On iOS, even a tiny 10x10 image can be scaled up to ~1000px, despite
+		// the fact that it gets blurry.
+		let minSize = 1024;
+		let minScale = Math.min(minSize / imgWidth, minSize / imgHeight);
+		this.scaleMax = Math.max(naturalScale, minScale, 1);
+		this.scaleStatic = this.imgSize.x / imgWidth;
+		this.scaleStatic = clamp(this.scaleStatic, 1, this.scaleMax);
 
 		this.updateBounds();
 		this.constrainPoint(this.ptStatic, false);
@@ -367,7 +374,7 @@ export class Lightbox extends HTMLElement {
 	}
 
 	isExpandable() {
-		return this.naturalScale > 1;
+		return this.scaleMax > 1;
 	}
 
 	updateImageSrc() {
@@ -551,7 +558,7 @@ export class Lightbox extends HTMLElement {
 	}
 
 	constrainScale(scale: number) {
-		let min = this.scaleMin;
+		let min = 1;
 		let max = this.scaleMax;
 		let minExtra = min - scale;
 		let maxExtra = scale - max;
@@ -694,12 +701,12 @@ export class Lightbox extends HTMLElement {
 
 	zoomIn() {
 		let pull = new Point(
-			(this.naturalScale - 1) * (this.lastTapUp.clientX - this.ptStatic.x),
-			(this.naturalScale - 1) * (this.lastTapUp.clientY - this.ptStatic.y)
+			(this.scaleMax - 1) * (this.lastTapUp.clientX - this.ptStatic.x),
+			(this.scaleMax - 1) * (this.lastTapUp.clientY - this.ptStatic.y)
 		);
 
 		this.ptStatic.subtract(pull);
-		this.scaleStatic = this.naturalScale;
+		this.scaleStatic = this.scaleMax;
 		this.classList.add("is-expanded");
 	}
 
