@@ -20,10 +20,6 @@ const DIST_LAST_FOCUS = 10;
 
 const SHADOW_HTML = `
 <style>
-:host {
-	touch-action: none;
-}
-
 .backdrop {
 	position: fixed;
 	top: 0;
@@ -46,6 +42,12 @@ const SHADOW_HTML = `
 	width: 100%;
 	height: 100%;
 	overflow: hidden;
+
+	/**
+	 * Prevents page scroll/zoom on mobile. Must be on .container, rather than
+	 * :host, otherwise it doesn't work on Android.
+	 */
+	touch-action: none;
 }
 
 .wrapper {
