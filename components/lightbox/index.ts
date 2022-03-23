@@ -36,13 +36,17 @@ const SHADOW_HTML = `
 	position: fixed;
 	top: 0;
 	left: 0;
-	z-index: 60;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	width: 100%;
 	height: 100%;
-	overflow: hidden;
+
+	/**
+	 * Must be the same as the .backdrop z-index to ensure that an opening
+	 * lightbox stacks correctly on top of a closing one.
+	 */
+	z-index: 50;
 
 	/**
 	 * Prevents page scroll/zoom on mobile. Must be on .container, rather than
