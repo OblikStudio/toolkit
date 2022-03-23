@@ -3,6 +3,7 @@ import { easeInOutQuad } from "../../utils/easings";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
+ * @todo fix image moved in wrong direction on mobile when expanded and overdrag
  * @todo if pointer is touch, do not check isMoved for closing - just distance
  * @todo use transform origin center to avoid weird rotation transition
  * @todo fix lightbox not opening on first tap on iOS
@@ -298,6 +299,7 @@ export class Lightbox extends HTMLElement {
 
 		window.addEventListener("resize", this.handleReiszeFn);
 		window.addEventListener("keydown", this.handleKeyDownFn);
+		this.addEventListener("wheel", this.handleWheelFn);
 	}
 
 	updateImageSize() {
@@ -339,6 +341,31 @@ export class Lightbox extends HTMLElement {
 		window.requestAnimationFrame(() => {
 			this.elImg.style.transition = "";
 		});
+	}
+
+	handleWheelFn = this.handleWheel.bind(this);
+	handleWheel(e: WheelEvent) {
+		e.preventDefault();
+
+		let newScale = clamp(this.scaleStatic - e.deltaY / 400, 1, this.scaleMax);
+		let delta = newScale / this.scaleStatic - 1;
+
+		if (delta === 0) {
+			return;
+		}
+
+		let pull = new Point(
+			delta * (e.clientX - this.ptStatic.x),
+			delta * (e.clientY - this.ptStatic.y)
+		);
+
+		this.ptStatic.subtract(pull);
+		this.scaleStatic = newScale;
+		this.updateBounds();
+		this.constrainPoint(this.ptStatic, false);
+		this.render();
+
+		this.classList.toggle("is-expanded", this.isExpanded());
 	}
 
 	updateSize() {
@@ -902,6 +929,7 @@ export class Lightbox extends HTMLElement {
 
 		window.removeEventListener("resize", this.handleReiszeFn);
 		window.removeEventListener("keydown", this.handleKeyDownFn);
+		this.removeEventListener("wheel", this.handleWheelFn);
 
 		if (this.isOpening) {
 			// If open transition has not finished, prevent the closing one from
