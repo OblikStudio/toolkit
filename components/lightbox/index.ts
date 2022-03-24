@@ -462,7 +462,6 @@ export class Lightbox extends HTMLElement {
 	rotation: number;
 	distDown: number;
 
-	ptPull: Point;
 	vcPull: Vector;
 
 	pointersChange() {
@@ -474,17 +473,12 @@ export class Lightbox extends HTMLElement {
 		this.gestureOffset = null;
 		this.gestureAngle = null;
 		this.angle = null;
-		this.vcPull = null;
 
 		if (this.ptrs.length) {
 			this.ptDown = avgPoint(this.ptrs);
 			this.gesturePoint = this.ptDown.copy();
 			this.avgDist = this.getAverageDistance();
 			this.distDown = this.avgDist;
-			this.ptPull = new Point(
-				this.ptDown.x - this.ptStatic.x,
-				this.ptDown.y - this.ptStatic.y
-			);
 			this.vcPull = this.ptDown.to(this.ptStatic);
 
 			// Reset the tick position, otherwise the speed will be inaccurate
@@ -826,13 +820,9 @@ export class Lightbox extends HTMLElement {
 		}
 
 		if (scale !== this.scaleStatic) {
-			let diff = scale / this.scaleStatic;
-			let pull = new Point(
-				(diff - 1) * this.ptPull.x,
-				(diff - 1) * this.ptPull.y
-			);
-
-			point.subtract(pull);
+			let pull = this.vcPull.copy();
+			pull.magnitude *= scale / this.scaleStatic - 1;
+			point.add(pull);
 		}
 
 		if (this.angle) {
@@ -894,12 +884,12 @@ export class Lightbox extends HTMLElement {
 
 			this.animRatio = easeInOutQuad(ratio);
 
-			let animScale = 1 - ratio * 0.3;
-			s *= animScale;
-			render.add(
-				(1 - animScale) * this.ptPull.x,
-				(1 - animScale) * this.ptPull.y
-			);
+			let animScale = ratio * 0.3;
+			s *= 1 - animScale;
+
+			let pull = this.vcPull.copy();
+			pull.magnitude *= -animScale;
+			render.add(pull);
 		}
 
 		let opacity = 1 - this.animRatio;
