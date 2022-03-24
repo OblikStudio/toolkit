@@ -41,6 +41,7 @@ const SHADOW_HTML = `
 	justify-content: center;
 	width: 100%;
 	height: 100%;
+	overflow: hidden;
 
 	/**
 	 * Must be the same as the .backdrop z-index to ensure that an opening
