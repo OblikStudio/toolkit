@@ -3,7 +3,6 @@ import { easeInOutQuad } from "../../utils/easings";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
- * @todo fix image moved in wrong direction on mobile when expanded and overdrag
  * @todo if pointer is touch, do not check isMoved for closing - just distance
  * @todo use transform origin center to avoid weird rotation transition
  * @todo fix lightbox not opening on first tap on iOS
@@ -146,7 +145,6 @@ export class Lightbox extends HTMLElement {
 	ptStatic = new Point();
 	ptDown = new Point();
 	ptTick: Point;
-	ptRender: Point;
 	vcSpeed: Vector;
 	vcMovement: Vector;
 	scaleDirection: number;
@@ -759,14 +757,14 @@ export class Lightbox extends HTMLElement {
 				this.classList.remove("is-moved");
 				this.isSliding = false;
 			}
-		} else if (this.ptRender) {
+		} else if (this.gesturePoint) {
 			if (this.ptTick) {
 				let lastTickPoint = this.ptTick.copy();
-				this.ptTick.set(this.ptRender);
+				this.ptTick.set(this.gesturePoint);
 				this.vcSpeed = lastTickPoint.to(this.ptTick);
 				this.vcSpeed.magnitude /= this.timeScale;
 			} else {
-				this.ptTick = this.ptRender.copy();
+				this.ptTick = this.gesturePoint.copy();
 			}
 		}
 
@@ -909,7 +907,6 @@ export class Lightbox extends HTMLElement {
 		 * @see https://stackoverflow.com/q/70233672/3130281
 		 */
 		this.elImg.style.transform = `matrix(${s}, 0, 0, ${s}, ${x}, ${y}) rotate(${gesture.angle}rad)`;
-		this.ptRender = new Point(x, y);
 	}
 
 	close() {
