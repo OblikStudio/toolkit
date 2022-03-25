@@ -6,6 +6,7 @@ import { clamp, Point, Vector } from "../../utils/math";
  * @todo if pointer is touch, do not check isMoved for closing - just distance
  * @todo use transform origin center to avoid weird rotation transition
  * @todo fix lightbox not opening on first tap on iOS
+ * @todo fix image upscaled and src updated if closed immediately after open
  */
 
 /**
@@ -80,6 +81,11 @@ const SHADOW_HTML = `
 	blurry on iOS. */
 	will-change: transform;
 	transform-origin: left top;
+	transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:host(.is-opening) .image,
+:host(.is-closing) .image {
 	transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -213,18 +219,23 @@ export class Lightbox extends HTMLElement {
 	}
 
 	connectedCallback() {
-		this.width = parseInt(this.opener.getAttribute("width"));
-		this.height = parseInt(this.opener.getAttribute("height"));
-
-		this.updateImageSize();
-		this.elImg.src = this.opener.currentSrc;
-
 		this.loader = new Image();
 		this.loader.src = this.opener.src;
 
 		if (this.loader.complete) {
 			this.elImg.src = this.loader.src;
+			this.width = this.loader.naturalWidth;
+			this.height = this.loader.naturalHeight;
 		} else {
+			this.elImg.src = this.opener.currentSrc;
+			this.width = parseInt(this.opener.getAttribute("width"));
+			this.height = parseInt(this.opener.getAttribute("height"));
+
+			if (!this.width) {
+				this.width = this.opener.naturalWidth;
+				this.height = this.opener.naturalHeight;
+			}
+
 			this.loader.addEventListener("load", () => {
 				if (this.loader.naturalWidth) {
 					this.isImageLoaded = true;
@@ -232,6 +243,8 @@ export class Lightbox extends HTMLElement {
 				}
 			});
 		}
+
+		this.updateImageSize();
 
 		this.addEventListener("click", () => {
 			if (!this.isMoved) {
@@ -290,15 +303,15 @@ export class Lightbox extends HTMLElement {
 				"ob-lightbox-is-visible"
 			);
 
-			this.classList.add("is-open");
+			this.classList.add("is-open", "is-opening");
 			this.style.setProperty("--opacity", "1");
 			this.updateImageSize();
 			this.elImg.style.transform = "";
 			this.elImg.addEventListener("transitionend", this.onOpenEndFn);
-			this.isOpening = true;
 		});
 
 		this.isClosed = false;
+		this.isOpening = true;
 
 		window.addEventListener("resize", this.handleReiszeFn);
 		window.addEventListener("keydown", this.handleKeyDownFn);
@@ -333,17 +346,9 @@ export class Lightbox extends HTMLElement {
 
 	handleReiszeFn = this.handleResize.bind(this);
 	handleResize() {
-		// Needed in order to remove the width/height transition, which could
-		// lead to incorrect calculations.
-		this.elImg.style.transition = "none";
-
 		this.updateImageSize();
 		this.updateSize();
 		this.render();
-
-		window.requestAnimationFrame(() => {
-			this.elImg.style.transition = "";
-		});
 	}
 
 	handleWheelFn = this.handleWheel.bind(this);
@@ -410,12 +415,18 @@ export class Lightbox extends HTMLElement {
 	updateImageSrc() {
 		if (this.isImageLoaded && !this.isOpening) {
 			this.elImg.src = this.loader.src;
+			this.width = this.loader.naturalWidth;
+			this.height = this.loader.naturalHeight;
+			this.updateImageSize();
+			this.updateSize();
+			this.render();
 		}
 	}
 
 	onOpenEndFn = this.onOpenEnd.bind(this);
 	onOpenEnd() {
 		this.isOpening = false;
+		this.classList.remove("is-opening");
 		this.updateImageSrc();
 		this.elImg.removeEventListener("transitionend", this.onOpenEndFn);
 	}
