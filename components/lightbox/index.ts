@@ -21,39 +21,28 @@ const DIST_LAST_FOCUS = 10;
 
 const SHADOW_HTML = `
 <style>
-.backdrop {
+:host {
 	position: fixed;
 	top: 0;
 	left: 0;
 	z-index: 50;
-	width: 100%;
-	height: 100%;
-	background-color: rgba(0, 0, 0, calc(var(--opacity, 1) * 0.8));
-	transition: background-color 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.container {
-	position: fixed;
-	top: 0;
-	left: 0;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	width: 100%;
 	height: 100%;
-	overflow: hidden;
-
-	/**
-	 * Must be the same as the .backdrop z-index to ensure that an opening
-	 * lightbox stacks correctly on top of a closing one.
-	 */
-	z-index: 50;
-
-	/**
-	 * Prevents page scroll/zoom on mobile. Must be on .container, rather than
-	 * :host, otherwise it doesn't work on Android.
-	 */
 	touch-action: none;
+}
+
+.backdrop {
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: -1;
+	width: 100%;
+	height: 100%;
+	background-color: rgba(0, 0, 0, calc(var(--opacity, 1) * 0.8));
+	transition: background-color 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .wrapper {
@@ -122,10 +111,8 @@ const SHADOW_HTML = `
 </style>
 
 <div class="backdrop"></div>
-<div class="container">
-	<div class="wrapper">
-		<img class="image">
-	</div>
+<div class="wrapper">
+	<img class="image">
 </div>
 `;
 
@@ -189,7 +176,6 @@ export class Lightbox extends HTMLElement {
 
 	ptrs: Pointer[] = [];
 
-	elContainer: HTMLDivElement;
 	elImg: HTMLImageElement;
 	elWrap: HTMLElement;
 	width: number;
@@ -213,7 +199,6 @@ export class Lightbox extends HTMLElement {
 		this.shadow = this.attachShadow({ mode: "open" });
 		this.shadow.innerHTML = SHADOW_HTML;
 
-		this.elContainer = this.shadow.querySelector(".container");
 		this.elWrap = this.shadow.querySelector(".wrapper");
 		this.elImg = this.shadow.querySelector(".image") as HTMLImageElement;
 	}
@@ -921,15 +906,6 @@ export class Lightbox extends HTMLElement {
 	}
 
 	close() {
-		this.elContainer.style.position = "absolute";
-		this.elContainer.style.top = `${document.documentElement.scrollTop}px`;
-		this.elContainer.style.left = `${document.documentElement.scrollLeft}px`;
-
-		// Some browsers (e.g. Brave) have UI elements that animate on scroll
-		// and resize the viewport, which resizes the 100% height container and
-		// ruins the animation. This makes sure the height stays the same.
-		this.elContainer.style.height = `${this.elContainer.offsetHeight}px`;
-
 		window.removeEventListener("resize", this.handleReiszeFn);
 		window.removeEventListener("keydown", this.handleKeyDownFn);
 		this.removeEventListener("wheel", this.handleWheelFn);
@@ -963,8 +939,17 @@ export class Lightbox extends HTMLElement {
 		let sx = r1.left - this.elImg.offsetLeft - widthDiff / 2;
 		let sy = r1.top - this.elImg.offsetTop - heightDiff / 2;
 
+		let elHeight = this.offsetHeight;
+		let scrollTop = document.scrollingElement.scrollTop;
+		let scrollLeft = document.scrollingElement.scrollLeft;
+
 		this.classList.remove("is-moved");
 		this.classList.add("is-closing");
+
+		this.style.position = "absolute";
+		this.style.top = `${scrollTop}px`;
+		this.style.left = `${scrollLeft}px`;
+		this.style.height = `${elHeight}px`;
 
 		this.elImg.style.width = `${width}px`;
 		this.elImg.style.height = `${height}px`;
