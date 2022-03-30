@@ -5,8 +5,6 @@ import { clamp, Point, Vector } from "../../utils/math";
 /**
  * @todo if pointer is touch, do not check isMoved for closing - just distance
  * @todo use transform origin center to avoid weird rotation transition
- * @todo fix lightbox not opening on first tap on iOS
- * @todo fix image upscaled and src updated if closed immediately after open
  */
 
 /**
@@ -221,12 +219,7 @@ export class Lightbox extends HTMLElement {
 				this.height = this.opener.naturalHeight;
 			}
 
-			this.loader.addEventListener("load", () => {
-				if (this.loader.naturalWidth) {
-					this.isImageLoaded = true;
-					this.updateImageSrc();
-				}
-			});
+			this.loader.addEventListener("load", this.handleLoaderLoadFn);
 		}
 
 		this.updateImageSize();
@@ -301,6 +294,14 @@ export class Lightbox extends HTMLElement {
 		window.addEventListener("resize", this.handleReiszeFn);
 		window.addEventListener("keydown", this.handleKeyDownFn);
 		this.addEventListener("wheel", this.handleWheelFn);
+	}
+
+	handleLoaderLoadFn = this.handleLoaderLoad.bind(this);
+	handleLoaderLoad() {
+		if (this.loader.naturalWidth) {
+			this.isImageLoaded = true;
+			this.updateImageSrc();
+		}
 	}
 
 	updateImageSize() {
@@ -906,6 +907,7 @@ export class Lightbox extends HTMLElement {
 	}
 
 	close() {
+		this.loader.removeEventListener("load", this.handleLoaderLoadFn);
 		window.removeEventListener("resize", this.handleReiszeFn);
 		window.removeEventListener("keydown", this.handleKeyDownFn);
 		this.removeEventListener("wheel", this.handleWheelFn);
