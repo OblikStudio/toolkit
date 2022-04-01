@@ -265,7 +265,7 @@ export class Lightbox extends HTMLElement {
 		let r1 = this.opener.getBoundingClientRect();
 		let openerAspect = r1.width / r1.height;
 		let rect = this.elWrap.getBoundingClientRect();
-		let width = Math.min(rect.width, this.width);
+		let width = rect.width;
 		let height = width / openerAspect;
 
 		if (height > rect.height) {
@@ -941,7 +941,7 @@ export class Lightbox extends HTMLElement {
 		let r1 = this.opener.getBoundingClientRect();
 		let openerAspect = r1.width / r1.height;
 		let rect = this.elWrap.getBoundingClientRect();
-		let width = Math.min(rect.width, this.width);
+		let width = rect.width;
 		let height = width / openerAspect;
 
 		if (height > rect.height) {
