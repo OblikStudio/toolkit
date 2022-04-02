@@ -177,7 +177,7 @@ export class Lightbox extends HTMLElement {
 	animRatio = 0;
 
 	isClosed = false;
-	isImageLoaded = false;
+	isImageLoaded: boolean;
 	isOpening = false;
 
 	/**
@@ -217,23 +217,19 @@ export class Lightbox extends HTMLElement {
 	}
 
 	connectedCallback() {
+		this.elImg.src = this.opener.currentSrc;
+		this.width =
+			parseInt(this.opener.getAttribute("data-ob-width")) ||
+			this.opener.naturalWidth;
+		this.height =
+			parseInt(this.opener.getAttribute("data-ob-height")) ||
+			this.opener.naturalHeight;
+
 		this.loader = new Image();
 		this.loader.src = this.opener.src;
+		this.isImageLoaded = this.loader.complete;
 
-		if (this.loader.complete) {
-			this.elImg.src = this.loader.src;
-			this.width = this.loader.naturalWidth;
-			this.height = this.loader.naturalHeight;
-		} else {
-			this.elImg.src = this.opener.currentSrc;
-			this.width = parseInt(this.opener.getAttribute("width"));
-			this.height = parseInt(this.opener.getAttribute("height"));
-
-			if (!this.width) {
-				this.width = this.opener.naturalWidth;
-				this.height = this.opener.naturalHeight;
-			}
-
+		if (!this.isImageLoaded) {
 			this.loader.addEventListener("load", this.handleLoaderLoadFn);
 		}
 
