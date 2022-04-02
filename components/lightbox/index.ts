@@ -24,6 +24,7 @@ const SHADOW_HTML = `
 <style>
 :host {
 	--resolution: 1;
+	--transition: 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 
 	position: fixed;
 	top: 0;
@@ -45,7 +46,7 @@ const SHADOW_HTML = `
 	width: 100%;
 	height: 100%;
 	background-color: rgba(0, 0, 0, calc(var(--opacity, 1) * 0.8));
-	transition: background-color 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+	transition: background-color var(--transition);
 }
 
 .wrapper {
@@ -69,7 +70,7 @@ const SHADOW_HTML = `
 	user-select: none;
 	cursor: grab;
 	transform-origin: left top;
-	transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+	transition: transform var(--transition);
 }
 
 .image {
@@ -84,7 +85,7 @@ const SHADOW_HTML = `
 
 :host(.is-opening) .figure,
 :host(.is-closing) .figure {
-	transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+	transition: all var(--transition);
 }
 
 :host(:not(.is-open)) .backdrop,
