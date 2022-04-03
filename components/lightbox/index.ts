@@ -660,7 +660,7 @@ export class Lightbox extends HTMLElement {
 		let animRatio = this.animRatio;
 		this.animRatio = 0;
 
-		if (this.isExpandable()) {
+		if (this.isExpandable() || this.isExpanded()) {
 			if (this.isDoubleTap) {
 				this.clickZoom();
 				this.isDoubleTap = false;
