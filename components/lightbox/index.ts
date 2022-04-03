@@ -3,7 +3,6 @@ import { easeInOutQuad } from "../../utils/easings";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
- * @todo fix blurry images after expand on small viewports
  * @todo do not move on x/y if image is smaller than vw/vh and constrained
  * @todo make double tap zoom to natural size / DPR
  * @todo if pointer is touch, do not check isMoved for closing - just distance
@@ -416,9 +415,16 @@ export class Lightbox extends HTMLElement {
 			this.width = this.loader.naturalWidth;
 			this.height = this.loader.naturalHeight;
 			this.updateImageSize();
+			this.updateResolution();
 			this.updateSize();
-			this.render();
+
+			this.elFigure.addEventListener("transitionend", this.updateResolutionFn);
 		}
+	}
+
+	updateResolutionFn = this.updateResolution.bind(this);
+	updateResolution() {
+		this.style.setProperty("--resolution", this.scaleStatic.toString());
 	}
 
 	onOpenEndFn = this.onOpenEnd.bind(this);
@@ -929,6 +935,11 @@ export class Lightbox extends HTMLElement {
 			// triggering onOpenEnd().
 			this.elFigure.removeEventListener("transitionend", this.onOpenEndFn);
 			this.isOpening = false;
+		} else {
+			this.elFigure.removeEventListener(
+				"transitionend",
+				this.updateResolutionFn
+			);
 		}
 
 		this.isClosed = true;
@@ -969,6 +980,10 @@ export class Lightbox extends HTMLElement {
 		this.elFigure.style.height = `${height}px`;
 
 		this.elFigure.style.transform = `translate(${sx}px, ${sy}px) scale(${sw}, ${sh})`;
+
+		this.scaleStatic = 1;
+		this.updateResolution();
+
 		this.style.setProperty("--opacity", "0");
 		this.opener.classList.remove("ob-lightbox-is-active");
 
