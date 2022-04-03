@@ -916,12 +916,7 @@ export class Lightbox extends HTMLElement {
 
 		let x = render.x - this.ptOffset.x;
 		let y = render.y - this.ptOffset.y;
-
-		/**
-		 * Using `matrix()` to prevent flicker on iOS.
-		 * @see https://stackoverflow.com/q/70233672/3130281
-		 */
-		this.elFigure.style.transform = `matrix(${s}, 0, 0, ${s}, ${x}, ${y}) rotate(${gesture.angle}rad)`;
+		this.elFigure.style.transform = `translate(${x}px, ${y}px) scale(${s}) rotate(${gesture.angle}rad)`;
 	}
 
 	close() {
@@ -957,8 +952,6 @@ export class Lightbox extends HTMLElement {
 			width = height * openerAspect;
 		}
 
-		let sw = r1.width / width;
-		let sh = r1.height / height;
 		let widthDiff = this.elFigure.offsetWidth - width;
 		let heightDiff = this.elFigure.offsetHeight - height;
 		let sx = r1.left - this.elFigure.offsetLeft - widthDiff / 2;
@@ -976,10 +969,10 @@ export class Lightbox extends HTMLElement {
 		this.style.left = `${scrollLeft}px`;
 		this.style.height = `${elHeight}px`;
 
+		let scale = r1.width / width; // Height ratio is the same.
 		this.elFigure.style.width = `${width}px`;
 		this.elFigure.style.height = `${height}px`;
-
-		this.elFigure.style.transform = `translate(${sx}px, ${sy}px) scale(${sw}, ${sh})`;
+		this.elFigure.style.transform = `translate(${sx}px, ${sy}px) scale(${scale})`;
 
 		this.scaleStatic = 1;
 		this.updateResolution();
