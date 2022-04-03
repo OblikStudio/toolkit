@@ -405,7 +405,7 @@ export class Lightbox extends HTMLElement {
 	}
 
 	isExpandable() {
-		return this.scaleMax > 1;
+		return this.scaleMax / window.devicePixelRatio > 1;
 	}
 
 	updateImageSrc() {
