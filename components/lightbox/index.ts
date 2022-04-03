@@ -4,7 +4,6 @@ import { clamp, Point, Vector } from "../../utils/math";
 
 /**
  * @todo do not move on x/y if image is smaller than vw/vh and constrained
- * @todo make double tap zoom to natural size / DPR
  * @todo if pointer is touch, do not check isMoved for closing - just distance
  * @todo use transform origin center to avoid weird rotation transition
  */
@@ -739,13 +738,14 @@ export class Lightbox extends HTMLElement {
 	}
 
 	zoomIn() {
+		let scale = this.scaleMax / window.devicePixelRatio;
 		let pull = new Point(
-			(this.scaleMax - 1) * (this.lastTapUp.clientX - this.ptStatic.x),
-			(this.scaleMax - 1) * (this.lastTapUp.clientY - this.ptStatic.y)
+			(scale - 1) * (this.lastTapUp.clientX - this.ptStatic.x),
+			(scale - 1) * (this.lastTapUp.clientY - this.ptStatic.y)
 		);
 
 		this.ptStatic.subtract(pull);
-		this.scaleStatic = this.scaleMax;
+		this.scaleStatic = scale;
 		this.classList.add("is-expanded");
 	}
 
