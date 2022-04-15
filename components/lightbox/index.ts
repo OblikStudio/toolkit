@@ -3,7 +3,6 @@ import { easeInOutQuad } from "../../utils/easings";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
- * @todo allow click and double-tap to zoom even for low-res images (like iOS)
  * @todo if pointer is touch, do not check isMoved for closing - just distance
  * @todo fix pointer events glitch on iOS when swipe triggers native page change
  * @todo remove is-moving class on mousewheel to avoid jagged scale change
@@ -169,6 +168,7 @@ export class Lightbox extends HTMLElement {
 
 	scaleStatic = 1;
 	scaleMax: number;
+	scaleIdeal: number;
 
 	isPinchToClose: boolean;
 	isDoubleTap: boolean;
@@ -396,6 +396,10 @@ export class Lightbox extends HTMLElement {
 		// the fact that it gets blurry.
 		let minSize = 1024;
 		let minScale = Math.min(minSize / imgWidth, minSize / imgHeight);
+
+		// Height calulations would be the same, so only width can be checked.
+		this.scaleIdeal = this.width / imgWidth / window.devicePixelRatio;
+
 		this.scaleMax = Math.max(naturalScale, minScale, 1);
 		this.scaleStatic = this.imgSize.x / imgWidth;
 		this.scaleStatic = clamp(this.scaleStatic, 1, this.scaleMax);
@@ -413,7 +417,7 @@ export class Lightbox extends HTMLElement {
 	}
 
 	isExpandable() {
-		return this.scaleMax / window.devicePixelRatio > 1;
+		return this.scaleMax > 1;
 	}
 
 	updateImageSrc() {
@@ -766,7 +770,7 @@ export class Lightbox extends HTMLElement {
 	}
 
 	zoomIn() {
-		let scale = this.scaleMax / window.devicePixelRatio;
+		let scale = this.scaleIdeal > 1 ? this.scaleIdeal : this.scaleMax;
 		let pull = new Point(
 			(scale - 1) * (this.lastTapUp.clientX - this.ptStatic.x),
 			(scale - 1) * (this.lastTapUp.clientY - this.ptStatic.y)
