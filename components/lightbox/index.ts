@@ -4,10 +4,9 @@ import { clamp, Point, Vector } from "../../utils/math";
 
 /**
  * @todo allow click and double-tap to zoom even for low-res images (like iOS)
- * @todo do not move on x/y if image is smaller than vw/vh and constrained
  * @todo if pointer is touch, do not check isMoved for closing - just distance
  * @todo fix pointer events glitch on iOS when swipe triggers native page change
- * @todo open with pinch-zoom on thumbnail
+ * @todo remove is-moving class on mousewheel to avoid jagged scale change
  */
 
 /**
@@ -482,6 +481,7 @@ export class Lightbox extends HTMLElement {
 	gestureOffset: Vector;
 	rotation: number;
 	distDown: number;
+	isSnappy: boolean;
 
 	vcPull: Vector;
 
@@ -494,6 +494,11 @@ export class Lightbox extends HTMLElement {
 		this.gestureOffset = null;
 		this.gestureAngle = null;
 		this.angle = null;
+
+		if (this.ptrs.length > 1 && this.isSnappy) {
+			this.constrainPoint(this.ptStatic, false, true);
+			this.isSnappy = false;
+		}
 
 		if (this.ptrs.length) {
 			this.ptDown = avgPoint(this.ptrs);
@@ -515,6 +520,9 @@ export class Lightbox extends HTMLElement {
 		this.isRotate = this.isPinchToClose && this.isScaledDown;
 		this.scaleDirection = 0;
 		this.isMoved = false;
+		this.isSnappy =
+			this.rectBounds.height > this.imgSize.y ||
+			this.rectBounds.width > this.imgSize.x;
 
 		if (
 			this.lastTapUp &&
@@ -575,6 +583,17 @@ export class Lightbox extends HTMLElement {
 			delta.magnitude = Math.pow(delta.magnitude, 3);
 			this.vcMovement.magnitude *= 0.75;
 			this.vcMovement.add(delta);
+		}
+
+		if (this.isSnappy && this.vcMovement.magnitude > 3) {
+			if (Math.abs(Math.cos(this.vcMovement.direction)) > 0.7) {
+				this.isSwipeDownClose = false;
+			} else if (
+				this.isSwipeDownClose &&
+				Math.sin(this.vcMovement.direction) > 0.7
+			) {
+				this.isSnappy = false;
+			}
 		}
 
 		if (this.distDown) {
@@ -795,25 +814,38 @@ export class Lightbox extends HTMLElement {
 		this.render();
 	}
 
-	constrainPoint(p: Point, overdrag = true) {
+	constrainPoint(p: Point, overdrag = true, retouch = false) {
 		let r2 = this.rectBounds;
 		let dt = r2.top - (p.y - this.imgSize.y * this.originY);
 		let dl = r2.left - (p.x - this.imgSize.x * this.originX);
 		let dr = p.x + this.imgSize.x * (1 - this.originX) - r2.right;
 		let db = p.y + this.imgSize.y * (1 - this.originY) - r2.bottom;
 
-		if (dt > 0) p.y = r2.top + this.imgSize.y * this.originY;
-		if (dl > 0) p.x = r2.left + this.imgSize.x * this.originX;
-		if (dr > 0) p.x = r2.right - this.imgSize.x * (1 - this.originX);
-		if (db > 0 && (!overdrag || !this.isSwipeDownClose))
-			p.y = r2.bottom - this.imgSize.y * (1 - this.originY);
+		let snapY = r2.height > this.imgSize.y;
+		let snapX = r2.width > this.imgSize.x;
+
+		if (!retouch || !snapY) {
+			if (dt > 0) p.y = r2.top + this.imgSize.y * this.originY;
+			if (db > 0 && (!overdrag || !this.isSwipeDownClose))
+				p.y = r2.bottom - this.imgSize.y * (1 - this.originY);
+		}
+
+		if (!retouch || !snapX) {
+			if (dl > 0) p.x = r2.left + this.imgSize.x * this.originX;
+			if (dr > 0) p.x = r2.right - this.imgSize.x * (1 - this.originX);
+		}
 
 		if (overdrag) {
-			if (dt > 0) p.y -= this.getOverdrag(dt, window.innerHeight / 3);
-			if (dl > 0) p.x -= this.getOverdrag(dl, window.innerWidth / 3);
-			if (dr > 0) p.x += this.getOverdrag(dr, window.innerWidth / 3);
-			if (db > 0 && !this.isSwipeDownClose)
-				p.y += this.getOverdrag(db, window.innerHeight / 3);
+			if (snapY || !snapX || !this.isSnappy) {
+				if (dt > 0) p.y -= this.getOverdrag(dt, window.innerHeight / 3);
+				if (db > 0 && !this.isSwipeDownClose)
+					p.y += this.getOverdrag(db, window.innerHeight / 3);
+			}
+
+			if (snapX || !snapY || !this.isSnappy) {
+				if (dl > 0) p.x -= this.getOverdrag(dl, window.innerWidth / 3);
+				if (dr > 0) p.x += this.getOverdrag(dr, window.innerWidth / 3);
+			}
 		}
 
 		p.set(p.x, p.y);
