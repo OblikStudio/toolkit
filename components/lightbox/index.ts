@@ -4,8 +4,6 @@ import { clamp, Point, Vector } from "../../utils/math";
 
 /**
  * @todo if pointer is touch, do not check isMoved for closing - just distance
- * @todo fix pointer events glitch on iOS when swipe triggers native page change
- * @todo remove is-moving class on mousewheel to avoid jagged scale change
  */
 
 /**
@@ -378,6 +376,10 @@ export class Lightbox extends HTMLElement {
 		this.render();
 
 		this.classList.toggle("is-expanded", this.isExpanded());
+
+		if (this.isSliding) {
+			this.stopSliding();
+		}
 	}
 
 	updateSize() {
@@ -800,9 +802,7 @@ export class Lightbox extends HTMLElement {
 			this.ptStatic.add(vcPush);
 
 			if (this.vcSpeed.magnitude < 0.1 && vcPush.magnitude < 0.1) {
-				ticker.off("tick", this.tickHandler);
-				this.classList.remove("is-moved");
-				this.isSliding = false;
+				this.stopSliding();
 			}
 		} else if (this.gesturePoint) {
 			if (this.ptTick) {
@@ -816,6 +816,12 @@ export class Lightbox extends HTMLElement {
 		}
 
 		this.render();
+	}
+
+	stopSliding() {
+		ticker.off("tick", this.tickHandler);
+		this.classList.remove("is-moved");
+		this.isSliding = false;
 	}
 
 	constrainPoint(p: Point, overdrag = true, retouch = false) {
