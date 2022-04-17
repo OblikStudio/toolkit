@@ -626,8 +626,17 @@ export class Lightbox extends HTMLElement {
 			this.classList.add("is-moved");
 		}
 
-		if (!this.isDragged && this.gestureOffset.magnitude > 5) {
+		let pixelsMoved = this.gestureOffset.magnitude;
+
+		if (!this.isDragged && pixelsMoved > 5) {
 			this.isDragged = true;
+		}
+
+		/**
+		 * Prevent false double-tap when second tap is a drag.
+		 */
+		if (this.isDoubleTap && pixelsMoved > DIST_DOUBLE_TAP) {
+			this.isDoubleTap = false;
 		}
 	}
 
@@ -667,10 +676,6 @@ export class Lightbox extends HTMLElement {
 
 		this.ptrs.splice(this.ptrs.indexOf(ptr), 1);
 
-		/**
-		 * @todo fix case where pointer is dragged and brought back to the same
-		 * place, falsely considered as a tap
-		 */
 		if (ptr.point.dist(ptr.origin) < DIST_DOUBLE_TAP) {
 			this.lastTapUp = e;
 		} else {
