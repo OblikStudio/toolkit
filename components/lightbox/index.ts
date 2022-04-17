@@ -3,10 +3,6 @@ import { easeInOutQuad } from "../../utils/easings";
 import { clamp, Point, Vector } from "../../utils/math";
 
 /**
- * @todo if pointer is touch, do not check isMoved for closing - just distance
- */
-
-/**
  * On down, if there's only one pointer and the last gesture (1) happened within
  * TIME_DOUBLE_TAP, (2) within DIST_DOUBLE_TAP, and (3) was not a drag, flag a
  * double-tap. On up, if the gesture was not a drag, trigger the double-tap.
@@ -236,7 +232,7 @@ export class Lightbox extends HTMLElement {
 		this.updateImageSize();
 
 		this.addEventListener("click", () => {
-			if (!this.isMoved) {
+			if (!this.isDragged) {
 				this.close();
 			}
 		});
@@ -526,6 +522,7 @@ export class Lightbox extends HTMLElement {
 		this.isRotate = this.isPinchToClose && this.isScaledDown;
 		this.scaleDirection = 0;
 		this.isMoved = false;
+		this.isDragged = false;
 		this.isSnappy =
 			this.rectBounds.height > this.imgSize.y ||
 			this.rectBounds.width > this.imgSize.x;
@@ -568,6 +565,7 @@ export class Lightbox extends HTMLElement {
 
 	angle: number;
 	isMoved: boolean;
+	isDragged: boolean;
 
 	handleMove(e: PointerEvent) {
 		// If `handleMove()` is called while `isOpening` is `true`, then the
@@ -626,6 +624,10 @@ export class Lightbox extends HTMLElement {
 		if (!this.isMoved) {
 			this.isMoved = true;
 			this.classList.add("is-moved");
+		}
+
+		if (!this.isDragged && this.gestureOffset.magnitude > 5) {
+			this.isDragged = true;
 		}
 	}
 
