@@ -16,6 +16,7 @@
 	},
 	"homepage": "https://github.com/oblikjs/oblik#readme",
 	"devDependencies": {
+		"minify-html-literals-loader": "^1.1.1",
 		"ts-loader": "^9.2.8",
 		"typescript": "^4.6.3",
 		"webpack": "^5.72.0",

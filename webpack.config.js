@@ -1,5 +1,6 @@
 let path = require("path");
 
+/** @type {import('@types/webpack').Configuration} */
 module.exports = {
 	entry: {
 		oblik: "./index.ts",
@@ -15,10 +16,17 @@ module.exports = {
 		rules: [
 			{
 				test: /\.ts$/,
-				loader: "ts-loader",
-				options: {
-					transpileOnly: true,
-				},
+				use: [
+					{
+						loader: "minify-html-literals-loader",
+					},
+					{
+						loader: "ts-loader",
+						options: {
+							transpileOnly: true,
+						},
+					},
+				],
 			},
 		],
 	},
