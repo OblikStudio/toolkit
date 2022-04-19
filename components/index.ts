@@ -2,6 +2,7 @@ export { Accordion } from "./accordion";
 export { Carousel } from "./carousel";
 export { Expandable } from "./expandable";
 export { Height } from "./height";
+export { Lightbox } from "./lightbox";
 export { Masonry } from "./masonry";
 export { Parallax } from "./parallax";
 export { ScrollTo } from "./scroll-to";
