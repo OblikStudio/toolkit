@@ -12,114 +12,6 @@ const TIME_DOUBLE_TAP = 400;
 
 const DIST_LAST_FOCUS = 10;
 
-const SHADOW_HTML = `
-<style>
-:host {
-	--resolution: 1;
-	--transition: 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-
-	position: fixed;
-	top: 0;
-	left: 0;
-	z-index: 50;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	width: 100%;
-	height: 100%;
-	touch-action: none;
-}
-
-.backdrop {
-	position: fixed;
-	top: 0;
-	left: 0;
-	z-index: -1;
-	width: 100%;
-	height: 100%;
-	background-color: rgba(0, 0, 0, calc(var(--opacity, 1) * 0.8));
-	transition: background-color var(--transition);
-}
-
-.wrapper {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	width: 100%;
-	height: 100%;
-}
-
-@media (min-width: 600px) {
-	.wrapper {
-		width: 80%;
-		height: 80%;
-	}
-}
-
-.figure {
-	position: relative;
-	display: block;
-	user-select: none;
-	cursor: grab;
-	transform-origin: center;
-	transition: transform var(--transition);
-}
-
-.image {
-	position: absolute;
-	top: 50%;
-	left: 50%;
-	width: calc(var(--resolution) * 100%);
-	height: calc(var(--resolution) * 100%);
-	transform: translate(-50%, -50%) scale(calc(1 / var(--resolution)));
-	will-change: transform;
-}
-
-:host(.is-opening) .figure,
-:host(.is-closing) .figure {
-	transition: all var(--transition);
-}
-
-:host(:not(.is-open)) .backdrop,
-:host(:not(.is-open)) .figure,
-:host(.is-moved) .backdrop,
-:host(.is-moved) .figure {
-	transition: none;
-}
-
-:host(.is-closing) {
-	pointer-events: none;
-}
-
-:host(.is-open) {
-	cursor: zoom-out;
-}
-
-:host(.is-moved) {
-	cursor: grabbing;
-}
-
-:host(.is-expandable) .figure {
-	cursor: zoom-in;
-}
-
-:host(.is-expanded) .figure {
-	cursor: grab;
-}
-
-:host(.is-dragging) .figure {
-	cursor: grabbing;
-}
-</style>
-
-<div class="backdrop"></div>
-<div class="wrapper">
-	<div class="figure">
-		<img class="image">
-	</div>
-</div>
-`;
-
 interface Pointer {
 	id: number;
 	point: Point;
@@ -205,11 +97,129 @@ export class Lightbox extends HTMLElement {
 		super();
 
 		this.shadow = this.attachShadow({ mode: "open" });
-		this.shadow.innerHTML = SHADOW_HTML;
+		this.shadow.innerHTML = this.getHtml();
 
 		this.elWrap = this.shadow.querySelector(".wrapper");
 		this.elFigure = this.shadow.querySelector(".figure");
 		this.elImg = this.shadow.querySelector(".image") as HTMLImageElement;
+	}
+
+	getHtml() {
+		let html = String.raw;
+		return html`
+			<style>
+				${this.getCss()}
+			</style>
+
+			<div class="backdrop"></div>
+			<div class="wrapper">
+				<div class="figure">
+					<img class="image" />
+				</div>
+			</div>
+		`;
+	}
+
+	getCss() {
+		let css = String.raw;
+		return css`
+			:host {
+				--resolution: 1;
+				--transition: 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+
+				position: fixed;
+				top: 0;
+				left: 0;
+				z-index: 50;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				width: 100%;
+				height: 100%;
+				touch-action: none;
+			}
+
+			.backdrop {
+				position: fixed;
+				top: 0;
+				left: 0;
+				z-index: -1;
+				width: 100%;
+				height: 100%;
+				background-color: rgba(0, 0, 0, calc(var(--opacity, 1) * 0.8));
+				transition: background-color var(--transition);
+			}
+
+			.wrapper {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				width: 100%;
+				height: 100%;
+			}
+
+			@media (min-width: 600px) {
+				.wrapper {
+					width: 80%;
+					height: 80%;
+				}
+			}
+
+			.figure {
+				position: relative;
+				display: block;
+				user-select: none;
+				cursor: grab;
+				transform-origin: center;
+				transition: transform var(--transition);
+			}
+
+			.image {
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				width: calc(var(--resolution) * 100%);
+				height: calc(var(--resolution) * 100%);
+				transform: translate(-50%, -50%) scale(calc(1 / var(--resolution)));
+				will-change: transform;
+			}
+
+			:host(.is-opening) .figure,
+			:host(.is-closing) .figure {
+				transition: all var(--transition);
+			}
+
+			:host(:not(.is-open)) .backdrop,
+			:host(:not(.is-open)) .figure,
+			:host(.is-moved) .backdrop,
+			:host(.is-moved) .figure {
+				transition: none;
+			}
+
+			:host(.is-closing) {
+				pointer-events: none;
+			}
+
+			:host(.is-open) {
+				cursor: zoom-out;
+			}
+
+			:host(.is-moved) {
+				cursor: grabbing;
+			}
+
+			:host(.is-expandable) .figure {
+				cursor: zoom-in;
+			}
+
+			:host(.is-expanded) .figure {
+				cursor: grab;
+			}
+
+			:host(.is-dragging) .figure {
+				cursor: grabbing;
+			}
+		`;
 	}
 
 	connectedCallback() {
