@@ -532,9 +532,12 @@ export class Lightbox extends HTMLElement {
 		this.scaleDirection = 0;
 		this.isMoved = false;
 		this.isDragged = false;
+
+		// Both values are floats, so the difference is checked to avoid
+		// rounding errors.
 		this.isSnappy =
-			this.rectBounds.height > this.imgSize.y ||
-			this.rectBounds.width > this.imgSize.x;
+			this.rectBounds.height - this.imgSize.y > 1 ||
+			this.rectBounds.width - this.imgSize.x > 1;
 
 		if (
 			this.lastTapUp &&
