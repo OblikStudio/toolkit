@@ -90,18 +90,17 @@ export class Lightbox extends HTMLElement {
 	imgSize = new Point();
 	rectBounds: DOMRectReadOnly;
 
-	shadow: ShadowRoot;
 	opener: HTMLImageElement;
 
 	constructor() {
 		super();
 
-		this.shadow = this.attachShadow({ mode: "open" });
-		this.shadow.innerHTML = this.getHtml();
+		let shadow = this.attachShadow({ mode: "open" });
+		shadow.innerHTML = this.getHtml();
 
-		this.elWrap = this.shadow.querySelector(".wrapper");
-		this.elFigure = this.shadow.querySelector(".figure");
-		this.elImg = this.shadow.querySelector(".image") as HTMLImageElement;
+		this.elWrap = shadow.querySelector(".wrapper");
+		this.elFigure = shadow.querySelector(".figure");
+		this.elImg = shadow.querySelector(".image") as HTMLImageElement;
 	}
 
 	getHtml() {
