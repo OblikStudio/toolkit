@@ -231,7 +231,7 @@ export class Lightbox extends HTMLElement {
 			this.opener.naturalHeight;
 
 		this.loader = new Image();
-		this.loader.src = this.opener.src;
+		this.loader.src = this.getSrc();
 		this.isImageLoaded = this.loader.complete;
 
 		if (!this.isImageLoaded) {
@@ -315,6 +315,12 @@ export class Lightbox extends HTMLElement {
 		window.addEventListener("resize", this.handleReiszeFn);
 		window.addEventListener("keydown", this.handleKeyDownFn);
 		this.addEventListener("wheel", this.handleWheelFn);
+	}
+
+	getSrc() {
+		// If `data-ob-src` is empty, assume that `srcset` is used and the
+		// full-scale image is in `src`.
+		return this.opener.getAttribute("data-ob-src") || this.opener.src;
 	}
 
 	handleLoaderLoadFn = this.handleLoaderLoad.bind(this);
