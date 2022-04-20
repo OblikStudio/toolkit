@@ -223,15 +223,7 @@ export class Lightbox extends HTMLElement {
 	connectedCallback() {
 		this.elImg.src = this.opener.currentSrc;
 
-		this.loader = new Image();
-		this.loader.src = this.getSrc();
-
-		if (!this.loader.complete) {
-			this.loader.onload = () => {
-				this.updateImageSrc();
-			};
-		}
-
+		this.preloadImage();
 		this.updateDimensions();
 		this.updateImageSize();
 
@@ -310,6 +302,17 @@ export class Lightbox extends HTMLElement {
 		window.addEventListener("resize", this.handleReiszeFn);
 		window.addEventListener("keydown", this.handleKeyDownFn);
 		this.addEventListener("wheel", this.handleWheelFn);
+	}
+
+	preloadImage() {
+		this.loader = new Image();
+		this.loader.src = this.getSrc();
+
+		if (!this.loader.complete) {
+			this.loader.onload = () => {
+				this.updateImageSrc();
+			};
+		}
 	}
 
 	getSrc() {
