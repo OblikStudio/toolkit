@@ -223,12 +223,6 @@ export class Lightbox extends HTMLElement {
 
 	connectedCallback() {
 		this.elImg.src = this.opener.currentSrc;
-		this.width =
-			parseInt(this.opener.getAttribute("data-ob-width")) ||
-			this.opener.naturalWidth;
-		this.height =
-			parseInt(this.opener.getAttribute("data-ob-height")) ||
-			this.opener.naturalHeight;
 
 		this.loader = new Image();
 		this.loader.src = this.getSrc();
@@ -238,6 +232,7 @@ export class Lightbox extends HTMLElement {
 			this.loader.addEventListener("load", this.handleLoaderLoadFn);
 		}
 
+		this.updateDimensions();
 		this.updateImageSize();
 
 		this.addEventListener("click", () => {
@@ -321,6 +316,18 @@ export class Lightbox extends HTMLElement {
 		// If `data-ob-src` is empty, assume that `srcset` is used and the
 		// full-scale image is in `src`.
 		return this.opener.getAttribute("data-ob-src") || this.opener.src;
+	}
+
+	updateDimensions() {
+		if (this.loader.complete) {
+			this.width = this.loader.naturalWidth;
+			this.height = this.loader.naturalHeight;
+		} else {
+			let width = this.opener.getAttribute("data-ob-width");
+			let height = this.opener.getAttribute("data-ob-height");
+			this.width = width ? parseInt(width) : this.opener.naturalWidth;
+			this.height = height ? parseInt(height) : this.opener.naturalHeight;
+		}
 	}
 
 	handleLoaderLoadFn = this.handleLoaderLoad.bind(this);
@@ -436,8 +443,7 @@ export class Lightbox extends HTMLElement {
 	updateImageSrc() {
 		if (this.isImageLoaded && !this.isOpening) {
 			this.elImg.src = this.loader.src;
-			this.width = this.loader.naturalWidth;
-			this.height = this.loader.naturalHeight;
+			this.updateDimensions();
 			this.updateImageSize();
 			this.updateResolution();
 			this.updateSize();
