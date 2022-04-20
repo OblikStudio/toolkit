@@ -65,7 +65,6 @@ export class Lightbox extends HTMLElement {
 	animRatio = 0;
 
 	isClosed = false;
-	isImageLoaded: boolean;
 	isOpening = false;
 
 	/**
@@ -226,10 +225,11 @@ export class Lightbox extends HTMLElement {
 
 		this.loader = new Image();
 		this.loader.src = this.getSrc();
-		this.isImageLoaded = this.loader.complete;
 
-		if (!this.isImageLoaded) {
-			this.loader.addEventListener("load", this.handleLoaderLoadFn);
+		if (!this.loader.complete) {
+			this.loader.onload = () => {
+				this.updateImageSrc();
+			};
 		}
 
 		this.updateDimensions();
@@ -327,14 +327,6 @@ export class Lightbox extends HTMLElement {
 			let height = this.opener.getAttribute("data-ob-height");
 			this.width = width ? parseInt(width) : this.opener.naturalWidth;
 			this.height = height ? parseInt(height) : this.opener.naturalHeight;
-		}
-	}
-
-	handleLoaderLoadFn = this.handleLoaderLoad.bind(this);
-	handleLoaderLoad() {
-		if (this.loader.naturalWidth) {
-			this.isImageLoaded = true;
-			this.updateImageSrc();
 		}
 	}
 
@@ -441,7 +433,7 @@ export class Lightbox extends HTMLElement {
 	}
 
 	updateImageSrc() {
-		if (this.isImageLoaded && !this.isOpening) {
+		if (this.loader.complete && !this.isOpening) {
 			this.elImg.src = this.loader.src;
 			this.updateDimensions();
 			this.updateImageSize();
@@ -995,7 +987,7 @@ export class Lightbox extends HTMLElement {
 	}
 
 	close() {
-		this.loader.removeEventListener("load", this.handleLoaderLoadFn);
+		this.loader.onload = null;
 		window.removeEventListener("resize", this.handleReiszeFn);
 		window.removeEventListener("keydown", this.handleKeyDownFn);
 		this.removeEventListener("wheel", this.handleWheelFn);
