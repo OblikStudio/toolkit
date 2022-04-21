@@ -38,7 +38,6 @@ export class Lightbox extends HTMLElement {
 	vcMovement: Vector;
 	scaleDirection: number;
 	isSliding = false;
-	avgDist: number;
 	gesturePoint: Point;
 	gestureScale: number;
 	timeScale = 1;
@@ -521,8 +520,7 @@ export class Lightbox extends HTMLElement {
 		if (this.ptrs.length) {
 			this.ptDown = avgPoint(this.ptrs);
 			this.gesturePoint = this.ptDown.copy();
-			this.avgDist = this.getAverageDistance();
-			this.distDown = this.avgDist;
+			this.distDown = this.getAverageDistance();
 			this.vcPull = this.ptDown.to(this.ptStatic);
 
 			// Reset the tick position, otherwise the speed will be inaccurate
@@ -946,8 +944,17 @@ export class Lightbox extends HTMLElement {
 			this.isPinchToClose = false;
 		}
 
-		if (this.isScaledDown && this.isPinchToClose) {
+		if (this.isScaledDown && this.isPinchToClose && !this.isRotate) {
 			this.isRotate = true;
+
+			this.constrainPoint(render, true);
+			this.ptStatic = render;
+			this.scaleStatic = gesture.scale;
+
+			this.ptDown = avgPoint(this.ptrs);
+			this.gesturePoint = this.ptDown.copy();
+			this.distDown = this.getAverageDistance();
+			this.vcPull = this.ptDown.to(this.ptStatic);
 		}
 
 		if (!this.isSliding && !this.isRotate) {
