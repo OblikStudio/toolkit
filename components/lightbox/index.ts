@@ -2,16 +2,6 @@ import { ticker } from "../../core/ticker";
 import { easeInOutQuad } from "../../utils/easings";
 import { clamp, Point, Vector } from "../../utils/math";
 
-/**
- * On down, if there's only one pointer and the last gesture (1) happened within
- * TIME_DOUBLE_TAP, (2) within DIST_DOUBLE_TAP, and (3) was not a drag, flag a
- * double-tap. On up, if the gesture was not a drag, trigger the double-tap.
- */
-const DIST_DOUBLE_TAP = 50;
-const TIME_DOUBLE_TAP = 400;
-
-const DIST_LAST_FOCUS = 10;
-
 interface Pointer {
 	id: number;
 	point: Point;
@@ -98,6 +88,7 @@ export class Lightbox extends HTMLElement {
 	scaleDirection: number;
 
 	isDoubleTap: boolean;
+	doubleTapDistance = 50;
 	isSwipeDownClose: boolean;
 	lastTapUp: PointerEvent;
 
@@ -556,14 +547,14 @@ export class Lightbox extends HTMLElement {
 		if (
 			this.lastTapUp &&
 			e.pointerType === "touch" &&
-			e.timeStamp - this.lastTapUp.timeStamp < TIME_DOUBLE_TAP
+			e.timeStamp - this.lastTapUp.timeStamp < 400
 		) {
 			let dist = Math.hypot(
 				Math.abs(e.clientX - this.lastTapUp.clientX),
 				Math.abs(e.clientY - this.lastTapUp.clientY)
 			);
 
-			if (dist < DIST_DOUBLE_TAP) {
+			if (dist < this.doubleTapDistance) {
 				this.isDoubleTap = true;
 			}
 		}
@@ -658,7 +649,7 @@ export class Lightbox extends HTMLElement {
 		/**
 		 * Prevent false double-tap when second tap is a drag.
 		 */
-		if (this.isDoubleTap && pixelsMoved > DIST_DOUBLE_TAP) {
+		if (this.isDoubleTap && pixelsMoved > this.doubleTapDistance) {
 			this.isDoubleTap = false;
 		}
 	}
@@ -694,13 +685,13 @@ export class Lightbox extends HTMLElement {
 		}
 
 		let delta = this.gesturePosition.copy().subtract(this.downPosition);
-		if (!this.focusPosition || delta.dist() > DIST_LAST_FOCUS) {
+		if (!this.focusPosition || delta.dist() > 10) {
 			this.focusPosition = avgPoint(this.pointers);
 		}
 
 		this.pointers.splice(this.pointers.indexOf(ptr), 1);
 
-		if (ptr.point.dist(ptr.origin) < DIST_DOUBLE_TAP) {
+		if (ptr.point.dist(ptr.origin) < this.doubleTapDistance) {
 			this.lastTapUp = e;
 		} else {
 			this.isDoubleTap = false;
