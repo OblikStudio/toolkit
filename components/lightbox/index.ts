@@ -2,23 +2,6 @@ import { ticker } from "../../core/ticker";
 import { easeInOutQuad } from "../../utils/easings";
 import { clamp, Point, Vector } from "../../utils/math";
 
-interface Pointer {
-	id: number;
-	point: Point;
-	origin: Point;
-}
-
-function avgPoint(points: Pointer[]) {
-	let pt = new Point();
-
-	points.forEach((p) => pt.add(p.point));
-
-	pt.x /= points.length;
-	pt.y /= points.length;
-
-	return pt;
-}
-
 export class Lightbox extends HTMLElement {
 	opener: HTMLImageElement;
 	image: HTMLImageElement;
@@ -53,7 +36,11 @@ export class Lightbox extends HTMLElement {
 
 	angle: number;
 
-	pointers: Pointer[] = [];
+	pointers: {
+		id: number;
+		point: Point;
+		origin: Point;
+	}[] = [];
 
 	bounds: DOMRectReadOnly;
 
@@ -518,7 +505,7 @@ export class Lightbox extends HTMLElement {
 		}
 
 		if (this.pointers.length) {
-			this.downPosition = avgPoint(this.pointers);
+			this.downPosition = this.getAveragePoint();
 			this.gesturePosition = this.downPosition.copy();
 			this.gestureStartDistance = this.getAverageDistance();
 			this.pull = this.downPosition.to(this.position);
@@ -593,7 +580,7 @@ export class Lightbox extends HTMLElement {
 			?.point.set(e.clientX, e.clientY);
 
 		let lastGesturePoint = this.gesturePosition;
-		this.gesturePosition = avgPoint(this.pointers);
+		this.gesturePosition = this.getAveragePoint();
 		this.gestureOffset = this.downPosition.to(this.gesturePosition);
 
 		if (lastGesturePoint) {
@@ -686,7 +673,7 @@ export class Lightbox extends HTMLElement {
 
 		let delta = this.gesturePosition.copy().subtract(this.downPosition);
 		if (!this.focusPosition || delta.dist() > 10) {
-			this.focusPosition = avgPoint(this.pointers);
+			this.focusPosition = this.getAveragePoint();
 		}
 
 		this.pointers.splice(this.pointers.indexOf(ptr), 1);
@@ -950,7 +937,7 @@ export class Lightbox extends HTMLElement {
 			this.position = render;
 			this.scale = gesture.scale;
 
-			this.downPosition = avgPoint(this.pointers);
+			this.downPosition = this.getAveragePoint();
 			this.gesturePosition = this.downPosition.copy();
 			this.gestureStartDistance = this.getAverageDistance();
 			this.pull = this.downPosition.to(this.position);
@@ -1115,6 +1102,10 @@ export class Lightbox extends HTMLElement {
 
 	getBleed(p: Point) {
 		return p.y + this.size.y * (1 - this.originY) - this.bounds.bottom;
+	}
+
+	getAveragePoint() {
+		return Point.average(...this.pointers.map((p) => p.point));
 	}
 
 	getAverageDistance() {

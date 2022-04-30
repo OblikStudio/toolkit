@@ -6,6 +6,17 @@ export function clamp(number: number, min: number, max: number) {
 }
 
 export class Point {
+	static average(...points: Point[]) {
+		let pt = new Point();
+
+		points.forEach((p) => pt.add(p));
+
+		pt.x /= points.length;
+		pt.y /= points.length;
+
+		return pt;
+	}
+
 	x: number;
 	y: number;
 
