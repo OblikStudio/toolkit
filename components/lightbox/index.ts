@@ -12,9 +12,7 @@ export class Lightbox extends HTMLElement {
 	width: number;
 	height: number;
 	size = new Point();
-
-	originX = 0.5;
-	originY = 0.5;
+	origin = new Point(0.5, 0.5);
 
 	offset = new Point();
 	position = new Point();
@@ -230,10 +228,10 @@ export class Lightbox extends HTMLElement {
 		this.scale = 1;
 		this.size.set(this.figure.offsetWidth, this.figure.offsetHeight);
 		this.offset.set(this.figure.offsetLeft, this.figure.offsetLeft);
+		this.position
+			.setPoint(this.offset)
+			.addPoint(this.size.clone().mulPoint(this.origin));
 
-		this.position.set(this.offset);
-		this.position.x += this.size.x * this.originX;
-		this.position.y += this.size.y * this.originY;
 		this.updateSize();
 
 		this.addEventListener("pointerdown", this.handleDownCallback);
@@ -263,9 +261,9 @@ export class Lightbox extends HTMLElement {
 		let sw = r1.width / width;
 		let sh = r1.height / height;
 		let sx =
-			r1.left + r1.width * this.originX - (r2.left + r2.width * this.originX);
+			r1.left + r1.width * this.origin.x - (r2.left + r2.width * this.origin.x);
 		let sy =
-			r1.top + r1.height * this.originY - (r2.top + r2.height * this.originY);
+			r1.top + r1.height * this.origin.y - (r2.top + r2.height * this.origin.y);
 		let flipTransform = `translate(${sx}px, ${sy}px) scale(${sw}, ${sh})`;
 
 		this.figure.style.transform = flipTransform;
@@ -370,7 +368,7 @@ export class Lightbox extends HTMLElement {
 			delta * (e.clientY - this.position.y)
 		);
 
-		this.position.subtract(pull);
+		this.position.subPoint(pull);
 		this.scale = newScale;
 		this.updateBounds();
 		this.constrainPoint(this.position, false);
@@ -506,7 +504,7 @@ export class Lightbox extends HTMLElement {
 
 		if (this.pointers.length) {
 			this.downPosition = this.getAveragePoint();
-			this.gesturePosition = this.downPosition.copy();
+			this.gesturePosition = this.downPosition.clone();
 			this.gestureStartDistance = this.getAverageDistance();
 			this.pull = this.downPosition.to(this.position);
 
@@ -671,7 +669,7 @@ export class Lightbox extends HTMLElement {
 			return;
 		}
 
-		let delta = this.gesturePosition.copy().subtract(this.downPosition);
+		let delta = this.gesturePosition.clone().subPoint(this.downPosition);
 		if (!this.focusPosition || delta.dist() > 10) {
 			this.focusPosition = this.getAveragePoint();
 		}
@@ -718,7 +716,7 @@ export class Lightbox extends HTMLElement {
 			this.close();
 			this.isSliding = false;
 		} else if (this.scale < 1) {
-			this.position.set(this.offset);
+			this.position.setPoint(this.offset);
 			this.scale = 1;
 			this.isSliding = false;
 
@@ -787,7 +785,7 @@ export class Lightbox extends HTMLElement {
 			(scale - 1) * (this.lastTapUp.clientY - this.position.y)
 		);
 
-		this.position.subtract(pull);
+		this.position.subPoint(pull);
 		this.scale = scale;
 		this.classList.add("is-expanded");
 	}
@@ -801,27 +799,27 @@ export class Lightbox extends HTMLElement {
 
 			let vcStep = this.speed.copy();
 			vcStep.magnitude *= this.timeScale;
-			this.position.add(vcStep);
+			this.position.addVector(vcStep);
 			this.constrainPoint(this.position);
 
-			let ptIdeal = this.position.copy();
+			let ptIdeal = this.position.clone();
 			this.constrainPoint(ptIdeal, false);
 
 			let vcPush = this.position.to(ptIdeal);
 			vcPush.magnitude *= 1 - Math.pow(0.9, this.timeScale);
-			this.position.add(vcPush);
+			this.position.addVector(vcPush);
 
 			if (this.speed.magnitude < 0.1 && vcPush.magnitude < 0.1) {
 				this.stopSliding();
 			}
 		} else if (this.gesturePosition) {
 			if (this.tickPosition) {
-				let lastTickPoint = this.tickPosition.copy();
-				this.tickPosition.set(this.gesturePosition);
+				let lastTickPoint = this.tickPosition.clone();
+				this.tickPosition.setPoint(this.gesturePosition);
 				this.speed = lastTickPoint.to(this.tickPosition);
 				this.speed.magnitude /= this.timeScale;
 			} else {
-				this.tickPosition = this.gesturePosition.copy();
+				this.tickPosition = this.gesturePosition.clone();
 			}
 		}
 
@@ -836,23 +834,23 @@ export class Lightbox extends HTMLElement {
 
 	constrainPoint(p: Point, overdrag = true, retouch = false) {
 		let r2 = this.bounds;
-		let dt = r2.top - (p.y - this.size.y * this.originY);
-		let dl = r2.left - (p.x - this.size.x * this.originX);
-		let dr = p.x + this.size.x * (1 - this.originX) - r2.right;
-		let db = p.y + this.size.y * (1 - this.originY) - r2.bottom;
+		let dt = r2.top - (p.y - this.size.y * this.origin.y);
+		let dl = r2.left - (p.x - this.size.x * this.origin.x);
+		let dr = p.x + this.size.x * (1 - this.origin.x) - r2.right;
+		let db = p.y + this.size.y * (1 - this.origin.y) - r2.bottom;
 
 		let snapY = r2.height > this.size.y;
 		let snapX = r2.width > this.size.x;
 
 		if (!retouch || !snapY) {
-			if (dt > 0) p.y = r2.top + this.size.y * this.originY;
+			if (dt > 0) p.y = r2.top + this.size.y * this.origin.y;
 			if (db > 0 && (!overdrag || !this.isSwipeDownClose))
-				p.y = r2.bottom - this.size.y * (1 - this.originY);
+				p.y = r2.bottom - this.size.y * (1 - this.origin.y);
 		}
 
 		if (!retouch || !snapX) {
-			if (dl > 0) p.x = r2.left + this.size.x * this.originX;
-			if (dr > 0) p.x = r2.right - this.size.x * (1 - this.originX);
+			if (dl > 0) p.x = r2.left + this.size.x * this.origin.x;
+			if (dr > 0) p.x = r2.right - this.size.x * (1 - this.origin.x);
 		}
 
 		if (overdrag) {
@@ -872,7 +870,7 @@ export class Lightbox extends HTMLElement {
 	}
 
 	getGestureTransform() {
-		let point = this.position.copy();
+		let point = this.position.clone();
 		let scale = this.scale;
 		let angle = this.angle;
 
@@ -881,13 +879,13 @@ export class Lightbox extends HTMLElement {
 		}
 
 		if (this.gestureOffset) {
-			point.add(this.gestureOffset);
+			point.addVector(this.gestureOffset);
 		}
 
 		if (scale !== this.scale) {
 			let pull = this.pull.copy();
 			pull.magnitude *= scale / this.scale - 1;
-			point.add(pull);
+			point.addVector(pull);
 		}
 
 		if (this.gestureAngle) {
@@ -902,7 +900,7 @@ export class Lightbox extends HTMLElement {
 			v2.direction += this.gestureAngle;
 			v1.direction -= Math.PI;
 			v2.add(v1);
-			point.add(v2);
+			point.addVector(v2);
 		}
 
 		return {
@@ -938,7 +936,7 @@ export class Lightbox extends HTMLElement {
 			this.scale = gesture.scale;
 
 			this.downPosition = this.getAveragePoint();
-			this.gesturePosition = this.downPosition.copy();
+			this.gesturePosition = this.downPosition.clone();
 			this.gestureStartDistance = this.getAverageDistance();
 			this.pull = this.downPosition.to(this.position);
 		}
@@ -963,7 +961,7 @@ export class Lightbox extends HTMLElement {
 
 			let pull = this.pull.copy();
 			pull.magnitude *= -animScale;
-			render.add(pull);
+			render.addVector(pull);
 		}
 
 		let opacity = 1 - this.animRatio;
@@ -975,8 +973,8 @@ export class Lightbox extends HTMLElement {
 
 		this.style.setProperty("--opacity", opacity.toString());
 
-		let x = render.x - this.offset.x - this.figure.offsetWidth * this.originX;
-		let y = render.y - this.offset.y - this.figure.offsetHeight * this.originY;
+		let x = render.x - this.offset.x - this.figure.offsetWidth * this.origin.x;
+		let y = render.y - this.offset.y - this.figure.offsetHeight * this.origin.y;
 		this.figure.style.transform = `translate(${x}px, ${y}px) scale(${s}) rotate(${gesture.angle}rad)`;
 	}
 
@@ -1017,14 +1015,14 @@ export class Lightbox extends HTMLElement {
 		let heightDiff = this.figure.offsetHeight - height;
 		let sx =
 			r1.left +
-			r1.width * this.originX -
-			(this.figure.offsetLeft + this.figure.offsetWidth * this.originX) -
-			widthDiff * (0.5 - this.originX);
+			r1.width * this.origin.x -
+			(this.figure.offsetLeft + this.figure.offsetWidth * this.origin.x) -
+			widthDiff * (0.5 - this.origin.x);
 		let sy =
 			r1.top +
-			r1.height * this.originY -
-			(this.figure.offsetTop + this.figure.offsetHeight * this.originY) -
-			heightDiff * (0.5 - this.originY);
+			r1.height * this.origin.y -
+			(this.figure.offsetTop + this.figure.offsetHeight * this.origin.y) -
+			heightDiff * (0.5 - this.origin.y);
 
 		let elHeight = this.offsetHeight;
 		let scrollTop = document.scrollingElement.scrollTop;
@@ -1101,7 +1099,7 @@ export class Lightbox extends HTMLElement {
 	}
 
 	getBleed(p: Point) {
-		return p.y + this.size.y * (1 - this.originY) - this.bounds.bottom;
+		return p.y + this.size.y * (1 - this.origin.y) - this.bounds.bottom;
 	}
 
 	getAveragePoint() {

@@ -22,7 +22,7 @@ export class Swipe {
 	constructor(id: number | string, origin: Point) {
 		this.id = id;
 		this.origin = origin;
-		this.position = origin.copy();
+		this.position = origin.clone();
 
 		this.positionPrev = null;
 		this.delta = null;
@@ -30,7 +30,7 @@ export class Swipe {
 	}
 
 	offset() {
-		return this.position.copy().subtract(this.origin);
+		return this.position.clone().subPoint(this.origin);
 	}
 }
 
