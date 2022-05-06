@@ -11,10 +11,16 @@ export class Lightbox extends HTMLElement {
 
 	width: number;
 	height: number;
+
+	/**
+	 * Rendered size of the image, after applied transforms.
+	 */
 	size = new Point();
 	origin = new Point(0.5, 0.5);
 
-	offset = new Point();
+	offsetSize: Point;
+	offsetPosition: Point;
+
 	position = new Point();
 	downPosition = new Point();
 	tickPosition: Point;
@@ -226,10 +232,10 @@ export class Lightbox extends HTMLElement {
 
 		this.angle = 0;
 		this.scale = 1;
-		this.size.set(this.figure.offsetWidth, this.figure.offsetHeight);
-		this.offset.set(this.figure.offsetLeft, this.figure.offsetLeft);
+		this.updateOffsets();
+		this.size.setPoint(this.offsetSize);
 		this.position
-			.setPoint(this.offset)
+			.setPoint(this.offsetPosition)
 			.addPoint(this.size.clone().mulPoint(this.origin));
 
 		this.updateSize();
@@ -319,6 +325,18 @@ export class Lightbox extends HTMLElement {
 		}
 	}
 
+	updateOffsets() {
+		this.offsetSize = new Point(
+			this.figure.offsetWidth,
+			this.figure.offsetHeight
+		);
+
+		this.offsetPosition = new Point(
+			this.figure.offsetLeft,
+			this.figure.offsetTop
+		);
+	}
+
 	updateImageSize() {
 		// Calculating widths in JS because if width and height are `auto`,
 		// getBoundingClientRect() returns width 0 and height 0 if the image is
@@ -348,6 +366,7 @@ export class Lightbox extends HTMLElement {
 	handleReiszeCallback = this.handleResize.bind(this);
 	handleResize() {
 		this.updateImageSize();
+		this.updateOffsets();
 		this.updateSize();
 		this.render();
 	}
@@ -382,8 +401,7 @@ export class Lightbox extends HTMLElement {
 	}
 
 	updateSize() {
-		let imgWidth = this.figure.offsetWidth;
-		let imgHeight = this.figure.offsetHeight;
+		let { x: imgWidth, y: imgHeight } = this.offsetSize;
 		let naturalScale: number;
 
 		// Avoid unexpected behavior due to the browser rounding `offsetWidth`.
@@ -407,7 +425,6 @@ export class Lightbox extends HTMLElement {
 
 		this.updateBounds();
 		this.constrainPoint(this.position, false);
-		this.offset.set(this.figure.offsetLeft, this.figure.offsetTop);
 
 		this.classList.toggle("is-expandable", this.isExpandable());
 		this.classList.toggle("is-expanded", this.isExpanded());
@@ -716,7 +733,7 @@ export class Lightbox extends HTMLElement {
 			this.close();
 			this.isSliding = false;
 		} else if (this.scale < 1) {
-			this.position.setPoint(this.offset);
+			this.position.setPoint(this.offsetPosition);
 			this.scale = 1;
 			this.isSliding = false;
 
@@ -973,8 +990,10 @@ export class Lightbox extends HTMLElement {
 
 		this.style.setProperty("--opacity", opacity.toString());
 
-		let x = render.x - this.offset.x - this.figure.offsetWidth * this.origin.x;
-		let y = render.y - this.offset.y - this.figure.offsetHeight * this.origin.y;
+		let x =
+			render.x - this.offsetPosition.x - this.offsetSize.x * this.origin.x;
+		let y =
+			render.y - this.offsetPosition.y - this.offsetSize.y * this.origin.y;
 		this.figure.style.transform = `translate(${x}px, ${y}px) scale(${s}) rotate(${gesture.angle}rad)`;
 	}
 
@@ -1011,17 +1030,17 @@ export class Lightbox extends HTMLElement {
 			width = height * openerAspect;
 		}
 
-		let widthDiff = this.figure.offsetWidth - width;
-		let heightDiff = this.figure.offsetHeight - height;
+		let widthDiff = this.offsetSize.x - width;
+		let heightDiff = this.offsetSize.y - height;
 		let sx =
 			r1.left +
 			r1.width * this.origin.x -
-			(this.figure.offsetLeft + this.figure.offsetWidth * this.origin.x) -
+			(this.offsetPosition.x + this.offsetSize.x * this.origin.x) -
 			widthDiff * (0.5 - this.origin.x);
 		let sy =
 			r1.top +
 			r1.height * this.origin.y -
-			(this.figure.offsetTop + this.figure.offsetHeight * this.origin.y) -
+			(this.offsetPosition.y + this.offsetSize.y * this.origin.y) -
 			heightDiff * (0.5 - this.origin.y);
 
 		let elHeight = this.offsetHeight;
@@ -1064,10 +1083,10 @@ export class Lightbox extends HTMLElement {
 	 * @todo only needs to be called when image scale or window size changes.
 	 */
 	updateBounds(scale = this.scale) {
-		this.size.set(
-			this.figure.offsetWidth * scale,
-			this.figure.offsetHeight * scale
-		);
+		/**
+		 * @todo this.size should not be updated in bounds?
+		 */
+		this.size.setPoint(this.offsetSize).mul(scale);
 
 		let r3 = this.getMaxBoundsRect();
 		let w = Math.max(this.size.x, r3.width);
