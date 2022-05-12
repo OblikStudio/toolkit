@@ -523,6 +523,7 @@ export class Lightbox extends HTMLElement {
 			this.downPosition = this.getAveragePoint();
 			this.gesturePosition = this.downPosition.clone();
 			this.gestureStartDistance = this.getAverageDistance();
+			this.gestureStartAngle = this.getPointersAngle();
 			this.pull = this.downPosition.to(this.position);
 
 			// Reset the tick position, otherwise the speed will be inaccurate
@@ -630,11 +631,7 @@ export class Lightbox extends HTMLElement {
 
 		if (this.isRotate) {
 			let angle = this.getPointersAngle();
-			if (this.gestureStartAngle) {
 				this.gestureAngle = angle.direction - this.gestureStartAngle.direction;
-			} else {
-				this.gestureStartAngle = angle;
-			}
 		}
 
 		if (!this.isMoved) {
