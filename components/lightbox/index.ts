@@ -16,48 +16,121 @@ export class Lightbox extends HTMLElement {
 	 * Rendered size of the image, after applied transforms.
 	 */
 	size = new Point();
+
+	/**
+	 * Computed transform-origin of the figure, determining how calculations
+	 * should be done. Set in CSS.
+	 */
 	origin = new Point(0.5, 0.5);
 
+	/**
+	 * The figure's cached `offsetWidth` and `offsetHeight` values.
+	 */
 	offsetSize: Point;
+
+	/**
+	 * The figure's cached `offsetLeft` and `offsetTop` values.
+	 */
 	offsetPosition: Point;
 
+	/**
+	 * Current active position of the figure, before applying gesture.
+	 */
 	position = new Point();
+
+	/**
+	 * Averaged position of all pointers on pointer change. Used to determine
+	 * how much the user has moved the figure since the last pointer up/down.
+	 */
 	downPosition = new Point();
-	tickPosition: Point;
+
+	/**
+	 * Current active scale of the figure, before applying gesture.
+	 */
+	scale = 1;
+
+	/**
+	 * Maximum scale to which the user can zoom before overdrag kicks in. It's
+	 * not relative to the image's intrinsic size when that size is smaller than
+	 * 1024 on either width or height and the user can zoom beyond it.
+	 */
+	maxScale: number;
+
+	/**
+	 * Most optimal zoomed-in scale for the image, accounting for DPR.
+	 */
+	idealScale: number;
+
+	/**
+	 * Offset from the active position to the user pointer down position. When
+	 * the user pinches the image, this is used to pull the image such that it
+	 * scales relative to the center of the finger gesture.
+	 */
+	pull: Vector;
 
 	/**
 	 * Last effective point of focus, computed from the average of all pointers.
-	 * Updated on pointerup only if the movement since last pointerup was
-	 * greater than X.
+	 * When a pinch gesture ends and the figure scale is constrained, this
+	 * determines the point from which the figure should scale down.
 	 */
 	focusPosition = new Point();
 
-	pull: Vector;
+	/**
+	 * Current active angle of the figure, before applying gesture.
+	 */
+	angle = 0;
 
-	scale = 1;
-	maxScale: number;
-	idealScale: number;
-
-	angle: number;
-
+	/**
+	 * Current active pointers on the screen, used to perform a gesture.
+	 */
 	pointers: {
 		id: number;
 		point: Point;
 		origin: Point;
 	}[] = [];
 
+	/**
+	 * Active average pointer position.
+	 */
+	gesturePosition: Point;
+
+	/**
+	 * Offset from the `downPosition` to the `gesturePosition`.
+	 */
+	gestureOffset: Vector;
+
+	/**
+	 * Average distance between pointers on pointer change. Used to later
+	 * determine if the user is zooming in or out when pinching.
+	 */
+	gestureStartDistance: number;
+
+	/**
+	 * Active scale difference caused by the user gesture.
+	 */
+	gestureScale: number;
+
+	/**
+	 * Average angle between pointers on pointer change. Used to later determine
+	 * how much the user has rotated the figure.
+	 */
+	gestureStartAngle: Vector;
+
+	/**
+	 * Active rotation by the user gesture.
+	 */
+	gestureAngle: number;
+
+	/**
+	 * Rectangle that determines where the user can drag the image before
+	 * overdrag kicks in. Computed with the actual rendered scale of the image.
+	 */
 	bounds: DOMRectReadOnly;
 
 	speed: Vector;
+	tickPosition: Point;
 	movement: Vector;
 	timeScale = 1;
-
-	gesturePosition: Point;
-	gestureOffset: Vector;
-	gestureStartDistance: number;
-	gestureScale: number;
-	gestureStartAngle: Vector;
-	gestureAngle: number;
 
 	animRatio = 0;
 
@@ -230,8 +303,6 @@ export class Lightbox extends HTMLElement {
 			e.stopPropagation();
 		});
 
-		this.angle = 0;
-		this.scale = 1;
 		this.updateOffsets();
 		this.size.setPoint(this.offsetSize);
 		this.position
