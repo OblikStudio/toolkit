@@ -292,17 +292,6 @@ export class Lightbox extends HTMLElement {
 		this.updateDimensions();
 		this.updateImageSize();
 
-		this.addEventListener("click", () => {
-			if (!this.isDragged) {
-				this.close();
-			}
-		});
-
-		this.image.addEventListener("click", (e) => {
-			// Prevent click listener of host element from closing the lightbox.
-			e.stopPropagation();
-		});
-
 		this.updateOffsets();
 		this.size.setPoint(this.offsetSize);
 		this.position
@@ -311,6 +300,7 @@ export class Lightbox extends HTMLElement {
 
 		this.updateSize();
 
+		this.addEventListener("click", this.handleClickCallback);
 		this.addEventListener("pointerdown", this.handleDownCallback);
 		this.addEventListener("pointerup", this.handleUpCallback);
 		this.addEventListener("pointerleave", this.handleUpCallback);
@@ -425,6 +415,13 @@ export class Lightbox extends HTMLElement {
 
 		this.figure.style.width = `${width}px`;
 		this.figure.style.height = `${height}px`;
+	}
+
+	handleClickCallback = this.handleClick.bind(this);
+	handleClick(e: PointerEvent) {
+		if (!e.composedPath().includes(this.figure) && !this.isDragged) {
+			this.close();
+		}
 	}
 
 	handleKeyDownCallback = this.handleKeyDown.bind(this);
