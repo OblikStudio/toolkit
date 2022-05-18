@@ -1,3 +1,7 @@
+/**
+ * @todo fix jump on swipe-down then pinch close?
+ */
+
 import { ticker } from "../../core/ticker";
 import { easeInOutQuad } from "../../utils/easings";
 import { clamp, Point, Vector } from "../../utils/math";
@@ -300,12 +304,6 @@ export class Lightbox extends HTMLElement {
 
 		this.updateSize();
 
-		this.addEventListener("click", this.handleClickCallback);
-		this.addEventListener("pointerdown", this.handleDownCallback);
-		this.addEventListener("pointerup", this.handleUpCallback);
-		this.addEventListener("pointerleave", this.handleUpCallback);
-		this.addEventListener("pointercancel", this.handleUpCallback);
-
 		let r1 = this.opener.getBoundingClientRect();
 		let openerAspect = r1.width / r1.height;
 		let rect = this.wrapper.getBoundingClientRect();
@@ -336,6 +334,9 @@ export class Lightbox extends HTMLElement {
 		this.figure.style.transform = flipTransform;
 		this.style.setProperty("--opacity", "0");
 
+		this.isClosed = false;
+		this.isOpening = true;
+
 		window.requestAnimationFrame(() => {
 			this.opener.classList.add(
 				"ob-lightbox-is-active",
@@ -349,12 +350,15 @@ export class Lightbox extends HTMLElement {
 			this.figure.addEventListener("transitionend", this.onOpenEndCallback);
 		});
 
-		this.isClosed = false;
-		this.isOpening = true;
-
-		window.addEventListener("resize", this.handleReiszeCallback);
 		window.addEventListener("keydown", this.handleKeyDownCallback);
+		window.addEventListener("resize", this.handleReiszeCallback);
+
+		this.addEventListener("click", this.handleClickCallback);
 		this.addEventListener("wheel", this.handleWheelCallback);
+		this.addEventListener("pointerdown", this.handleDownCallback);
+		this.addEventListener("pointerup", this.handleUpCallback);
+		this.addEventListener("pointerleave", this.handleUpCallback);
+		this.addEventListener("pointercancel", this.handleUpCallback);
 	}
 
 	preloadImage() {
@@ -417,13 +421,6 @@ export class Lightbox extends HTMLElement {
 		this.figure.style.height = `${height}px`;
 	}
 
-	handleClickCallback = this.handleClick.bind(this);
-	handleClick(e: PointerEvent) {
-		if (!e.composedPath().includes(this.figure) && !this.isDragged) {
-			this.close();
-		}
-	}
-
 	handleKeyDownCallback = this.handleKeyDown.bind(this);
 	handleKeyDown(e: KeyboardEvent) {
 		if (e.key === "Escape") {
@@ -437,6 +434,13 @@ export class Lightbox extends HTMLElement {
 		this.updateOffsets();
 		this.updateSize();
 		this.render();
+	}
+
+	handleClickCallback = this.handleClick.bind(this);
+	handleClick(e: PointerEvent) {
+		if (!e.composedPath().includes(this.figure) && !this.isDragged) {
+			this.close();
+		}
 	}
 
 	handleWheelCallback = this.handleWheel.bind(this);
@@ -699,7 +703,7 @@ export class Lightbox extends HTMLElement {
 
 		if (this.isRotate) {
 			let angle = this.getPointersAngle();
-				this.gestureAngle = angle.direction - this.gestureStartAngle.direction;
+			this.gestureAngle = angle.direction - this.gestureStartAngle.direction;
 		}
 
 		if (!this.isMoved) {
