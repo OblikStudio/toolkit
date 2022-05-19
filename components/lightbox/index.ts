@@ -303,52 +303,7 @@ export class Lightbox extends HTMLElement {
 			.addPoint(this.size.clone().mulPoint(this.origin));
 
 		this.updateSize();
-
-		let r1 = this.opener.getBoundingClientRect();
-		let openerAspect = r1.width / r1.height;
-		let rect = this.wrapper.getBoundingClientRect();
-		let width = rect.width;
-		let height = width / openerAspect;
-
-		if (height > rect.height) {
-			height = rect.height;
-			width = height * openerAspect;
-		}
-
-		let styles = window.getComputedStyle(this.opener);
-		this.image.style.background = styles.background;
-		this.image.style.objectFit = styles.objectFit;
-		this.image.style.objectPosition = styles.objectPosition;
-		this.figure.style.width = `${width}px`;
-		this.figure.style.height = `${height}px`;
-
-		let r2 = this.figure.getBoundingClientRect();
-		let sw = r1.width / width;
-		let sh = r1.height / height;
-		let sx =
-			r1.left + r1.width * this.origin.x - (r2.left + r2.width * this.origin.x);
-		let sy =
-			r1.top + r1.height * this.origin.y - (r2.top + r2.height * this.origin.y);
-		let flipTransform = `translate(${sx}px, ${sy}px) scale(${sw}, ${sh})`;
-
-		this.figure.style.transform = flipTransform;
-		this.style.setProperty("--opacity", "0");
-
-		this.isClosed = false;
-		this.isOpening = true;
-
-		window.requestAnimationFrame(() => {
-			this.opener.classList.add(
-				"ob-lightbox-is-active",
-				"ob-lightbox-is-visible"
-			);
-
-			this.classList.add("is-open", "is-opening");
-			this.style.setProperty("--opacity", "1");
-			this.updateImageSize();
-			this.figure.style.transform = "";
-			this.figure.addEventListener("transitionend", this.onOpenEndCallback);
-		});
+		this.open();
 
 		window.addEventListener("keydown", this.handleKeyDownCallback);
 		window.addEventListener("resize", this.handleReiszeCallback);
@@ -419,6 +374,55 @@ export class Lightbox extends HTMLElement {
 
 		this.figure.style.width = `${width}px`;
 		this.figure.style.height = `${height}px`;
+	}
+
+	open() {
+		let openerRect = this.opener.getBoundingClientRect();
+		let wrapperRect = this.wrapper.getBoundingClientRect();
+		let openerAspect = openerRect.width / openerRect.height;
+		let width = wrapperRect.width;
+		let height = width / openerAspect;
+
+		if (height > wrapperRect.height) {
+			height = wrapperRect.height;
+			width = height * openerAspect;
+		}
+
+		let styles = window.getComputedStyle(this.opener);
+		this.image.style.background = styles.background;
+		this.image.style.objectFit = styles.objectFit;
+		this.image.style.objectPosition = styles.objectPosition;
+		this.figure.style.width = `${width}px`;
+		this.figure.style.height = `${height}px`;
+
+		let figureRect = this.figure.getBoundingClientRect();
+		let figureLeft = figureRect.left + figureRect.width * this.origin.x;
+		let figureTop = figureRect.top + figureRect.height * this.origin.y;
+		let openerLeft = openerRect.left + openerRect.width * this.origin.x;
+		let openerTop = openerRect.top + openerRect.height * this.origin.y;
+		let startX = openerLeft - figureLeft;
+		let startY = openerTop - figureTop;
+		let startWidth = openerRect.width / width;
+		let startHeight = openerRect.height / height;
+
+		this.figure.style.transform = `translate(${startX}px, ${startY}px) scale(${startWidth}, ${startHeight})`;
+		this.style.setProperty("--opacity", "0");
+
+		this.isClosed = false;
+		this.isOpening = true;
+
+		window.requestAnimationFrame(() => {
+			this.opener.classList.add(
+				"ob-lightbox-is-active",
+				"ob-lightbox-is-visible"
+			);
+
+			this.classList.add("is-open", "is-opening");
+			this.style.setProperty("--opacity", "1");
+			this.updateImageSize();
+			this.figure.style.transform = "";
+			this.figure.addEventListener("transitionend", this.onOpenEndCallback);
+		});
 	}
 
 	handleKeyDownCallback = this.handleKeyDown.bind(this);
@@ -526,6 +530,11 @@ export class Lightbox extends HTMLElement {
 	}
 
 	updateResolutionCallback = this.updateResolution.bind(this);
+	/**
+	 * Resolution is used to increase the image's rendered size (pixels loaded
+	 * on the GPU) by increasing its width and height. Otherwise, if `transform`
+	 * is used to scale it up, it gets blurry on mobile devices.
+	 */
 	updateResolution() {
 		this.style.setProperty("--resolution", this.scale.toString());
 	}
@@ -577,10 +586,10 @@ export class Lightbox extends HTMLElement {
 	}
 
 	pointersChange() {
-		let tr = this.getGestureTransform();
-		this.position = tr.point;
-		this.scale = tr.scale;
-		this.angle = tr.angle;
+		let gesture = this.getGestureTransform();
+		this.position = gesture.point;
+		this.scale = gesture.scale;
+		this.angle = gesture.angle;
 		this.gestureScale = null;
 		this.gestureOffset = null;
 		this.gestureStartAngle = null;
@@ -1088,29 +1097,25 @@ export class Lightbox extends HTMLElement {
 
 		ticker.off("tick", this.handleTickCallback);
 
-		let r1 = this.opener.getBoundingClientRect();
-		let openerAspect = r1.width / r1.height;
-		let rect = this.wrapper.getBoundingClientRect();
-		let width = rect.width;
+		let openerRect = this.opener.getBoundingClientRect();
+		let wrapperRect = this.wrapper.getBoundingClientRect();
+		let openerAspect = openerRect.width / openerRect.height;
+		let width = wrapperRect.width;
 		let height = width / openerAspect;
 
-		if (height > rect.height) {
-			height = rect.height;
+		if (height > wrapperRect.height) {
+			height = wrapperRect.height;
 			width = height * openerAspect;
 		}
 
 		let widthDiff = this.offsetSize.x - width;
 		let heightDiff = this.offsetSize.y - height;
-		let sx =
-			r1.left +
-			r1.width * this.origin.x -
-			(this.offsetPosition.x + this.offsetSize.x * this.origin.x) -
-			widthDiff * (0.5 - this.origin.x);
-		let sy =
-			r1.top +
-			r1.height * this.origin.y -
-			(this.offsetPosition.y + this.offsetSize.y * this.origin.y) -
-			heightDiff * (0.5 - this.origin.y);
+		let figureLeft = this.offsetPosition.x + this.offsetSize.x * this.origin.x;
+		let figureTop = this.offsetPosition.y + this.offsetSize.y * this.origin.y;
+		let openerLeft = openerRect.left + openerRect.width * this.origin.x;
+		let openerTop = openerRect.top + openerRect.height * this.origin.y;
+		let startX = openerLeft - figureLeft - widthDiff * (0.5 - this.origin.x);
+		let startY = openerTop - figureTop - heightDiff * (0.5 - this.origin.y);
 
 		let elHeight = this.offsetHeight;
 		let scrollTop = document.scrollingElement.scrollTop;
@@ -1124,10 +1129,10 @@ export class Lightbox extends HTMLElement {
 		this.style.left = `${scrollLeft}px`;
 		this.style.height = `${elHeight}px`;
 
-		let scale = r1.width / width; // Height ratio is the same.
+		let scale = openerRect.width / width; // Height ratio is the same.
 		this.figure.style.width = `${width}px`;
 		this.figure.style.height = `${height}px`;
-		this.figure.style.transform = `translate(${sx}px, ${sy}px) scale(${scale})`;
+		this.figure.style.transform = `translate(${startX}px, ${startY}px) scale(${scale})`;
 
 		this.scale = 1;
 		this.updateResolution();
