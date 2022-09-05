@@ -47,7 +47,7 @@ export class Sensor extends Component<HTMLElement, Options> {
 		}
 	}
 
-	measure(elRect: ClientRect, ctrRect: ClientRect) {
+	measure(elRect: DOMRect, ctrRect: DOMRect) {
 		let v1 = elRect[this.$options.edge] + this.$options.offset;
 		let v2 = ctrRect[this.$options.containerEdge];
 		return v2 - v1 > 0;

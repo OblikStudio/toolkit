@@ -46,18 +46,11 @@ export function offsetGlobal(element: HTMLElement, reference = null) {
  * Calls getBoundingClientRect when the input is an Element and returns it. If
  * the input is Window, an object with a ClientRect shape is returned instead.
  */
-export function getClientRect(input: Window | Element): ClientRect {
+export function getClientRect(input: Window | Element): DOMRect {
 	if (input instanceof Element) {
 		return input.getBoundingClientRect();
 	} else if (input === window) {
-		return {
-			width: window.innerWidth,
-			height: window.innerHeight,
-			top: 0,
-			right: window.innerWidth,
-			bottom: window.innerHeight,
-			left: 0,
-		};
+		return new DOMRect(0, 0, window.innerWidth, window.innerHeight);
 	}
 }
 

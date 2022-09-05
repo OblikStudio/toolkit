@@ -44,7 +44,7 @@ export class Parallax extends Component<HTMLElement, Options> {
 		return this.calculate(rect, refRect, this.$options.axis);
 	}
 
-	calculate(elRect: ClientRect, refRect: ClientRect, axis: Options["axis"]) {
+	calculate(elRect: DOMRect, refRect: DOMRect, axis: Options["axis"]) {
 		let offset: number;
 		let edge: number;
 		let edgeEnd: number;
