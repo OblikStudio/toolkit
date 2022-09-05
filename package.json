@@ -1,9 +1,10 @@
 {
 	"name": "oblik",
-	"version": "1.1.4",
+	"version": "1.2.0",
 	"description": "Minimal, extensible, renderless front-end components and utilities",
 	"scripts": {
-		"build": "webpack --mode=production"
+		"build": "webpack --mode=production",
+		"prepare-publish": "rm -rf build && npx tsc && npm run build && cp LICENSE package.json package-lock.json README.md build/"
 	},
 	"repository": {
 		"type": "git",
