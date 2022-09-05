@@ -22,7 +22,7 @@ export class Swipe {
 	constructor(id: number | string, origin: Point) {
 		this.id = id;
 		this.origin = origin;
-		this.position = origin.copy();
+		this.position = origin.clone();
 
 		this.positionPrev = null;
 		this.delta = null;
@@ -30,7 +30,7 @@ export class Swipe {
 	}
 
 	offset() {
-		return this.position.copy().subtract(this.origin);
+		return this.position.clone().subPoint(this.origin);
 	}
 }
 
@@ -151,5 +151,17 @@ export class Gesture extends Emitter<Events> {
 
 			el.positionPrev = el.position;
 		});
+	}
+
+	destroy() {
+		this.element.removeEventListener("mousedown", this.mouseStartHandler);
+		this.element.removeEventListener("mousemove", this.mouseMoveHandler);
+		this.element.removeEventListener("mouseup", this.mouseEndHandler);
+		this.element.removeEventListener("mouseleave", this.mouseEndHandler);
+		this.element.removeEventListener("touchstart", this.touchStartHandler);
+		this.element.removeEventListener("touchmove", this.touchMoveHandler);
+		this.element.removeEventListener("touchend", this.touchEndHandler);
+		this.element.removeEventListener("touchcancel", this.touchEndHandler);
+		ticker.off("tick", this.tickHandler);
 	}
 }

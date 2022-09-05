@@ -6,45 +6,82 @@ export function clamp(number: number, min: number, max: number) {
 }
 
 export class Point {
-	x: number;
-	y: number;
+	static average(...points: Point[]) {
+		let pt = new Point();
 
-	constructor(x = 0, y = 0) {
+		points.forEach((p) => pt.addPoint(p));
+
+		pt.x /= points.length;
+		pt.y /= points.length;
+
+		return pt;
+	}
+
+	constructor(public x = 0, public y = 0) {
 		this.set(x, y);
 	}
 
-	copy() {
+	clone() {
 		return new Point(this.x, this.y);
 	}
 
-	set(input: number | Point, y?: number) {
-		if (typeof input === "number") {
-			this.x = input;
-			this.y = y;
-		} else if (input instanceof Point) {
-			this.set(input.x, input.y);
-		}
-	}
-
-	add(input: number | Point | Vector, y = 0) {
-		if (typeof input === "number") {
-			this.set(this.x + input, this.y + y);
-		} else if (input instanceof Point) {
-			this.add(input.x, input.y);
-		} else if (input instanceof Vector) {
-			this.add(
-				input.magnitude * Math.cos(input.direction),
-				input.magnitude * Math.sin(input.direction)
-			);
-		}
-
+	set(a: number, b?: number) {
+		this.x = a;
+		this.y = b ?? a;
 		return this;
 	}
 
-	subtract(input: Point) {
-		this.x -= input.x;
-		this.y -= input.y;
+	setPoint(p: Point) {
+		return this.set(p.x, p.y);
+	}
+
+	add(a: number, b?: number) {
+		this.x += a;
+		this.y += b ?? a;
 		return this;
+	}
+
+	addPoint(p: Point) {
+		return this.add(p.x, p.y);
+	}
+
+	addVector(v: Vector) {
+		return this.add(
+			v.magnitude * Math.cos(v.direction),
+			v.magnitude * Math.sin(v.direction)
+		);
+	}
+
+	sub(a: number, b?: number) {
+		this.x -= a;
+		this.y -= b ?? a;
+		return this;
+	}
+
+	subPoint(p: Point) {
+		return this.sub(p.x, p.y);
+	}
+
+	mul(a: number, b?: number) {
+		this.x *= a;
+		this.y *= b ?? a;
+		return this;
+	}
+
+	mulPoint(p: Point) {
+		return this.mul(p.x, p.y);
+	}
+
+	dist(p?: Point) {
+		let x = this.x;
+		let y = this.y;
+
+		if (p) {
+			x -= p.x;
+			y -= p.y;
+		}
+
+		return Math.hypot(Math.abs(x), Math.abs(y));
 	}
 
 	to(input: Point) {
@@ -60,6 +97,13 @@ export class Vector {
 		if (p1) {
 			this.set(p1, p2);
 		}
+	}
+
+	copy() {
+		let v = new Vector();
+		v.magnitude = this.magnitude;
+		v.direction = this.direction;
+		return v;
 	}
 
 	set(p1: Point, p2?: Point) {
@@ -78,8 +122,8 @@ export class Vector {
 	add(vector: Vector) {
 		let point = new Point();
 
-		point.add(this);
-		point.add(vector);
+		point.addVector(this);
+		point.addVector(vector);
 
 		this.set(point);
 	}
